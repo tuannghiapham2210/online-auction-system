@@ -1,0 +1,13 @@
+# ignore file biên dịch của Maven
+target/
+*.class
+
+# ignore configuration files of IDEs (IntelliJ, Vscode)
+.vscode/
+.idea/
+*.iml
+*.iws
+
+# ignore Database local (for security and avoid conflicts)
+*.db
+*.sqlite
