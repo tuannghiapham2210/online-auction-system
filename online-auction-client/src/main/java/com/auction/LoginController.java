@@ -48,10 +48,19 @@ public class LoginController {
 
             // printing the response message on the status label
             if ("SUCCESS".equals(status)) {
-                lblStatus.setStyle("-fx-text-fill: green;");
-                lblStatus.setText(message);
-                // update the UI to show the main auction screen (not implemented yet)
-                // ...
+                System.out.println("Switching to dashboard...");
+
+                //getting the current stage from the login button
+                javafx.stage.Stage stage = (javafx.stage.Stage) btnLogin.getScene().getWindow();
+
+                // loading the dashboard.fxml file to switch to the dashboard screen
+                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("dashboard.fxml"));
+                javafx.scene.Parent root = loader.load();
+
+                // changing the scene to the dashboard screen with specified dimensions and title
+                javafx.scene.Scene newScene = new javafx.scene.Scene(root, 800, 600);
+                stage.setScene(newScene);
+                stage.setTitle("Sàn Đấu Giá - Bảng Điều Khiển");
 
             } else {
                 lblStatus.setStyle("-fx-text-fill: red;");
