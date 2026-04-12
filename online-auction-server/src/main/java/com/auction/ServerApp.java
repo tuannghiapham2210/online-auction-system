@@ -2,7 +2,7 @@ package com.auction;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.Socket;  
 
 public class ServerApp {
     private static final int PORT = 8080;
