@@ -17,4 +17,8 @@ public class Vehicle extends Item {
     public String getItemType() {
         return "VEHICLE";
     }
+
+    public String getEngineType() {
+        return this.engineType; // Đảm bảo biến của bạn tên là engineType
+    }
 }

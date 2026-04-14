@@ -13,4 +13,6 @@ public class Art extends Item {
 
     @Override
     public String getItemType() { return "ART"; }
-}
+
+    }
+
