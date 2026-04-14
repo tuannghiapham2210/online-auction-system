@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+
+<VBox spacing="12" alignment="CENTER"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.auction.RegisterController">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <Label text="ĐĂNG KÝ"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+    <TextField fx:id="usernameField" promptText="Tên đăng nhập"/>
+
+    <PasswordField fx:id="passwordField" promptText="Mật khẩu"/>
+
+    <ComboBox fx:id="roleBox" promptText="Chọn vai trò">
+        <items>
+            <FXCollections fx:factory="observableArrayList">
+                <String fx:value="Bidder"/>
+                <String fx:value="Seller"/>
+            </FXCollections>
+        </items>
+    </ComboBox>
+
+    <Button text="Đăng ký" onAction="#handleRegister"/>
+
+    <Button text="Đã có tài khoản? Đăng nhập"
+            onAction="#goToLogin"/>
+
+    <Label fx:id="messageLabel"/>
+
+</VBox>

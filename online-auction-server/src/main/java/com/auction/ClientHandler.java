@@ -1,6 +1,7 @@
 package com.auction;
 
 import com.auction.dao.DatabaseConnection;
+import com.auction.dao.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -12,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHandler implements Runnable {
-    
+
     // 1. DANH BẠ MẠNG (Bản chất: Nơi lưu trữ tất cả các kết nối đang online)
     // Dùng static để biến này là DUY NHẤT dùng chung cho mọi luồng ClientHandler.
     private static final List<ClientHandler> activeClients = new ArrayList<>();
@@ -42,7 +43,7 @@ public class ClientHandler implements Runnable {
             // Giữ cho luồng này chạy mãi mãi, chừng nào Client chưa ngắt kết nối
             while ((clientMessage = reader.readLine()) != null) {
                 System.out.println("Nhận từ Client: " + clientMessage);
-                
+
                 JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
                 String action = request.get("action").getAsString();
 
@@ -89,23 +90,54 @@ public class ClientHandler implements Runnable {
     private void handleLogin(JsonObject request) {
         String user = request.get("username").getAsString();
         String pass = request.get("password").getAsString();
-        
-        boolean isOk = DatabaseConnection.getInstance().authenticateUser(user, pass);
-        
-        JsonObject response = new JsonObject();
+
+        UserDAO dao = new UserDAO();
+        boolean isOk = dao.login(user, pass);
+
+        JsonObject res = new JsonObject();
+
         if (isOk) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Đăng nhập thành công!");
+            res.addProperty("status", "SUCCESS");
+            res.addProperty("message", "Đăng nhập thành công!");
         } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
+            res.addProperty("status", "FAIL");
+            res.addProperty("message", "Sai tài khoản!");
         }
-        writer.println(response.toString());
+
+        writer.println(res.toString());
     }
 
     private void handleRegister(JsonObject request) {
         // TODO: [Tên_Thành_Viên_1] Viết logic Đăng ký ở đây, dùng UserDAO
-        System.out.println("Đang xử lý chức năng đăng ký...");
+        try {
+            String username = request.get("username").getAsString();
+            String password = request.get("password").getAsString();
+            String role = request.get("role").getAsString();
+
+            UserDAO userDAO = new UserDAO();
+            boolean isSuccess = userDAO.registerUser(username, password, role);
+
+            JsonObject response = new JsonObject();
+
+            if (isSuccess) {
+                response.addProperty("status", "SUCCESS");
+                response.addProperty("message", "Đăng ký thành công!");
+            } else {
+                response.addProperty("status", "FAIL");
+                response.addProperty("message", "Tài khoản đã tồn tại hoặc lỗi!");
+            }
+
+            writer.println(response.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("status", "ERROR");
+            response.addProperty("message", "Lỗi server!");
+
+            writer.println(response.toString());
+        }
     }
 
     private void handleAddItem(JsonObject request) {
