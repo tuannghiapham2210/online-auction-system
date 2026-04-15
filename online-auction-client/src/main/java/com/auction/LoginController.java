@@ -2,91 +2,109 @@ package com.auction;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.animation.*;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.stage.Stage;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.util.Duration;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 public class LoginController {
 
-    @FXML
-    private TextField usernameField;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label messageLabel;
 
-    @FXML
-    private PasswordField passwordField;
-
-    @FXML
-    private Label messageLabel;
-
-    // ================= LOGIN =================
     @FXML
     private void handleLogin() {
+
         String username = usernameField.getText();
         String password = passwordField.getText();
 
         if (username.isEmpty() || password.isEmpty()) {
-            messageLabel.setStyle("-fx-text-fill: red;");
+            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        try (Socket socket = new Socket("127.0.0.1", 8080);
-             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        messageLabel.setStyle("-fx-text-fill: #f59e0b;");
+        messageLabel.setText("Đang đăng nhập...");
 
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "LOGIN");
-            request.addProperty("username", username);
-            request.addProperty("password", password);
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 8080);
+                 PrintWriter writer = new PrintWriter(
+                         new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+                 BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
-            writer.println(request.toString());
+                JsonObject req = new JsonObject();
+                req.addProperty("action", "LOGIN");
+                req.addProperty("username", username);
+                req.addProperty("password", password);
 
-            String response = reader.readLine();
+                writer.println(req.toString());
 
-            JsonObject res = JsonParser.parseString(response).getAsJsonObject();
-            String status = res.get("status").getAsString();
-            String message = res.get("message").getAsString();
+                JsonObject res = JsonParser.parseString(reader.readLine()).getAsJsonObject();
 
-            if ("SUCCESS".equals(status)) {
-                Stage stage = (Stage) usernameField.getScene().getWindow();
+                String status = res.get("status").getAsString();
+                String message = res.get("message").getAsString();
 
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
-                Parent root = loader.load();
+                javafx.application.Platform.runLater(() -> {
 
-                stage.setScene(new Scene(root, 800, 600));
-                stage.setTitle("Dashboard");
+                    if ("SUCCESS".equals(status)) {
 
-            } else {
-                messageLabel.setStyle("-fx-text-fill: red;");
-                messageLabel.setText(message);
+                        messageLabel.setStyle("-fx-text-fill: #00ff99;");
+                        messageLabel.setText("✔ " + message + " Đang chuyển");
+
+                        // animation dấu ...
+                        Timeline dots = new Timeline(
+                                new KeyFrame(Duration.millis(300), e -> {
+                                    String text = messageLabel.getText();
+                                    if (text.endsWith("...")) {
+                                        messageLabel.setText(text.replace("...", ""));
+                                    } else {
+                                        messageLabel.setText(text + ".");
+                                    }
+                                })
+                        );
+                        dots.setCycleCount(Timeline.INDEFINITE);
+                        dots.play();
+
+                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                        delay.setOnFinished(e -> {
+                            dots.stop();
+                            try {
+                                Parent root = FXMLLoader.load(
+                                        getClass().getResource("dashboard.fxml"));
+                                usernameField.getScene().setRoot(root);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+                        delay.play();
+
+                    } else {
+                        messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+                        messageLabel.setText(message);
+                    }
+                });
+
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                        messageLabel.setText("Không kết nối server!"));
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setStyle("-fx-text-fill: red;");
-            messageLabel.setText("Không thể kết nối server!");
-        }
+        }).start();
     }
 
-    // ================= CHUYỂN SANG REGISTER =================
     @FXML
     private void goToRegister() {
         try {
-            Stage stage = (Stage) usernameField.getScene().getWindow();
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("register.fxml"));
-            Parent root = loader.load();
-
-            stage.setScene(new Scene(root, 640, 480));
-            stage.setTitle("Đăng ký");
-
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("register.fxml"));
+            usernameField.getScene().setRoot(root);
         } catch (Exception e) {
             e.printStackTrace();
         }

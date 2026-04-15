@@ -1,40 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.collections.FXCollections?>
-<?import java.lang.String?>
 
-<VBox spacing="12" alignment="CENTER"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.auction.RegisterController">
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.auction.RegisterController"
+           stylesheets="@style.css"
+           styleClass="background">
 
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
+    <!-- FIX: căn giữa -->
+    <VBox alignment="CENTER" spacing="30">
 
-    <Label text="ĐĂNG KÝ"
-           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <!-- TITLE -->
+        <HBox alignment="CENTER">
+            <Label text="THE AUCTION" styleClass="title"/>
+            <Label text=" SYSTEM" styleClass="title-accent"/>
+        </HBox>
 
-    <TextField fx:id="usernameField" promptText="Tên đăng nhập"/>
+        <!-- CARD -->
+        <VBox spacing="20" alignment="CENTER" styleClass="card" maxWidth="500">
 
-    <PasswordField fx:id="passwordField" promptText="Mật khẩu"/>
+            <TextField fx:id="usernameField"
+                       promptText="Nhập tài khoản"
+                       styleClass="input"/>
 
-    <ComboBox fx:id="roleBox" promptText="Chọn vai trò">
-        <items>
-            <FXCollections fx:factory="observableArrayList">
-                <String fx:value="Bidder"/>
-                <String fx:value="Seller"/>
-            </FXCollections>
-        </items>
-    </ComboBox>
+            <PasswordField fx:id="passwordField"
+                           promptText="Nhập mật khẩu"
+                           styleClass="input"/>
 
-    <Button text="Đăng ký" onAction="#handleRegister"/>
+            <!-- FIX: bỏ class custom -->
+            <ComboBox fx:id="roleBox"
+                      promptText="Chọn vai trò"
+                      styleClass="combo-box"
+                      maxWidth="Infinity"/>
 
-    <Button text="Đã có tài khoản? Đăng nhập"
-            onAction="#goToLogin"/>
+            <Button text="ĐĂNG KÝ"
+                    onAction="#handleRegister"
+                    styleClass="main-btn"
+                    maxWidth="Infinity"/>
 
-    <Label fx:id="messageLabel"/>
+            <Label text="Quay lại đăng nhập"
+                   styleClass="switch-btn"
+                   onMouseClicked="#goToLogin"/>
 
-</VBox>
+            <Label fx:id="messageLabel"/>
+
+        </VBox>
+    </VBox>
+
+</StackPane>

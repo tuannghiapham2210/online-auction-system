@@ -1,29 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="12" alignment="CENTER"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.auction.LoginController">
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.auction.LoginController"
+           stylesheets="@style.css"
+           styleClass="background">
 
-   <padding>
-      <Insets top="20" right="20" bottom="20" left="20"/>
-   </padding>
+   <!-- FIX: căn giữa -->
+   <VBox alignment="CENTER" spacing="30">
 
-   <Label text="ĐĂNG NHẬP"
-          style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+      <!-- TITLE -->
+      <HBox alignment="CENTER">
+         <Label text="THE AUCTION" styleClass="title"/>
+         <Label text=" SYSTEM" styleClass="title-accent"/>
+      </HBox>
 
-   <TextField fx:id="usernameField" promptText="Tên đăng nhập"/>
+      <!-- CARD -->
+      <VBox spacing="20" alignment="CENTER" styleClass="card" maxWidth="500">
 
-   <PasswordField fx:id="passwordField" promptText="Mật khẩu"/>
+         <!-- SWITCH -->
+         <HBox spacing="40" alignment="CENTER">
+            <Label text="Đăng Nhập" styleClass="switch-active"/>
+            <Label text="Đăng Ký"
+                   styleClass="switch-btn"
+                   onMouseClicked="#goToRegister"/>
+         </HBox>
 
-   <Button text="Đăng nhập" onAction="#handleLogin"/>
+         <!-- INPUT -->
+         <TextField fx:id="usernameField"
+                    promptText="Nhập tài khoản"
+                    styleClass="input"/>
 
-   <Button text="Chưa có tài khoản? Đăng ký"
-           onAction="#goToRegister"/>
+         <PasswordField fx:id="passwordField"
+                        promptText="Nhập mật khẩu"
+                        styleClass="input"/>
 
-   <Label fx:id="messageLabel"/>
+         <!-- BUTTON -->
+         <Button text="ĐĂNG NHẬP"
+                 onAction="#handleLogin"
+                 styleClass="main-btn"
+                 maxWidth="Infinity"/>
 
-</VBox>
+         <Label fx:id="messageLabel"/>
+
+      </VBox>
+   </VBox>
+
+</StackPane>

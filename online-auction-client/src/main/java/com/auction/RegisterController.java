@@ -2,90 +2,110 @@ package com.auction;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.animation.*;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.stage.Stage;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.util.Duration;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 public class RegisterController {
 
-    @FXML
-    private TextField usernameField;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private ComboBox<String> roleBox;
+    @FXML private Label messageLabel;
 
     @FXML
-    private PasswordField passwordField;
+    public void initialize() {
+        roleBox.getItems().addAll("Bidder", "Seller");
+    }
 
-    @FXML
-    private ComboBox<String> roleBox;
-
-    @FXML
-    private Label messageLabel;
-
-    // ================= REGISTER =================
     @FXML
     private void handleRegister() {
+
         String username = usernameField.getText();
         String password = passwordField.getText();
         String role = roleBox.getValue();
 
         if (username.isEmpty() || password.isEmpty() || role == null) {
-            messageLabel.setStyle("-fx-text-fill: red;");
+            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        try (Socket socket = new Socket("127.0.0.1", 8080);
-             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        messageLabel.setStyle("-fx-text-fill: #f59e0b;");
+        messageLabel.setText("Đang đăng ký...");
 
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "REGISTER");
-            request.addProperty("username", username);
-            request.addProperty("password", password);
-            request.addProperty("role", role);
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 8080);
+                 PrintWriter writer = new PrintWriter(
+                         new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+                 BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
-            writer.println(request.toString());
+                JsonObject req = new JsonObject();
+                req.addProperty("action", "REGISTER");
+                req.addProperty("username", username);
+                req.addProperty("password", password);
+                req.addProperty("role", role);
 
-            String response = reader.readLine();
+                writer.println(req.toString());
 
-            JsonObject res = JsonParser.parseString(response).getAsJsonObject();
-            String status = res.get("status").getAsString();
-            String message = res.get("message").getAsString();
+                JsonObject res = JsonParser.parseString(reader.readLine()).getAsJsonObject();
 
-            if ("SUCCESS".equals(status)) {
-                messageLabel.setStyle("-fx-text-fill: green;");
-            } else {
-                messageLabel.setStyle("-fx-text-fill: red;");
+                String status = res.get("status").getAsString();
+                String message = res.get("message").getAsString();
+
+                javafx.application.Platform.runLater(() -> {
+
+                    if ("SUCCESS".equals(status)) {
+
+                        messageLabel.setStyle("-fx-text-fill: #00ff99;");
+                        messageLabel.setText("✔ " + message + " Đang chuyển");
+
+                        Timeline dots = new Timeline(
+                                new KeyFrame(Duration.millis(300), e -> {
+                                    String text = messageLabel.getText();
+                                    if (text.endsWith("...")) {
+                                        messageLabel.setText(text.replace("...", ""));
+                                    } else {
+                                        messageLabel.setText(text + ".");
+                                    }
+                                })
+                        );
+                        dots.setCycleCount(Timeline.INDEFINITE);
+                        dots.play();
+
+                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                        delay.setOnFinished(e -> {
+                            dots.stop();
+                            goToLogin();
+                        });
+                        delay.play();
+
+                    } else {
+                        messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+                        messageLabel.setText(message);
+                    }
+                });
+
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                        messageLabel.setText("Lỗi server!"));
             }
-
-            messageLabel.setText(message);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setStyle("-fx-text-fill: red;");
-            messageLabel.setText("Không thể kết nối server!");
-        }
+        }).start();
     }
 
-    // ================= CHUYỂN VỀ LOGIN =================
     @FXML
     private void goToLogin() {
         try {
-            Stage stage = (Stage) usernameField.getScene().getWindow();
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
-            Parent root = loader.load();
-
-            stage.setScene(new Scene(root, 640, 480));
-            stage.setTitle("Đăng nhập");
-
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("login.fxml"));
+            usernameField.getScene().setRoot(root);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -25,7 +25,7 @@ public class DashboardController {
             Parent root = loader.load();
             
             // changing the scene to the login screen with specified dimensions and title
-            stage.setScene(new Scene(root, 640, 480));
+            stage.getScene().setRoot(root);
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến - Client");
             
         } catch (IOException e) {
