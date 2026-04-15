@@ -1,5 +1,8 @@
 package com.auction;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+
 import com.auction.dao.DatabaseConnection;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -114,8 +117,18 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleGetAllItems(JsonObject request) {
-        // TODO: [Tên_Thành_Viên_3] Viết logic Lấy danh sách hàng ở đây, dùng ItemDAO
-        System.out.println("Đang xử lý chức năng tải danh sách hàng...");
+        com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
+        List<com.auction.model.Item> items = itemDAO.getAllItems();
+
+        Gson gson = new Gson();
+        JsonArray itemsJsonArray = gson.toJsonTree(items).getAsJsonArray();
+
+        JsonObject response = new JsonObject();
+        response.addProperty("action", "GET_ALL_ITEMS_RESPONSE");
+        response.addProperty("status", "SUCCESS");
+        response.add("data", itemsJsonArray);
+
+        writer.println(response.toString());
     }
 
     private void handlePlaceBid(JsonObject request) {
