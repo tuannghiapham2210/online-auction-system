@@ -3,32 +3,44 @@ package com.auction.factory;
 import com.auction.model.Art;
 import com.auction.model.Electronics;
 import com.auction.model.Item;
-import com.auction.model.Vehicle; // Nhớ import thêm class Vehicle
+import com.auction.model.Vehicle;
 
 public class ItemFactory {
-    
-    // Design Pattern: Factory Method
+
+    // ================= CREATE FROM CLIENT =================
     public static Item createItem(String type, String name, double startingPrice, String endTime, int sellerId, String extraInfo) {
         if (type == null || type.isEmpty()) {
             return null;
         }
-        
+
         switch (type.toUpperCase()) {
             case "ELECTRONICS":
-                // extraInfo lúc này là số tháng bảo hành
                 int warranty = Integer.parseInt(extraInfo);
                 return new Electronics(name, startingPrice, endTime, sellerId, warranty);
-                
+
             case "ART":
-                // extraInfo lúc này là tên tác giả
                 return new Art(name, startingPrice, endTime, sellerId, extraInfo);
-                
+
             case "VEHICLE":
-                // extraInfo lúc này là loại động cơ (Xăng, Điện...)
                 return new Vehicle(name, startingPrice, endTime, sellerId, extraInfo);
-                
+
             default:
-                throw new IllegalArgumentException("Loại sản phẩm không được hệ thống hỗ trợ: " + type);
+                throw new IllegalArgumentException("Loại sản phẩm không được hỗ trợ: " + type);
         }
+    }
+
+    // ================= CREATE FROM DB (QUAN TRỌNG) =================
+    public static Item createItemFromDB(String type, int id, String name,
+                                        double startingPrice, String endTime,
+                                        int sellerId, String extraInfo) {
+
+        Item item = createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
+
+        // 🔥 set ID từ DB vào object
+        if (item != null) {
+            item.setId(id); // vì Item extends Entity
+        }
+
+        return item;
     }
 }

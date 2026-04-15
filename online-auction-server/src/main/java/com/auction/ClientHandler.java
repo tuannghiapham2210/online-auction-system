@@ -4,7 +4,9 @@ import com.auction.dao.DatabaseConnection;
 import com.auction.dao.UserDAO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
+import com.auction.dao.ItemDAO;
+import com.auction.factory.ItemFactory;
+import com.auction.model.Item;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -141,7 +143,37 @@ public class ClientHandler implements Runnable {
     // ===== GIỮ NGUYÊN =====
 
     private void handleAddItem(JsonObject request) {
-        System.out.println("Đang xử lý chức năng thêm hàng...");
+        System.out.println("Đang xử lý thêm item...");
+
+        try {
+            String name = request.get("name").getAsString();
+            String type = request.get("type").getAsString();
+            double price = request.get("startingPrice").getAsDouble();
+            String endTime = request.get("endTime").getAsString();
+            int sellerId = request.get("sellerId").getAsInt();
+            String extra = request.get("extraInfo").getAsString();
+
+            // ✅ FIX: dùng Factory (đúng design của bạn)
+            Item item = ItemFactory.createItem(type, name, price, endTime, sellerId, extra);
+
+            ItemDAO dao = new ItemDAO();
+            boolean ok = dao.insertItem(item);
+
+            JsonObject res = new JsonObject();
+
+            if (ok) {
+                res.addProperty("status", "SUCCESS");
+                res.addProperty("message", "Thêm item thành công!");
+            } else {
+                res.addProperty("status", "FAIL");
+                res.addProperty("message", "Thêm item thất bại!");
+            }
+
+            writer.println(res.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleGetAllItems(JsonObject request) {

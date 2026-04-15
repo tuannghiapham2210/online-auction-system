@@ -78,7 +78,7 @@ public class LoginController {
                             dots.stop();
                             try {
                                 Parent root = FXMLLoader.load(
-                                        getClass().getResource("dashboard.fxml"));
+                                        getClass().getResource("add_item.fxml"));
                                 usernameField.getScene().setRoot(root);
                             } catch (Exception ex) {
                                 ex.printStackTrace();

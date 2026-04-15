@@ -7,6 +7,9 @@ public class Vehicle extends Item {
         super(name, startingPrice, endTime, sellerId);
         this.engineType = engineType;
     }
+    public String getEngineType() {
+        return engineType;
+    }
 
     @Override
     public void printInfo() {
