@@ -1,6 +1,9 @@
 package com.auction;
 
 import com.auction.dao.DatabaseConnection;
+import com.auction.dao.ItemDAO;
+import com.auction.factory.ItemFactory;
+import com.auction.model.Item;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -111,6 +114,41 @@ public class ClientHandler implements Runnable {
     private void handleAddItem(JsonObject request) {
         // TODO: [Tên_Thành_Viên_2] Viết logic Thêm hàng ở đây, dùng ItemFactory và ItemDAO
         System.out.println("Đang xử lý chức năng thêm hàng...");
+
+        try {
+            // 1. Lấy dữ liệu từ JSON
+            String name = request.get("name").getAsString();
+            String type = request.get("type").getAsString();
+            double startingPrice = request.get("startingPrice").getAsDouble();
+            String endTime = request.get("endTime").getAsString();
+            int sellerId = request.get("sellerId").getAsInt();
+            String extraInfo = request.get("extraInfo").getAsString();
+            // String description = request.get("description").getAsString(); // Lấy thêm nếu cần
+
+            // 2. Sử dụng Factory Pattern để tạo đối tượng
+            Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
+
+            // 3. Lưu vào Database thông qua DAO
+            ItemDAO itemDAO = new ItemDAO(); // Hoặc lấy từ Singleton nếu có
+            boolean isSuccess = itemDAO.insertItem(newItem);
+
+            // 4. Phản hồi lại Client
+            JsonObject response = new JsonObject();
+            if (isSuccess) {
+                response.addProperty("status", "success");
+                response.addProperty("message", "Đăng bán sản phẩm thành công!");
+            } else {
+                response.addProperty("status", "error");
+                response.addProperty("message", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu.");
+            }
+
+            // TODO: Gửi response về Client (thông qua PrintWriter hoặc DataOutputStream)
+            // Ví dụ: out.println(response.toString());
+
+        } catch (Exception e) {
+            System.err.println("Lỗi khi thêm sản phẩm: " + e.getMessage());
+            // TODO: Gửi thông báo lỗi về Client
+        }
     }
 
     private void handleGetAllItems(JsonObject request) {

@@ -17,4 +17,5 @@ public class Vehicle extends Item {
     public String getItemType() {
         return "VEHICLE";
     }
-}
+
+    }
