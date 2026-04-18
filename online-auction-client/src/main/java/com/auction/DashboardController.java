@@ -46,6 +46,7 @@ public class DashboardController {
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
+            // Hét lên mạng đòi danh sách
             JsonObject request = new JsonObject();
             request.addProperty("action", "GET_ALL_ITEMS");
             out.println(request.toString());
@@ -53,10 +54,37 @@ public class DashboardController {
             String responseStr = in.readLine();
             if (responseStr != null) {
                 JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
+
                 if (response.get("status").getAsString().equals("SUCCESS")) {
                     JsonArray dataArray = response.getAsJsonArray("data");
-                    Gson gson = new Gson();
-                    List<Item> items = gson.fromJson(dataArray, new TypeToken<List<Item>>(){}.getType());
+
+                    // ==========================================================
+                    // ĐOẠN FIX LỖI ABSTRACT: Tự bóc JSON và dùng Factory để đúc
+                    // ==========================================================
+                    List<Item> items = new java.util.ArrayList<>();
+
+                    for (int i = 0; i < dataArray.size(); i++) {
+                        JsonObject obj = dataArray.get(i).getAsJsonObject();
+
+                        // 1. Rút ruột thông tin cơ bản
+                        String name = obj.has("name") ? obj.get("name").getAsString() : "Chưa có tên";
+                        double startPrice = obj.has("startingPrice") ? obj.get("startingPrice").getAsDouble() : 0;
+                        String endTime = obj.has("endTime") ? obj.get("endTime").getAsString() : "";
+                        int sellerId = obj.has("sellerId") ? obj.get("sellerId").getAsInt() : 0;
+
+                        // 2. Phân loại hàng hóa (Gson Server sẽ tự chèn thuộc tính của class con)
+                        // Nếu có thuộc tính "warranty", chắc chắn nó là Đồ điện tử
+                        String type = obj.has("warranty") ? "ELECTRONICS" : "ART";
+                        String extraInfo = obj.has("warranty") ? obj.get("warranty").getAsString() : "N/A";
+
+                        // 3. Gọi Factory đúc đúng loại class con (Giải quyết dứt điểm Abstract)
+                        Item item = com.auction.factory.ItemFactory.createItem(type, name, startPrice, endTime, sellerId, extraInfo);
+
+                        items.add(item);
+                    }
+                    // ==========================================================
+
+                    // Ném dữ liệu đã xử lý ngon lành lên Bảng
                     ObservableList<Item> observableItems = FXCollections.observableArrayList(items);
                     itemTable.setItems(observableItems);
                 }
