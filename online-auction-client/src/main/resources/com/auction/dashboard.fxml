@@ -2,12 +2,20 @@
 
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
+<AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
    <children>
       <Label layoutX="268.0" layoutY="50.0" style="-fx-font-size: 24px; -fx-font-weight: bold;" text="SÀN ĐẤU GIÁ TRỰC TUYẾN" />
-      <Label layoutX="40.0" layoutY="120.0" text="Danh sách sản phẩm đang đấu giá sẽ hiện ở đây..." />
       <Button fx:id="btnLogout" layoutX="700.0" layoutY="20.0" mnemonicParsing="false" onAction="#handleLogout" text="Đăng xuất" />
+      <TableView fx:id="itemTable" layoutY="90.0" prefHeight="511.0" prefWidth="801.0">
+        <columns>
+          <TableColumn fx:id="colName" prefWidth="102.0" text="Tên Sản Phẩm" />
+          <TableColumn fx:id="colStartPrice" prefWidth="89.0" text="Giá Khởi Điểm" />
+            <TableColumn fx:id="colEndTime" prefWidth="88.0" text="Giờ Kết Thúc" />
+        </columns>
+      </TableView>
    </children>
 </AnchorPane>

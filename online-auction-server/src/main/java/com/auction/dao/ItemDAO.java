@@ -1,5 +1,8 @@
 package com.auction.dao;
 
+import com.auction.factory.ItemFactory;
+import com.auction.dao.DatabaseConnection;
+
 import com.auction.model.Item;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -63,18 +66,33 @@ public class ItemDAO {
 
     }
 
-    // =========================================================================
-    // KHU VỰC CỦA TASK 3: [Tên_Thành_Viên_3] (LẤY DANH SÁCH SẢN PHẨM RA)
-    // =========================================================================
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
-        // TODO: Viết câu lệnh SELECT * FROM items
-        // Gợi ý: Dùng PreparedStatement gọi executeQuery() để lấy ResultSet.
-        // Dùng vòng lặp while (rs.next()), lấy từng cột ra.
-        // CỰC KỲ QUAN TRỌNG: Gọi ItemFactory.createItem(...) để đúc thành Object rồi add vào itemList.
-        
-        System.out.println("Đang thực thi lệnh lấy toàn bộ Item từ Database...");
-        
+        String sql = "SELECT * FROM items";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                double startingPrice = rs.getDouble("starting_price");
+                double currentPrice = rs.getDouble("current_price");
+                String endTime = rs.getString("end_time");
+                int sellerId = rs.getInt("seller_id");
+                String itemType = rs.getString("item_type");
+                String extraInfo = rs.getString("extra_info");
+
+                Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
+                item.setId(id);
+                item.setCurrentPrice(currentPrice);
+
+                itemList.add(item);
+            }
+        } catch (Exception e) {
+            System.out.println("Lỗi Task 3: " + e.getMessage());
+        }
         return itemList;
     }
 
