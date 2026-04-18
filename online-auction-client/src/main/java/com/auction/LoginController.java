@@ -2,77 +2,113 @@ package com.auction;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.animation.*;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.util.Duration;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 public class LoginController {
-    @FXML private TextField txtUsername;
-    @FXML private PasswordField txtPassword;
-    @FXML private Button btnLogin;
-    @FXML private Label lblStatus;
+
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label messageLabel;
 
     @FXML
-    public void handleLoginAction() {
-        String username = txtUsername.getText();
-        String password = txtPassword.getText();
+    private void handleLogin() {
 
-        // encapsulating the information into a JSON object
-        JsonObject request = new JsonObject();
-        request.addProperty("action", "LOGIN");
-        request.addProperty("username", username);
-        request.addProperty("password", password);
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText().trim();
 
-        // opening a socket connection to the server and sending the JSON request, then waiting for the response
-        try (Socket socket = new Socket("127.0.0.1", 8080);
-             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        if (username.isEmpty() || password.isEmpty()) {
+            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+            messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
+            return;
+        }
 
-            // sending the JSON request to the server
-            writer.println(request.toString());
+        messageLabel.setStyle("-fx-text-fill: #f59e0b;");
+        messageLabel.setText("Đang đăng nhập...");
 
-            // getting the response from the server (as JSON string)
-            String serverResponse = reader.readLine();
-            
-            // parsing the JSON response from the server
-            JsonObject responseJson = JsonParser.parseString(serverResponse).getAsJsonObject();
-            String status = responseJson.get("status").getAsString();
-            String message = responseJson.get("message").getAsString();
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 8080);
+                 PrintWriter writer = new PrintWriter(
+                         new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+                 BufferedReader reader = new BufferedReader(
+                         new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
-            // printing the response message on the status label
-            if ("SUCCESS".equals(status)) {
-                System.out.println("Switching to dashboard...");
+                JsonObject req = new JsonObject();
+                req.addProperty("action", "LOGIN");
+                req.addProperty("username", username);
+                req.addProperty("password", password);
 
-                //getting the current stage from the login button
-                javafx.stage.Stage stage = (javafx.stage.Stage) btnLogin.getScene().getWindow();
+                writer.println(req.toString());
 
-                // loading the dashboard.fxml file to switch to the dashboard screen
-                javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("dashboard.fxml"));
-                javafx.scene.Parent root = loader.load();
+                String line = reader.readLine();
+                if (line == null) throw new Exception("No response");
 
-                // changing the scene to the dashboard screen with specified dimensions and title
-                javafx.scene.Scene newScene = new javafx.scene.Scene(root, 800, 600);
-                stage.setScene(newScene);
-                stage.setTitle("Sàn Đấu Giá - Bảng Điều Khiển");
+                JsonObject res = JsonParser.parseString(line).getAsJsonObject();
 
-            } else {
-                lblStatus.setStyle("-fx-text-fill: red;");
-                lblStatus.setText(message);
+                String status = res.get("status").getAsString();
+                String message = res.get("message").getAsString();
 
+                javafx.application.Platform.runLater(() -> {
+
+                    if ("SUCCESS".equals(status)) {
+
+                        messageLabel.setStyle("-fx-text-fill: #00ff99;");
+                        messageLabel.setText("✔ " + message + " Đang chuyển");
+
+                        Timeline dots = new Timeline(
+                                new KeyFrame(Duration.millis(300), e -> {
+                                    String text = messageLabel.getText();
+                                    if (text.endsWith("...")) {
+                                        messageLabel.setText(text.replace("...", ""));
+                                    } else {
+                                        messageLabel.setText(text + ".");
+                                    }
+                                })
+                        );
+                        dots.setCycleCount(Timeline.INDEFINITE);
+                        dots.play();
+
+                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                        delay.setOnFinished(e -> {
+                            dots.stop();
+                            try {
+                                Parent root = FXMLLoader.load(
+                                        getClass().getResource("dashboard.fxml"));
+                                usernameField.getScene().setRoot(root);
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+                        delay.play();
+
+                    } else {
+                        messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+                        messageLabel.setText(message);
+                    }
+                });
+
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() ->
+                        messageLabel.setText("Không kết nối server!"));
             }
+        }).start();
+    }
 
+    @FXML
+    private void goToRegister() {
+        try {
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("register.fxml"));
+            usernameField.getScene().setRoot(root);
         } catch (Exception e) {
-            lblStatus.setStyle("-fx-text-fill: red;");
-            lblStatus.setText("Could not connect to the server.");
             e.printStackTrace();
-            
         }
     }
 }
