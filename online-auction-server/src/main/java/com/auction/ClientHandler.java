@@ -115,7 +115,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleAddItem(JsonObject request) {
-        // TODO: [Tên_Thành_Viên_2] Viết logic Thêm hàng ở đây, dùng ItemFactory và ItemDAO
         System.out.println("Đang xử lý chức năng thêm hàng...");
 
         try {
@@ -125,32 +124,37 @@ public class ClientHandler implements Runnable {
             double startingPrice = request.get("startingPrice").getAsDouble();
             String endTime = request.get("endTime").getAsString();
             int sellerId = request.get("sellerId").getAsInt();
-            String extraInfo = request.get("extraInfo").getAsString();
-            // String description = request.get("description").getAsString(); // Lấy thêm nếu cần
+            String extraInfo = request.has("extraInfo") ? request.get("extraInfo").getAsString() : "";
 
             // 2. Sử dụng Factory Pattern để tạo đối tượng
             Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
 
             // 3. Lưu vào Database thông qua DAO
-            ItemDAO itemDAO = new ItemDAO(); // Hoặc lấy từ Singleton nếu có
+            ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
             // 4. Phản hồi lại Client
             JsonObject response = new JsonObject();
             if (isSuccess) {
-                response.addProperty("status", "success");
+                // FIX: Sửa lại thành chữ IN HOA để khớp với Client
+                response.addProperty("status", "SUCCESS");
                 response.addProperty("message", "Đăng bán sản phẩm thành công!");
             } else {
-                response.addProperty("status", "error");
+                response.addProperty("status", "FAIL");
                 response.addProperty("message", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu.");
             }
 
-            // TODO: Gửi response về Client (thông qua PrintWriter hoặc DataOutputStream)
-            // Ví dụ: out.println(response.toString());
+            // FIX: Thực sự gửi gói tin trả về cho Client
+            writer.println(response.toString());
 
         } catch (Exception e) {
             System.err.println("Lỗi khi thêm sản phẩm: " + e.getMessage());
-            // TODO: Gửi thông báo lỗi về Client
+
+            // Bắt Exception cũng phải báo về cho Client biết để nhả đóng băng giao diện
+            JsonObject errorResponse = new JsonObject();
+            errorResponse.addProperty("status", "ERROR");
+            errorResponse.addProperty("message", "Lỗi định dạng dữ liệu Server: " + e.getMessage());
+            writer.println(errorResponse.toString());
         }
     }
 
