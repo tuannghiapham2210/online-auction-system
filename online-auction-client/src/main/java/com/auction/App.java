@@ -23,6 +23,7 @@ public class App extends Application {
         
         stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
         stage.setScene(scene);
+        stage.setMaximized(true);
         stage.show(); // Hiển thị cửa sổ
     }
 
