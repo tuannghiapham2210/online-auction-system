@@ -195,10 +195,58 @@ public class ClientHandler implements Runnable {
     }
 
     private void handlePlaceBid(JsonObject request) {
-        JsonObject res = new JsonObject();
-        res.addProperty("status", "SUCCESS");
-        res.addProperty("message", "Bid received");
+        try {
+            System.out.println("[SERVER] Vừa nhận được yêu cầu từ Client: " + request.toString());
+            // 1. Bóc tách dữ liệu từ JSON
+            int itemId = request.get("itemId").getAsInt();
+            int bidderId = request.get("bidderId").getAsInt();
+            double bidAmount = request.get("bidAmount").getAsDouble();
 
-        writer.println(res.toString());
+            // 2. Tương tác với Database (Khởi tạo DAO cục bộ)
+            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
+            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
+
+            // 3. Thực thi nghiệp vụ lưu trữ
+            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
+            boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
+
+            // 4. Nếu Database lưu thành công, cầm loa hét lên cho mọi người biết
+            if (updateSuccess && logSuccess) {
+                JsonObject broadcastMsg = new JsonObject();
+                broadcastMsg.addProperty("action", "UPDATE_PRICE");
+                broadcastMsg.addProperty("newPrice", bidAmount);
+                broadcastMsg.addProperty("bidderId", bidderId); // Có thể kèm tên người dùng sau nếu muốn
+
+                System.out.println("✅ Đã ghi nhận giá mới. Bắt đầu phát thanh...");
+                broadcast(broadcastMsg);
+            } else {
+                // Nếu lỗi DB, chỉ báo lỗi riêng cho cái ông vừa đặt giá thôi (không broadcast)
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Lỗi lưu Database khi đặt giá!");
+                this.writer.println(errorMsg.toString());
+            }
+
+        } catch (Exception e) {
+            System.err.println("Lỗi xử lý luồng đặt giá: " + e.getMessage());
+        }
+    }
+
+    // HÀM PHÁT THANH ĐỒNG LOẠT
+    private void broadcast(JsonObject message) {
+        // LƯU Ý LOGIC: Bắt buộc phải có 'synchronized'
+        // Vì List activeClients có thể bị thay đổi nếu có ai đó vừa đăng nhập hoặc thoát ra
+        // trong lúc mình đang gửi tin, gây ra lỗi ConcurrentModificationException.
+        synchronized (activeClients) {
+            for (ClientHandler client : activeClients) {
+                try {
+                    if (client.writer != null) {
+                        client.writer.println(message.toString());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Lỗi khi gửi dữ liệu cho client: " + e.getMessage());
+                }
+            }
+        }
     }
 }
