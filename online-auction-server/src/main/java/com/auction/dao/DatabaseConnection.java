@@ -141,7 +141,7 @@ public class DatabaseConnection {
                     if (rsItems.getInt(1) == 0) {
                         // Cố tình ép id = 1 để khớp với biến giả lập bên Client của bạn
                         String insertItemSql = "INSERT INTO items (id, name, starting_price, current_price, end_time, seller_id, item_type, extra_info) " +
-                                            "VALUES (1, 'Laptop Gaming ASUS ROG', 15000.0, 15000.0, '2026-12-31 23:59:59', 1, 'ELECTRONICS', 'Bảo hành 24 tháng')";
+                                            "VALUES (1, 'Laptop Gaming ASUS ROG', 15000.0, 15000.0, '2026-12-31 23:59:59', 1, 'ELECTRONICS', '24')";
                         stmt.executeUpdate(insertItemSql);
                         System.out.println("[Database] Bơm thành công 1 sản phẩm mẫu (Laptop)!");
                     }

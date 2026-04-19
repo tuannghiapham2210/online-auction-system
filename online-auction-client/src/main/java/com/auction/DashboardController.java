@@ -39,6 +39,39 @@ public class DashboardController {
         colStartPrice.setCellValueFactory(new PropertyValueFactory<>("startingPrice"));
         colEndTime.setCellValueFactory(new PropertyValueFactory<>("endTime"));
         loadDataFromServer();
+
+        itemTable.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && itemTable.getSelectionModel().getSelectedItem() != null) {
+                Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
+                openBidRoom(selectedItem);
+            }
+        });
+    }
+
+    private void openBidRoom(Item item) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
+            Parent root = loader.load();
+
+            // LẤY ĐIỀU KHIỂN CỦA PHÒNG ĐẤU GIÁ VÀ TRUYỀN DỮ LIỆU
+            BidRoomController bidRoomCtrl = loader.getController();
+            
+            // Tạm thời fix cứng User ID = 1 (Người chơi 1). 
+            // Nếu team bạn đã làm phần Đăng nhập chuẩn, hãy thay số 1 bằng Session User ID nhé.
+            int myUserId = 1; 
+            
+            // GỌI HÀM NỐI DÂY (Truyền ID, Tên, Giá khởi điểm, UserID)
+            bidRoomCtrl.setAuctionData(item.getId(), item.getName(), item.getStartingPrice(), myUserId);
+
+            // Chuyển cảnh (Đổi Scene)
+            Stage stage = (Stage) itemTable.getScene().getWindow();
+            stage.setScene(new Scene(root, 900, 750));
+            stage.setTitle("Phòng Đấu Giá: " + item.getName());
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi mở phòng đấu giá: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void loadDataFromServer() {
@@ -52,6 +85,9 @@ public class DashboardController {
             out.println(request.toString());
 
             String responseStr = in.readLine();
+
+            System.out.println("[DASHBOARD] Server gửi về: " + responseStr);
+
             if (responseStr != null) {
                 JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
 
@@ -80,6 +116,9 @@ public class DashboardController {
                         // 3. Gọi Factory đúc đúng loại class con (Giải quyết dứt điểm Abstract)
                         Item item = com.auction.factory.ItemFactory.createItem(type, name, startPrice, endTime, sellerId, extraInfo);
 
+                        int id = obj.get("id").getAsInt();
+                                item.setId(id);
+                                
                         items.add(item);
                     }
                     // ==========================================================

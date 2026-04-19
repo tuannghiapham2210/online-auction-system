@@ -33,20 +33,34 @@ public class BidRoomController {
     private PrintWriter out;
     private BufferedReader in;
     
-    // Tạm thời fix cứng ID để test, sau này lấy từ Dashboard truyền qua
-    private int currentItemId = 1; 
-    private int currentUserId = 1;
+    private int currentItemId; 
+    private int currentUserId;
 
-    @FXML
+@FXML
     public void initialize() {
-        // Khởi tạo UI
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
         priceChart.getData().add(priceSeries);
         historyLogs = FXCollections.observableArrayList();
         bidHistoryList.setItems(historyLogs);
+        
+        // TUYỆT ĐỐI KHÔNG gọi connectToServer() ở đây nữa!
+    }
 
-        // Kích hoạt kết nối ngay khi vào phòng
+    // HÀM NHẬN DỮ LIỆU TỪ DASHBOARD TRUYỀN SANG
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId) {
+        this.currentItemId = itemId;
+        this.currentUserId = userId;
+
+        // Cập nhật giao diện với dữ liệu thật
+        itemNameLabel.setText(itemName);
+        currentPriceLabel.setText("$" + currentPrice);
+        
+        // Vẽ điểm giá đầu tiên lên biểu đồ
+        String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+        priceSeries.getData().add(new XYChart.Data<>(timeStamp, currentPrice));
+
+        // DỮ LIỆU ĐÃ CÓ ĐẦY ĐỦ -> BẬT KẾT NỐI MẠNG!
         connectToServer();
     }
 
