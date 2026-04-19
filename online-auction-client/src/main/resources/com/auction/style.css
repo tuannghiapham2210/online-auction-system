@@ -1,0 +1,309 @@
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+}
+
+/* ================= BACKGROUND ================= */
+.background {
+    -fx-background-color: linear-gradient(to bottom, #0b132b, #020617);
+}
+
+/* ================= CARD ================= */
+.card {
+    -fx-background-color: #0f172a;
+    -fx-background-radius: 30;
+    -fx-padding: 40;
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.35), 50, 0.3, 0, 15);
+}
+
+/* ================= TITLE ================= */
+.title {
+    -fx-text-fill: white;
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+}
+
+.title-accent {
+    -fx-text-fill: #f59e0b;
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+}
+
+/* ================= SWITCH ================= */
+.switch-active {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.switch-btn {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.switch-btn:hover {
+    -fx-text-fill: #f59e0b;
+}
+
+/* ================= INPUT ================= */
+.input {
+    -fx-background-color: #020617;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #64748b;
+    -fx-background-radius: 25;
+    -fx-padding: 14 18;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 25;
+}
+
+.input:focused {
+    -fx-border-color: #f59e0b;
+}
+
+/* ================= BUTTON ================= */
+.main-btn {
+    -fx-background-color: linear-gradient(to right, #f59e0b, #f97316);
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-background-radius: 25;
+    -fx-padding: 14;
+    -fx-cursor: hand;
+
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0.3, 0, 4);
+}
+
+.main-btn:hover {
+    -fx-background-color: linear-gradient(to right, #fbbf24, #fb923c);
+}
+
+/*  CLICK LÕM */
+.main-btn:pressed {
+    -fx-translate-y: 2;
+    -fx-background-color: linear-gradient(to right, #d97706, #ea580c);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0.2, 0, 1);
+}
+
+/* ================= MESSAGE ================= */
+.label {
+    -fx-text-fill: #e2e8f0;
+}
+
+/* ================= COMBOBOX (FIX FULL) ================= */
+.combo-box {
+    -fx-background-color: #020617;
+    -fx-background-radius: 25;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 25;
+    -fx-padding: 8 14;
+}
+
+/* text hiển thị */
+.combo-box .list-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+/* arrow */
+.combo-box .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow {
+    -fx-background-color: white;
+}
+
+/*  dropdown box */
+.combo-box-popup .list-view {
+    -fx-background-color: #020617;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 15;
+    -fx-background-radius: 15;
+
+    /* bóng cho đẹp */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0.3, 0, 5);
+}
+
+/* item */
+.combo-box-popup .list-cell {
+    -fx-background-color: #020617;
+    -fx-text-fill: white;
+    -fx-padding: 10 15;
+}
+
+/* hover */
+.combo-box-popup .list-cell:hover {
+    -fx-background-color: #1e293b;
+}
+
+/* selected */
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #f59e0b;
+    -fx-text-fill: black;
+}
+/*Them
+/* ================= ENHANCE UI (ADD ONLY) ================= */
+
+/* CARD TO HƠN + CENTER ĐẸP */
+.card {
+    -fx-max-width: 650;
+    -fx-padding: 50;
+
+    /* glow mạnh hơn */
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.45), 70, 0.35, 0, 20);
+}
+
+/* TITLE TO + SANG */
+.title {
+    -fx-font-size: 48px;
+}
+
+.title-accent {
+    -fx-font-size: 48px;
+}
+
+/* INPUT MƯỢT HƠN */
+.input {
+    -fx-padding: 16 20;
+    -fx-background-radius: 30;
+    -fx-border-radius: 30;
+}
+
+/* FOCUS PHÁT SÁNG */
+.input:focused {
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.4), 15, 0.3, 0, 0);
+}
+
+/* BUTTON XỊN HƠN */
+.main-btn {
+    -fx-font-size: 18px;
+    -fx-background-radius: 30;
+    -fx-padding: 16;
+
+    /* glow nhẹ */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.3, 0, 5);
+}
+
+.main-btn:hover {
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.6), 25, 0.4, 0, 5);
+}
+
+/* SWITCH NHƯ TAB (LOGIN) */
+.switch-active {
+    -fx-background-color: linear-gradient(to right, #f59e0b, #f97316);
+    -fx-text-fill: black;
+    -fx-padding: 8 20;
+    -fx-background-radius: 20;
+}
+
+.switch-btn {
+    -fx-padding: 8 20;
+}
+
+/* HOVER MƯỢT */
+.switch-btn:hover {
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 20;
+}
+
+/* CARD HOVER NHẸ (RẤT NGẦU) */
+.card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.6), 90, 0.4, 0, 25);
+}
+
+/* LABEL MESSAGE ĐẸP HƠN */
+#messageLabel {
+    -fx-text-fill: #fbbf24;
+    -fx-font-weight: bold;
+}
+/* ================= PREMIUM TITLE ================= */
+
+.title {
+    -fx-font-size: 52px;
+    -fx-text-fill: linear-gradient(to right, #ffffff, #cbd5f5);
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.15), 10, 0.3, 0, 2);
+}
+
+.title-accent {
+    -fx-font-size: 52px;
+    -fx-text-fill: linear-gradient(to right, #f59e0b, #f97316);
+
+    /* glow vàng mạnh */
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.8), 25, 0.4, 0, 5);
+}
+/* ================= TAB CONTAINER (GIỐNG BROWSER) ================= */
+
+.tab-container {
+    -fx-background-color: #020617;
+    -fx-background-radius: 25;
+    -fx-padding: 6;
+
+    /* viền nhẹ */
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 25;
+}
+
+/* TAB */
+.switch-active {
+    -fx-background-color: linear-gradient(to right, #f59e0b, #f97316);
+    -fx-text-fill: black;
+    -fx-padding: 10 25;
+    -fx-background-radius: 20;
+}
+
+.switch-btn {
+    -fx-padding: 10 25;
+    -fx-text-fill: #94a3b8;
+    -fx-background-radius: 20;
+}
+
+.switch-btn:hover {
+    -fx-background-color: #1e293b;
+    -fx-text-fill: #f59e0b;
+}
+/* ================= INPUT WITH ICON ================= */
+
+.input-box {
+    -fx-background-color: #020617;
+    -fx-background-radius: 30;
+    -fx-border-color: #1e293b;
+    -fx-border-radius: 30;
+    -fx-padding: 0 15;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.input-box:focused-within {
+    -fx-border-color: #f59e0b;
+    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.4), 15, 0.3, 0, 0);
+}
+
+.input-icon {
+    -fx-font-size: 18px;
+    -fx-text-fill: #94a3b8;
+    -fx-padding: 0 10 0 5;
+}
+
+.input-box .text-field,
+.input-box .password-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #64748b;
+    -fx-border-width: 0;
+    -fx-padding: 14 10;
+}
+/* ================= PREMIUM HEADER ================= */
+.header-sub {
+    -fx-text-fill: #94a3b8;
+    -fx-font-size: 14px;
+}
+
+/* ================= GLASS EFFECT ================= */
+.card {
+    -fx-background-color: rgba(15,23,42,0.85);
+}
+
+/* ================= ICON HEADER ================= */
+.logo-icon {
+    -fx-font-size: 28px;
+}

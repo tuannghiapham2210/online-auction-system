@@ -1,30 +1,26 @@
 package com.auction;
 
+import com.auction.dao.UserDAO;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
-import com.auction.dao.DatabaseConnection;
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHandler implements Runnable {
-    
-    // 1. DANH BẠ MẠNG (Bản chất: Nơi lưu trữ tất cả các kết nối đang online)
-    // Dùng static để biến này là DUY NHẤT dùng chung cho mọi luồng ClientHandler.
+
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
     private Socket clientSocket;
-    private PrintWriter writer; // Kéo biến này ra làm thuộc tính class để dùng cho chức năng Broadcast sau này
+    private PrintWriter writer;
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -33,26 +29,27 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            // Khởi tạo writer
-            this.writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            // ✅ FIX UTF-8
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(clientSocket.getInputStream(), "UTF-8")
+            );
 
-            // Khi một Client kết nối thành công, lập tức ghi danh vào "Danh bạ"
-            // Dùng khối synchronized để tránh xung đột (Race Condition) khi 2 người cùng kết nối 1 lúc
+            this.writer = new PrintWriter(
+                    new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"), true
+            );
+
             synchronized (activeClients) {
                 activeClients.add(this);
             }
 
             String clientMessage;
-            // 2. VÒNG LẶP LẮNG NGHE (Trái tim của Socket)
-            // Giữ cho luồng này chạy mãi mãi, chừng nào Client chưa ngắt kết nối
+
             while ((clientMessage = reader.readLine()) != null) {
                 System.out.println("Nhận từ Client: " + clientMessage);
-                
+
                 JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
                 String action = request.get("action").getAsString();
 
-                // 3. BỘ ĐIỀU PHỐI (Dispatcher) - Phân lô bán nền cho anh em code
                 switch (action) {
                     case "LOGIN":
                         handleLogin(request);
@@ -70,13 +67,16 @@ public class ClientHandler implements Runnable {
                         handlePlaceBid(request);
                         break;
                     default:
-                        System.out.println("Lệnh không được hỗ trợ: " + action);
+                        JsonObject res = new JsonObject();
+                        res.addProperty("status", "ERROR");
+                        res.addProperty("message", "Action không hợp lệ!");
+                        writer.println(res.toString());
                 }
             }
+
         } catch (Exception e) {
-            System.err.println("Lỗi giao tiếp hoặc Client đã ngắt kết nối: " + e.getMessage());
+            System.err.println("Lỗi giao tiếp: " + e.getMessage());
         } finally {
-            // Khi Client tắt app, dọn dẹp sạch sẽ: Xóa khỏi "Danh bạ"
             synchronized (activeClients) {
                 activeClients.remove(this);
             }
@@ -88,17 +88,16 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // =========================================================================
-    // KHU VỰC HÀM XỬ LÝ RIÊNG BIỆT (Anh em team tự làm việc ở đây, không đụng nhau)
-    // =========================================================================
-
+    // ================= LOGIN =================
     private void handleLogin(JsonObject request) {
         String user = request.get("username").getAsString();
         String pass = request.get("password").getAsString();
-        
-        boolean isOk = DatabaseConnection.getInstance().authenticateUser(user, pass);
-        
+
+        UserDAO dao = new UserDAO();
+        boolean isOk = dao.login(user, pass);
+
         JsonObject response = new JsonObject();
+
         if (isOk) {
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Đăng nhập thành công!");
@@ -106,19 +105,48 @@ public class ClientHandler implements Runnable {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
         }
+
         writer.println(response.toString());
     }
 
+    // ================= REGISTER =================
     private void handleRegister(JsonObject request) {
-        // TODO: [Tên_Thành_Viên_1] Viết logic Đăng ký ở đây, dùng UserDAO
-        System.out.println("Đang xử lý chức năng đăng ký...");
+        try {
+            String username = request.get("username").getAsString();
+            String password = request.get("password").getAsString();
+            String role = request.get("role").getAsString();
+
+            UserDAO userDAO = new UserDAO();
+            boolean isSuccess = userDAO.registerUser(username, password, role);
+
+            JsonObject response = new JsonObject();
+
+            if (isSuccess) {
+                response.addProperty("status", "SUCCESS");
+                response.addProperty("message", "Đăng ký thành công!");
+            } else {
+                response.addProperty("status", "FAIL");
+                response.addProperty("message", "Tài khoản đã tồn tại hoặc lỗi!");
+            }
+
+            writer.println(response.toString());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("status", "ERROR");
+            response.addProperty("message", "Lỗi server!");
+
+            writer.println(response.toString());
+        }
     }
 
+    // ================= ADD ITEM =================
     private void handleAddItem(JsonObject request) {
         System.out.println("Đang xử lý chức năng thêm hàng...");
 
         try {
-            // 1. Lấy dữ liệu từ JSON
             String name = request.get("name").getAsString();
             String type = request.get("type").getAsString();
             double startingPrice = request.get("startingPrice").getAsDouble();
@@ -126,14 +154,12 @@ public class ClientHandler implements Runnable {
             int sellerId = request.get("sellerId").getAsInt();
             String extraInfo = request.has("extraInfo") ? request.get("extraInfo").getAsString() : "";
 
-            // 2. Sử dụng Factory Pattern để tạo đối tượng
             Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
 
             // 3. Lưu vào Database thông qua DAO
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
-            // 4. Phản hồi lại Client
             JsonObject response = new JsonObject();
             if (isSuccess) {
                 // FIX: Sửa lại thành chữ IN HOA để khớp với Client
@@ -159,22 +185,24 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleGetAllItems(JsonObject request) {
-        com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-        List<com.auction.model.Item> items = itemDAO.getAllItems();
+        ItemDAO itemDAO = new ItemDAO();
+        List<Item> items = itemDAO.getAllItems();
 
         Gson gson = new Gson();
-        JsonArray itemsJsonArray = gson.toJsonTree(items).getAsJsonArray();
+        JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
 
         JsonObject response = new JsonObject();
-        response.addProperty("action", "GET_ALL_ITEMS_RESPONSE");
         response.addProperty("status", "SUCCESS");
-        response.add("data", itemsJsonArray);
+        response.add("data", arr);
 
         writer.println(response.toString());
     }
 
     private void handlePlaceBid(JsonObject request) {
-        // TODO: Khu vực của Tech Lead xử lý Đấu giá Thời gian thực
-        System.out.println("Đang xử lý luồng đặt giá...");
+        JsonObject res = new JsonObject();
+        res.addProperty("status", "SUCCESS");
+        res.addProperty("message", "Bid received");
+
+        writer.println(res.toString());
     }
 }

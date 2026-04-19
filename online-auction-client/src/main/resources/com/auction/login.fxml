@@ -1,20 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.PasswordField?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.effect.Blend?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="410.0" prefWidth="601.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.LoginController">
-   <children>
-      <Button fx:id="btnLogin" layoutX="261.0" layoutY="196.0" mnemonicParsing="false" onAction="#handleLoginAction" prefHeight="13.0" prefWidth="79.0" text="Login" />
-      <PasswordField fx:id="txtPassword" layoutX="225.0" layoutY="154.0" prefHeight="25.0" prefWidth="149.0" promptText="Enter your password" />
-      <TextField fx:id="txtUsername" layoutX="225.0" layoutY="129.0" promptText="Enter your username" />
-      <Label fx:id="lblStatus" layoutX="286.0" layoutY="179.0" text="Label" />
-   </children>
-   <effect>
-      <Blend />
-   </effect>
-</AnchorPane>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.auction.LoginController"
+           stylesheets="@style.css"
+           styleClass="background">
+
+   <VBox alignment="CENTER" spacing="30">
+
+      <!-- HEADER -->
+      <VBox alignment="CENTER" spacing="5">
+         <Label text="🔨" styleClass="logo-icon"/>
+         <HBox alignment="CENTER">
+            <Label text="THE AUCTION" styleClass="title"/>
+            <Label text=" SYSTEM" styleClass="title-accent"/>
+         </HBox>
+         <Label text="Nền tảng đấu giá trực tuyến"
+                styleClass="header-sub"/>
+      </VBox>
+
+      <!-- CARD -->
+      <VBox spacing="20"
+            alignment="CENTER"
+            styleClass="card"
+            maxWidth="650">
+
+
+         <!-- TAB -->
+         <HBox spacing="5" alignment="CENTER" styleClass="tab-container">
+            <Label text="Đăng Nhập" styleClass="switch-active"/>
+            <Label text="Đăng Ký"
+                   styleClass="switch-btn"
+                   onMouseClicked="#goToRegister"/>
+         </HBox>
+
+         <!-- USERNAME -->
+         <HBox styleClass="input-box" maxWidth="Infinity">
+            <Label text="👤" styleClass="input-icon"/>
+            <TextField fx:id="usernameField"
+                       promptText="Nhập tài khoản"
+                       maxWidth="Infinity"/>
+         </HBox>
+
+         <!-- PASSWORD -->
+         <HBox styleClass="input-box" maxWidth="Infinity">
+            <Label text="🔒" styleClass="input-icon"/>
+            <PasswordField fx:id="passwordField"
+                           promptText="Nhập mật khẩu"
+                           maxWidth="Infinity"/>
+         </HBox>
+
+         <!-- BUTTON -->
+         <Button text="Đăng nhập"
+                 onAction="#handleLogin"
+                 styleClass="main-btn"
+                 maxWidth="Infinity"/>
+
+         <Label fx:id="messageLabel"/>
+
+      </VBox>
+   </VBox>
+
+</StackPane>
