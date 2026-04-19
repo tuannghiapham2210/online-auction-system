@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane styleClass="background" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
+   <children>
+      <VBox alignment="CENTER" maxHeight="750.0" maxWidth="900.0" spacing="20.0">
+         <children>
+            <VBox spacing="15.0" styleClass="card" VBox.vgrow="NEVER">
+               <children>
+                  <Label fx:id="itemNameLabel" style="-fx-font-size: 24px;" styleClass="title" text="Đang tải dữ liệu sản phẩm..." />
+                  <HBox alignment="CENTER_LEFT" spacing="50.0">
+                     <children>
+                        <VBox spacing="5.0">
+                           <children>
+                              <Label styleClass="header-sub" text="GIÁ ĐẤU HIỆN TẠI" />
+                              <Label fx:id="currentPriceLabel" style="-fx-font-size: 32px; -fx-text-fill: white; -fx-font-weight: bold;" text="\$0.0" />
+                              <Label fx:id="highestBidderLabel" styleClass="header-sub" text="Chưa có người trả giá" />
+                           </children>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <VBox alignment="CENTER" spacing="5.0">
+                           <children>
+                              <Label fx:id="statusLabel" style="-fx-text-fill: #F39C12; -fx-font-weight: bold;" text="Đang chờ kết nối..." />
+                           </children>
+                        </VBox>
+                     </children>
+                  </HBox>
+                  <HBox alignment="CENTER" spacing="15.0">
+                     <children>
+                        <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="\$ Nhập giá thầu..." styleClass="input-box" HBox.hgrow="ALWAYS" />
+                        <Button onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8;" text="PHÁT GIÁ" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+               <children>
+                  <VBox spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-text-fill: gray; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
+                        <LineChart fx:id="priceChart" createSymbols="true" legendVisible="false">
+                          <xAxis>
+                            <CategoryAxis side="BOTTOM" />
+                          </xAxis>
+                          <yAxis>
+                            <NumberAxis side="LEFT" />
+                          </yAxis>
+                        </LineChart>
+                     </children>
+                  </VBox>
+                  <VBox prefWidth="350.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                     <children>
+                        <Label style="-fx-text-fill: #2ECC71; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
+                        <ListView fx:id="bidHistoryList" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</StackPane>

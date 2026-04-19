@@ -60,7 +60,9 @@ public class DatabaseConnection {
     }
 
     //automatically creates table if database is empty
+    // Hàm tự động tạo ĐẦY ĐỦ CÁC BẢNG nếu database trống
     private void createTables() {
+        // 1. Bảng Users
         String sqlUsers = "CREATE TABLE IF NOT EXISTS users ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "username TEXT UNIQUE NOT NULL,"
@@ -68,29 +70,37 @@ public class DatabaseConnection {
                 + "role TEXT NOT NULL"
                 + ");";
 
-        // ---> [THÊM MỚI] Câu lệnh SQL tạo bảng items <---
+        // 2. Bảng Items (Thiếu cái này nên nãy giờ update giá toàn tạch)
         String sqlItems = "CREATE TABLE IF NOT EXISTS items ("
-                + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + "name TEXT NOT NULL, "
-                + "type TEXT NOT NULL, "
-                + "starting_price REAL NOT NULL, "
-                + "end_time TEXT NOT NULL, "
-                + "seller_id INTEGER NOT NULL, "
-                + "extra_info TEXT, "
-                + "description TEXT"
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "name TEXT NOT NULL,"
+                + "starting_price REAL NOT NULL,"
+                + "current_price REAL NOT NULL,"
+                + "end_time TEXT NOT NULL,"
+                + "seller_id INTEGER NOT NULL,"
+                + "item_type TEXT NOT NULL,"
+                + "extra_info TEXT,"
+                + "FOREIGN KEY (seller_id) REFERENCES users(id)"
                 + ");";
 
-        try (Statement stmt = connection.createStatement()) {
-            // Tạo bảng Users
+        // 3. Bảng Bids (Thiếu cái này nên lưu lịch sử toàn văng lỗi)
+        String sqlBids = "CREATE TABLE IF NOT EXISTS bids ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "item_id INTEGER NOT NULL,"
+                + "bidder_id INTEGER NOT NULL,"
+                + "bid_amount REAL NOT NULL,"
+                + "bid_time TEXT NOT NULL,"
+                + "FOREIGN KEY (item_id) REFERENCES items(id),"
+                + "FOREIGN KEY (bidder_id) REFERENCES users(id)"
+                + ");";
+
+        try (java.sql.Statement stmt = connection.createStatement()) {
             stmt.execute(sqlUsers);
-            System.out.println("[Database] Table 'users' checked/created.");
-
-            // ---> [THÊM MỚI] Thực thi tạo bảng Items <---
             stmt.execute(sqlItems);
-            System.out.println("[Database] Table 'items' checked/created.");
-
-        } catch (SQLException e) {
-            System.err.println("[Database] Table creation error: " + e.getMessage());
+            stmt.execute(sqlBids);
+            System.out.println("[Database] Đã kiểm tra/khởi tạo thành công 3 bảng: users, items, bids.");
+        } catch (java.sql.SQLException e) {
+            System.err.println("[Database] Lỗi tạo bảng: " + e.getMessage());
         }
     }
 
@@ -129,6 +139,19 @@ public class DatabaseConnection {
 
                 stmt.executeUpdate(insertSql);
                 System.out.println("[Database] Successfully seeded 3 test accounts (admin, bidder1, seller1)!");
+            
+                // 2. Bơm tiếp dữ liệu cho bảng items (Sản phẩm)
+                String countItemsSql = "SELECT COUNT(*) FROM items";
+                try (java.sql.ResultSet rsItems = stmt.executeQuery(countItemsSql)) {
+                    
+                    if (rsItems.getInt(1) == 0) {
+                        // Cố tình ép id = 1 để khớp với biến giả lập bên Client của bạn
+                        String insertItemSql = "INSERT INTO items (id, name, starting_price, current_price, end_time, seller_id, item_type, extra_info) " +
+                                            "VALUES (1, 'Laptop Gaming ASUS ROG', 15000.0, 15000.0, '2026-12-31 23:59:59', 1, 'ELECTRONICS', '24')";
+                        stmt.executeUpdate(insertItemSql);
+                        System.out.println("[Database] Bơm thành công 1 sản phẩm mẫu (Laptop)!");
+                    }
+                }
             }
         } catch (SQLException e) {
             System.err.println("[Database] Error seeding data: " + e.getMessage());

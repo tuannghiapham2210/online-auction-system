@@ -1,21 +1,14 @@
 package com.auction;
 
 import com.auction.model.Item;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.reflect.TypeToken;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 import java.io.BufferedReader;
@@ -28,17 +21,93 @@ import java.util.List;
 public class DashboardController {
 
     @FXML private Button btnLogout;
-    @FXML private TableView<Item> itemTable;
-    @FXML private TableColumn<Item, String> colName;
-    @FXML private TableColumn<Item, Double> colStartPrice;
-    @FXML private TableColumn<Item, String> colEndTime;
+    @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML
-    public void initialize() {
-        colName.setCellValueFactory(new PropertyValueFactory<>("name"));
-        colStartPrice.setCellValueFactory(new PropertyValueFactory<>("startingPrice"));
-        colEndTime.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+    public void initialize() {;
         loadDataFromServer();
+
+    }
+
+    private void openBidRoom(Item item) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
+            Parent root = loader.load();
+
+            // LẤY ĐIỀU KHIỂN CỦA PHÒNG ĐẤU GIÁ VÀ TRUYỀN DỮ LIỆU
+            BidRoomController bidRoomCtrl = loader.getController();
+            
+            // Tạm thời fix cứng User ID = 1 (Người chơi 1). 
+            // Nếu team bạn đã làm phần Đăng nhập chuẩn, hãy thay số 1 bằng Session User ID nhé.
+            int myUserId = 1; 
+            
+            // GỌI HÀM NỐI DÂY (Truyền ID, Tên, Giá khởi điểm, UserID)
+            bidRoomCtrl.setAuctionData(item.getId(), item.getName(), item.getStartingPrice(), myUserId);
+
+            // Chuyển cảnh (Đổi Scene)
+            Stage stage = (Stage) itemGrid.getScene().getWindow();
+            stage.setScene(new Scene(root, 900, 750));
+            stage.setTitle("Phòng Đấu Giá: " + item.getName());
+            
+        } catch (Exception e) {
+            System.err.println("Lỗi khi mở phòng đấu giá: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    // HÀM TỰ ĐỘNG VẼ THẺ CARD SẢN PHẨM BẰNG CODE JAVA
+    private javafx.scene.layout.VBox createItemCard(com.auction.model.Item item) {
+        javafx.scene.layout.VBox card = new javafx.scene.layout.VBox();
+        card.setSpacing(10);
+        card.getStyleClass().add("item-card");
+        card.setPadding(new javafx.geometry.Insets(15));
+        card.setPrefWidth(280);
+
+        // Nút Badge LIVE
+        javafx.scene.layout.HBox badgeBox = new javafx.scene.layout.HBox();
+        javafx.scene.control.Label badge = new javafx.scene.control.Label("LIVE");
+        badge.getStyleClass().add("badge-live");
+        badgeBox.getChildren().add(badge);
+
+        // Khung Ảnh (Tạm để trống cho ngầu)
+        javafx.scene.layout.Region imageRegion = new javafx.scene.layout.Region();
+        imageRegion.setPrefHeight(150);
+        imageRegion.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+
+        // Loại sản phẩm
+        javafx.scene.control.Label subtitle = new javafx.scene.control.Label("LÔ-" + item.getId() + " • " + item.getItemType());
+        subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
+
+        // Tên sản phẩm
+        javafx.scene.control.Label title = new javafx.scene.control.Label(item.getName());
+        title.getStyleClass().add("card-title");
+        title.setPrefHeight(50);
+        title.setWrapText(true);
+
+        // Giá sản phẩm
+        javafx.scene.layout.HBox priceHBox = new javafx.scene.layout.HBox();
+        priceHBox.setAlignment(javafx.geometry.Pos.BOTTOM_LEFT);
+        javafx.scene.layout.VBox priceVBox = new javafx.scene.layout.VBox();
+        javafx.scene.control.Label priceLabel = new javafx.scene.control.Label("GIÁ KHỞI ĐIỂM");
+        priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+        javafx.scene.control.Label priceValue = new javafx.scene.control.Label("$" + item.getStartingPrice());
+        priceValue.getStyleClass().add("card-price");
+        priceVBox.getChildren().addAll(priceLabel, priceValue);
+        priceHBox.getChildren().add(priceVBox);
+
+        // Nút Vào Phòng
+        javafx.scene.control.Button btnEnter = new javafx.scene.control.Button("Vào Phòng");
+        btnEnter.setMaxWidth(Double.MAX_VALUE);
+        btnEnter.setPrefHeight(40);
+        btnEnter.getStyleClass().add("btn-orange");
+        javafx.scene.layout.VBox.setMargin(btnEnter, new javafx.geometry.Insets(10, 0, 0, 0));
+
+        // NỐI DÂY SỰ KIỆN: Bấm nút là nhảy sang Phòng Đấu Giá!
+        btnEnter.setOnAction(e -> openBidRoom(item));
+
+        // Lắp ráp mọi thứ vào Card
+        card.getChildren().addAll(badgeBox, imageRegion, subtitle, title, priceHBox, btnEnter);
+        return card;
     }
 
     private void loadDataFromServer() {
@@ -52,6 +121,9 @@ public class DashboardController {
             out.println(request.toString());
 
             String responseStr = in.readLine();
+
+            System.out.println("[DASHBOARD] Server gửi về: " + responseStr);
+
             if (responseStr != null) {
                 JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
 
@@ -80,13 +152,24 @@ public class DashboardController {
                         // 3. Gọi Factory đúc đúng loại class con (Giải quyết dứt điểm Abstract)
                         Item item = com.auction.factory.ItemFactory.createItem(type, name, startPrice, endTime, sellerId, extraInfo);
 
+                        int id = obj.get("id").getAsInt();
+                                item.setId(id);
+                                
                         items.add(item);
                     }
                     // ==========================================================
 
-                    // Ném dữ liệu đã xử lý ngon lành lên Bảng
-                    ObservableList<Item> observableItems = FXCollections.observableArrayList(items);
-                    itemTable.setItems(observableItems);
+                    
+                    // Xóa hết đồ giả mạo trong FXML đi
+                    javafx.application.Platform.runLater(() -> {
+                        itemGrid.getChildren().clear(); 
+                        
+                        // Lặp qua danh sách đồ thật lấy từ Server
+                        for (com.auction.model.Item item : items) {
+                            // Đúc ra cái thẻ, rồi nhét vào Lưới
+                            itemGrid.getChildren().add(createItemCard(item));
+                        }
+                    });
                 }
             }
         } catch (Exception e) {
