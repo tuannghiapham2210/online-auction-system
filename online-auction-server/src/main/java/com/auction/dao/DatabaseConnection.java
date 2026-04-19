@@ -6,11 +6,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
-    
+
     //volatile to prevent instruction reordering
     private static volatile DatabaseConnection instance;
     private Connection connection;
-    
+
     private static final String DB_URL = "jdbc:sqlite:auction.db";
 
     //private constructor to prevent using the "new" keyword on the outside world 
@@ -21,7 +21,7 @@ public class DatabaseConnection {
             System.out.println("[Database] Connected to SQLite successfully!");
 
             //automatically creates tables when connection is established
-            createTables(); 
+            createTables();
 
             //automatically seeds data when connection is established
             seedData();
@@ -34,10 +34,9 @@ public class DatabaseConnection {
     //instantiating a singleton instance with DCL (Double-checked locking)
     public static DatabaseConnection getInstance() {
         if (instance == null) {
-            
             //only one thread can enter this block at a time
             synchronized (DatabaseConnection.class) {
-                //while waiting, another thread might have gotten in and instantiated the instance                
+                //while waiting, another thread might have gotten in and instantiated the instance
                 if (instance == null) {
                     instance = new DatabaseConnection();
                 }
@@ -48,6 +47,15 @@ public class DatabaseConnection {
     }
 
     public Connection getConnection() {
+        // ---> [THÊM MỚI] CHỐT AN TOÀN CHO ĐA LUỒNG <---
+        // Nếu kết nối bị ngắt do ai đó gọi .close() ở DAO, tự động mở lại đường ống mới!
+        try {
+            if (connection == null || connection.isClosed()) {
+                connection = DriverManager.getConnection(DB_URL);
+            }
+        } catch (SQLException e) {
+            System.err.println("[Database] Lỗi khi mở lại kết nối: " + e.getMessage());
+        }
         return connection;
     }
 
@@ -100,20 +108,18 @@ public class DatabaseConnection {
     public boolean authenticateUser(String username, String password) {
         // using prepared statement to prevent SQL injection
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
-        
-        try (java.sql.PreparedStatement pstmt = connection.prepareStatement(sql)) {
+
+        try (java.sql.PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
             pstmt.setString(1, username);
             pstmt.setString(2, password);
-            
+
             try (java.sql.ResultSet rs = pstmt.executeQuery()) {
                 return rs.next(); // if at least one line is returned -> login successful
-
             }
-            
+
         } catch (SQLException e) {
             System.err.println("[Database] Error authenticating user: " + e.getMessage());
             return false;
-
         }
     }
 
@@ -122,7 +128,7 @@ public class DatabaseConnection {
         String countSql = "SELECT COUNT(*) FROM users";
         try (Statement stmt = connection.createStatement();
              java.sql.ResultSet rs = stmt.executeQuery(countSql)) {
-             
+
             // if the table is empty, insert 3 test accounts (admin, bidder1, seller1)
             if (rs.getInt(1) == 0) {
                 // adding 3 accounts with 3 different roles
@@ -130,7 +136,7 @@ public class DatabaseConnection {
                         + "('admin', '123456', 'ADMIN'), "
                         + "('bidder1', '123', 'BIDDER'), "
                         + "('seller1', '123', 'SELLER')";
-                
+
                 stmt.executeUpdate(insertSql);
                 System.out.println("[Database] Successfully seeded 3 test accounts (admin, bidder1, seller1)!");
             

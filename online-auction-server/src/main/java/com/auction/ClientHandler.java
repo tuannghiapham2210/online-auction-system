@@ -144,39 +144,43 @@ public class ClientHandler implements Runnable {
 
     // ================= ADD ITEM =================
     private void handleAddItem(JsonObject request) {
+        System.out.println("Đang xử lý chức năng thêm hàng...");
+
         try {
             String name = request.get("name").getAsString();
             String type = request.get("type").getAsString();
             double startingPrice = request.get("startingPrice").getAsDouble();
             String endTime = request.get("endTime").getAsString();
             int sellerId = request.get("sellerId").getAsInt();
-            String extraInfo = request.get("extraInfo").getAsString();
+            String extraInfo = request.has("extraInfo") ? request.get("extraInfo").getAsString() : "";
 
             Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
 
+            // 3. Lưu vào Database thông qua DAO
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
             JsonObject response = new JsonObject();
             if (isSuccess) {
+                // FIX: Sửa lại thành chữ IN HOA để khớp với Client
                 response.addProperty("status", "SUCCESS");
-                response.addProperty("message", "Đăng bán thành công!");
+                response.addProperty("message", "Đăng bán sản phẩm thành công!");
             } else {
                 response.addProperty("status", "FAIL");
-                response.addProperty("message", "Lỗi DB!");
+                response.addProperty("message", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu.");
             }
 
-            // ✅ FIX QUAN TRỌNG (trước đây thiếu)
+            // FIX: Thực sự gửi gói tin trả về cho Client
             writer.println(response.toString());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Lỗi khi thêm sản phẩm: " + e.getMessage());
 
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi server!");
-
-            writer.println(response.toString());
+            // Bắt Exception cũng phải báo về cho Client biết để nhả đóng băng giao diện
+            JsonObject errorResponse = new JsonObject();
+            errorResponse.addProperty("status", "ERROR");
+            errorResponse.addProperty("message", "Lỗi định dạng dữ liệu Server: " + e.getMessage());
+            writer.println(errorResponse.toString());
         }
     }
 

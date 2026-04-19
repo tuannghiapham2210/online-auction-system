@@ -3,46 +3,91 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
+<StackPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: rgba(15, 23, 42, 0.8);" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
+    <children>
 
-    <Label style="-fx-font-size: 18px; -fx-font-weight: bold;" text="Đăng Bán Sản Phẩm" />
+        <VBox maxWidth="500.0" maxHeight="600.0" spacing="20.0" style="-fx-background-color: #1f2937; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #374151; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 20, 0, 0, 10);">
+            <padding>
+                <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+            </padding>
 
-    <GridPane hgap="10.0" vgap="10.0">
-        <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="200.0" />
-        </columnConstraints>
-        <rowConstraints>
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-        </rowConstraints>
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label text="⊕" textFill="#fbbf24">
+                    <font>
+                        <Font name="System Bold" size="22.0" />
+                    </font>
+                </Label>
+                <Label text="TẠO PHIÊN ĐẤU GIÁ" textFill="WHITE">
+                    <font>
+                        <Font name="System Bold" size="18.0" />
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <Button style="-fx-background-color: #374151; -fx-text-fill: #9ca3af; -fx-background-radius: 50; -fx-cursor: hand;" text="✕" />
+            </HBox>
 
-        <Label text="Tên sản phẩm:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <VBox spacing="8.0">
+                <Label text="TÊN SẢN PHẨM *" textFill="#9ca3af">
+                    <font>
+                        <Font name="System Bold" size="11.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="nameField" prefHeight="40.0" promptText="Nhập tên sản phẩm..." style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+            </VBox>
 
-        <Label text="Loại sản phẩm:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-        <ComboBox fx:id="typeComboBox" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <HBox spacing="15.0">
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="DANH MỤC *" textFill="#9ca3af">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <ComboBox fx:id="typeComboBox" maxWidth="1.7976931348623157E308" prefHeight="40.0" style="-fx-background-color: #111827; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                </VBox>
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="GIÁ KHỞI ĐIỂM ($) *" textFill="#9ca3af">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="priceField" prefHeight="40.0" promptText="\$" style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                </VBox>
+            </HBox>
 
-        <Label text="Giá khởi điểm:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-        <TextField fx:id="priceField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <HBox spacing="15.0">
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="THỜI GIAN KẾT THÚC *" textFill="#9ca3af">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="endTimeField" prefHeight="40.0" promptText="YYYY-MM-DD HH:MM:SS" style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                </VBox>
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="THÔNG TIN THÊM" textFill="#9ca3af">
+                        <font>
+                            <Font name="System Bold" size="11.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="extraInfoField" prefHeight="40.0" promptText="Bảo hành/Tác giả..." style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                </VBox>
+            </HBox>
 
-        <Label text="Thời gian kết thúc:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-        <TextField fx:id="endTimeField" promptText="YYYY-MM-DD HH:MM:SS" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <VBox spacing="8.0">
+                <Label text="THÔNG TIN CHI TIẾT" textFill="#9ca3af">
+                    <font>
+                        <Font name="System Bold" size="11.0" />
+                    </font>
+                </Label>
+                <TextArea fx:id="descriptionArea" prefHeight="80.0" promptText="Mô tả sản phẩm..." style="-fx-control-inner-background: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" wrapText="true" />
+            </VBox>
 
-        <Label text="Thông tin thêm:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-        <TextField fx:id="extraInfoField" promptText="Bảo hành/Tác giả/Loại động cơ" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-
-        <Label text="Mô tả:" GridPane.columnIndex="0" GridPane.rowIndex="5" />
-        <TextArea fx:id="descriptionArea" prefRowCount="3" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-    </GridPane>
-
-    <Button fx:id="submitButton" onAction="#handleSubmit" text="Đăng Bán" />
-</VBox>
+            <HBox alignment="CENTER" spacing="15.0" translateY="5.0">
+                <Button prefHeight="40.0" prefWidth="140.0" style="-fx-background-color: #374151; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Hủy" />
+                <Button fx:id="submitButton" onAction="#handleSubmit" prefHeight="40.0" prefWidth="140.0" style="-fx-background-color: #f59e0b; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Tạo Phiên" />
+            </HBox>
+        </VBox>
+    </children>
+</StackPane>
