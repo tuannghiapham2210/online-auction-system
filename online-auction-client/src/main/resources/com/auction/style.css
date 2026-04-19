@@ -307,3 +307,60 @@
 .logo-icon {
     -fx-font-size: 28px;
 }
+
+/* Màu nền tổng thể siêu tối của Dashboard */
+.dashboard-root {
+    -fx-background-color: #0F131A; 
+}
+
+/* Thanh Sidebar bên trái */
+.sidebar {
+    -fx-background-color: #161B22;
+    -fx-background-radius: 0 20 20 0;
+}
+
+/* Thẻ Card Sản phẩm */
+.item-card {
+    -fx-background-color: #1A202C;
+    -fx-background-radius: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0, 0, 5);
+}
+.item-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(243, 156, 18, 0.3), 15, 0, 0, 5);
+    -fx-translate-y: -2px; /* Hiệu ứng nảy lên khi di chuột */
+}
+
+/* Chữ hiển thị */
+.card-title {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.card-price {
+    -fx-text-fill: white;
+    -fx-font-size: 20px;
+    -fx-font-weight: 900;
+}
+
+/* Nút bấm Cam */
+.btn-orange {
+    -fx-background-color: #F39C12;
+    -fx-text-fill: #0F131A;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-orange:hover {
+    -fx-background-color: #E67E22;
+}
+
+/* Các nhãn Badge (LIVE, Sắp diễn ra) */
+.badge-live {
+    -fx-background-color: #E74C3C;
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 3 8 3 8;
+    -fx-background-radius: 10;
+}
