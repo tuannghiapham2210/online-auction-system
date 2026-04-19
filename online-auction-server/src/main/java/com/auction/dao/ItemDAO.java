@@ -4,12 +4,8 @@ import com.auction.factory.ItemFactory;
 import com.auction.dao.DatabaseConnection;
 
 import com.auction.model.Item;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 public class ItemDAO {
 
@@ -22,8 +18,7 @@ public class ItemDAO {
         // Giả sử bảng tên là 'items' và có các cột: name, type, starting_price, end_time, seller_id, extra_info
         String sql = "INSERT INTO items (name, type, starting_price, end_time, seller_id, extra_info) VALUES (?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             // Cần đảm bảo class Item của bạn có các phương thức getter tương ứng
             pstmt.setString(1, item.getName());
@@ -70,9 +65,8 @@ public class ItemDAO {
         List<Item> itemList = new ArrayList<>();
         String sql = "SELECT * FROM items";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql);
+            ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -101,10 +95,22 @@ public class ItemDAO {
     // =========================================================================
     public boolean updateCurrentPrice(int itemId, double newPrice) {
         boolean isSuccess = false;
-        // TODO: Viết câu lệnh UPDATE items SET current_price = ? WHERE id = ?
+        String sql = "UPDATE items SET current_price = ? WHERE id = ?";
         
-        System.out.println("Đang cập nhật giá mới cho sản phẩm có ID: " + itemId);
-        
+        // Dùng try-with-resources cho PreparedStatement để tránh lỗi rò rỉ kết nối
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            
+            pstmt.setDouble(1, newPrice);
+            pstmt.setInt(2, itemId);
+            
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                isSuccess = true;
+                System.out.println("Đã cập nhật thành công giá mới: $" + newPrice + " cho Item ID: " + itemId);
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi khi update giá Item: " + e.getMessage());
+        }
         return isSuccess;
     }
 }
