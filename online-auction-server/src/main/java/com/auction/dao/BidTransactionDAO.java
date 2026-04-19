@@ -7,7 +7,8 @@ public class BidTransactionDAO {
     // Hàm lưu lịch sử đấu giá
     public boolean insertBidTransaction(int itemId, int bidderId, double bidAmount) {
         boolean isSuccess = false;
-        String sql = "INSERT INTO bid_transactions (item_id, bidder_id, bid_amount) VALUES (?, ?, ?)";
+        // Đã bổ sung cột bid_time và gán thẳng hàm lấy giờ hiện tại của SQLite
+        String sql = "INSERT INTO bids (item_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, datetime('now', 'localtime'))";
         
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
             
