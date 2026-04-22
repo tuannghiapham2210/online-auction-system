@@ -12,6 +12,9 @@ import javafx.util.Duration;
 import java.io.*;
 import java.net.Socket;
 
+// ✅ SESSION
+import com.auction.Session;
+
 public class LoginController {
 
     @FXML private TextField usernameField;
@@ -55,9 +58,17 @@ public class LoginController {
                 String status = res.get("status").getAsString();
                 String message = res.get("message").getAsString();
 
+                // ✅ LẤY ROLE + USERID (AN TOÀN)
+                String role = res.has("role") ? res.get("role").getAsString() : "bidder";
+                int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
+
                 javafx.application.Platform.runLater(() -> {
 
                     if ("SUCCESS".equals(status)) {
+
+                        // ✅ LƯU SESSION
+                        Session.role = role;
+                        Session.userId = userId;
 
                         messageLabel.setStyle("-fx-text-fill: #00ff99;");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
