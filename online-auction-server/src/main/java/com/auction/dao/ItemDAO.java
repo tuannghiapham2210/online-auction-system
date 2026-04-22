@@ -1,72 +1,72 @@
 package com.auction.dao;
 
 import com.auction.factory.ItemFactory;
-import com.auction.dao.DatabaseConnection;
-
 import com.auction.model.Item;
-import java.sql.*;
-import java.util.*;
+import com.auction.model.Electronics;
+import com.auction.model.Art;
+import com.auction.model.Vehicle;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ItemDAO {
 
     // =========================================================================
-    // KHU VỰC CỦA TASK 2: [Tên_Thành_Viên_2] (THÊM SẢN PHẨM VÀO DATABASE)
+    // 1. THÊM SẢN PHẨM MỚI (Đã tích hợp 11 cột)
     // =========================================================================
     public boolean insertItem(Item item) {
         boolean isSuccess = false;
-        System.out.println("Đang thực thi lệnh lưu Item vào Database...");
-        // Giả sử bảng tên là 'items' và có các cột: name, type, starting_price, end_time, seller_id, extra_info
-        String sql = "INSERT INTO items (name, type, starting_price, end_time, seller_id, extra_info) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // Cần đảm bảo class Item của bạn có các phương thức getter tương ứng
             pstmt.setString(1, item.getName());
-
-            // Xử lý type dựa vào class con (nếu Item là abstract)
-            // Tùy thuộc vào cách bạn thiết kế, có thể lấy tên class làm type
             pstmt.setString(2, item.getClass().getSimpleName().toUpperCase());
-
             pstmt.setDouble(3, item.getStartingPrice());
-            pstmt.setString(4, item.getEndTime());
-            pstmt.setInt(5, item.getSellerId());
+            pstmt.setDouble(4, item.getStartingPrice());
+            pstmt.setDouble(5, item.getStepPrice());
+            pstmt.setString(6, item.getEndTime());
+            pstmt.setInt(7, item.getDurationHours());
+            pstmt.setString(8, item.getImageUrl());
+            pstmt.setString(9, item.getDescription());
 
-            // Tùy theo cách bạn lưu extraInfo trong các subclass (Art, Electronics...)
-            // Dưới đây là ví dụ, bạn cần điều chỉnh nếu cách lấy dữ liệu khác đi
             String extra = "";
-            if (item instanceof com.auction.model.Electronics) {
-                extra = String.valueOf(((com.auction.model.Electronics) item).getWarranty());
-            } else if (item instanceof com.auction.model.Art) {
-                extra = ((com.auction.model.Art) item).getAuthor();
-            } else if (item instanceof com.auction.model.Vehicle) {
-                extra = ((com.auction.model.Vehicle) item).getEngineType();
+            if (item instanceof Electronics) {
+                extra = String.valueOf(((Electronics) item).getWarranty());
+            } else if (item instanceof Art) {
+                extra = ((Art) item).getAuthor();
+            } else if (item instanceof Vehicle) {
+                extra = ((Vehicle) item).getEngineType();
             }
-            pstmt.setString(6, extra);
+            pstmt.setString(10, extra);
 
-            System.out.println("Đang thực thi lệnh lưu Item vào Database...");
+            pstmt.setInt(11, item.getSellerId());
+
             int rowsAffected = pstmt.executeUpdate();
-
-            if (rowsAffected > 0) {
-                isSuccess = true;
-            }
+            if (rowsAffected > 0) isSuccess = true;
 
         } catch (SQLException e) {
             System.err.println("Lỗi SQL khi insert Item: " + e.getMessage());
         }
-
         return isSuccess;
-        // TODO: Viết câu lệnh INSERT INTO items (name, starting_price, current_price, end_time, seller_id, item_type, extra_info) VALUES (?, ?, ?, ?, ?, ?, ?)
-        // Gợi ý: Dùng DatabaseConnection.getInstance().getConnection() để lấy kết nối.
-        // Dùng PreparedStatement để set dữ liệu, sau đó gọi executeUpdate().
-
     }
 
+    // =========================================================================
+    // 2. LẤY TẤT CẢ SẢN PHẨM (Phục vụ màn hình Dashboard)
+    // =========================================================================
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
         String sql = "SELECT * FROM items";
 
-        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql);
-            ResultSet rs = pstmt.executeQuery()) {
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -78,31 +78,42 @@ public class ItemDAO {
                 String itemType = rs.getString("item_type");
                 String extraInfo = rs.getString("extra_info");
 
+                // Lấy thêm các cột mới phục vụ UI
+                double stepPrice = rs.getDouble("step_price");
+                int durationHours = rs.getInt("duration_hours");
+                String imageUrl = rs.getString("image_url");
+                String description = rs.getString("description");
+
+                // Tạo đối tượng Item
                 Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
                 item.setId(id);
                 item.setCurrentPrice(currentPrice);
+                item.setStepPrice(stepPrice);
+                item.setDurationHours(durationHours);
+                item.setImageUrl(imageUrl);
+                item.setDescription(description);
 
                 itemList.add(item);
             }
         } catch (Exception e) {
-            System.out.println("Lỗi Task 3: " + e.getMessage());
+            System.out.println("Lỗi lấy danh sách sản phẩm: " + e.getMessage());
         }
         return itemList;
     }
 
     // =========================================================================
-    // KHU VỰC CỦA TECH LEAD (BẠN): PHỤC VỤ LUỒNG ĐẤU GIÁ REAL-TIME
+    // 3. CẬP NHẬT GIÁ (Phục vụ luồng Đấu giá Real-time)
     // =========================================================================
     public boolean updateCurrentPrice(int itemId, double newPrice) {
         boolean isSuccess = false;
         String sql = "UPDATE items SET current_price = ? WHERE id = ?";
-        
-        // Dùng try-with-resources cho PreparedStatement để tránh lỗi rò rỉ kết nối
-        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
-            
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setDouble(1, newPrice);
             pstmt.setInt(2, itemId);
-            
+
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 isSuccess = true;

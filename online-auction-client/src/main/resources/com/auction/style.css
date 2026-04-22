@@ -364,3 +364,108 @@
     -fx-padding: 3 8 3 8;
     -fx-background-radius: 10;
 }
+/* ================= TARGET UI CLONE ================= */
+
+/* Form nền xanh đen tối */
+.modal-container {
+    -fx-background-color: #212936;
+    -fx-background-radius: 12;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 30, 0, 0, 15);
+}
+
+/* Nút Close tròn trên góc */
+.btn-close-circle {
+    -fx-background-color: #2D3748;
+    -fx-text-fill: #A0AABF;
+    -fx-font-weight: bold;
+    -fx-background-radius: 50;
+    -fx-min-width: 30;
+    -fx-min-height: 30;
+    -fx-cursor: hand;
+}
+.btn-close-circle:hover {
+    -fx-background-color: #4A5568;
+    -fx-text-fill: white;
+}
+
+/* Các Label nhỏ xám nhạt */
+.target-label {
+    -fx-text-fill: #8D99AE;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+/* Vỏ hộp Input chứa Icon */
+.target-input-box {
+    -fx-background-color: #151A22;
+    -fx-background-radius: 8;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 8;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 0 10 0 15;
+}
+.target-input-box:focused-within {
+    -fx-border-color: #F39C12;
+}
+
+/* Icon bên trong input */
+.target-input-icon {
+    -fx-text-fill: #5E6A7D;
+    -fx-font-size: 14px;
+}
+
+/* TextField và TextArea bên trong (Xóa nền, xóa viền) */
+.target-textfield, .target-textarea {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #5E6A7D;
+    -fx-padding: 12;
+}
+.target-textfield:focused, .target-textarea:focused {
+    -fx-background-color: transparent;
+}
+.target-textarea .content {
+    -fx-background-color: transparent;
+}
+
+/* ComboBox custom */
+.target-combo-box {
+    -fx-background-color: #151A22;
+    -fx-background-radius: 8;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 8;
+    -fx-padding: 4 8;
+}
+.target-combo-box .list-cell {
+    -fx-text-fill: white;
+}
+
+/* 2 Nút dưới cùng */
+.btn-target-cancel {
+    -fx-background-color: #374151;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-target-cancel:hover {
+    -fx-background-color: #4B5563;
+}
+
+.btn-target-submit {
+    -fx-background-color: #F59E0B;
+    -fx-text-fill: #111827;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.btn-target-submit:hover {
+    -fx-background-color: #FBBF24;
+}
