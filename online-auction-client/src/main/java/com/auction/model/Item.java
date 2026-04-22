@@ -1,11 +1,19 @@
 package com.auction.model;
 
-public abstract class Item extends Entity {
+import java.io.Serializable;
+
+public abstract class Item extends Entity implements Serializable {
     protected String name;
     protected double startingPrice;
     protected double currentPrice;
     protected String endTime;
     protected int sellerId;
+
+    // Các thuộc tính mới
+    protected double stepPrice;
+    protected int durationHours;
+    protected String imageUrl;
+    protected String description;
 
     public Item(String name, double startingPrice, String endTime, int sellerId) {
         this.name = name;
@@ -15,7 +23,7 @@ public abstract class Item extends Entity {
         this.sellerId = sellerId;
     }
 
-    public abstract void printInfo(); 
+    public abstract void printInfo();
     public abstract String getItemType();
 
     public String getName() { return name; }
@@ -28,4 +36,13 @@ public abstract class Item extends Entity {
     public void setEndTime(String endTime) { this.endTime = endTime; }
     public int getSellerId() { return sellerId; }
     public void setSellerId(int sellerId) { this.sellerId = sellerId; }
+
+    public double getStepPrice() { return stepPrice; }
+    public void setStepPrice(double stepPrice) { this.stepPrice = stepPrice; }
+    public int getDurationHours() { return durationHours; }
+    public void setDurationHours(int durationHours) { this.durationHours = durationHours; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

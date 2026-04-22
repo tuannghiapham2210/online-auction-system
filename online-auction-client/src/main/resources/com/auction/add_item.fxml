@@ -3,91 +3,84 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
 
-<StackPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: rgba(15, 23, 42, 0.8);" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
+<StackPane prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: rgba(10, 15, 25, 0.8);" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
     <children>
-
-        <VBox maxWidth="500.0" maxHeight="600.0" spacing="20.0" style="-fx-background-color: #1f2937; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #374151; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 20, 0, 0, 10);">
+        <VBox maxWidth="650.0" spacing="20.0" styleClass="modal-container">
             <padding>
-                <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+                <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
             </padding>
 
-            <HBox alignment="CENTER_LEFT" spacing="10">
-                <Label text="⊕" textFill="#fbbf24">
-                    <font>
-                        <Font name="System Bold" size="22.0" />
-                    </font>
-                </Label>
-                <Label text="TẠO PHIÊN ĐẤU GIÁ" textFill="WHITE">
-                    <font>
-                        <Font name="System Bold" size="18.0" />
-                    </font>
-                </Label>
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #F59E0B;" text="⊕" translateY="-1"/>
+                <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;" text="TẠO PHIÊN ĐẤU GIÁ" />
                 <Region HBox.hgrow="ALWAYS" />
-                <Button style="-fx-background-color: #374151; -fx-text-fill: #9ca3af; -fx-background-radius: 50; -fx-cursor: hand;" text="✕" />
+                <Button onAction="#closePopup" styleClass="btn-close-circle" text="✕" />
             </HBox>
 
             <VBox spacing="8.0">
-                <Label text="TÊN SẢN PHẨM *" textFill="#9ca3af">
-                    <font>
-                        <Font name="System Bold" size="11.0" />
-                    </font>
-                </Label>
-                <TextField fx:id="nameField" prefHeight="40.0" promptText="Nhập tên sản phẩm..." style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                <Label styleClass="target-label" text="- TÊN SẢN PHẨM *" />
+                <HBox styleClass="target-input-box">
+                    <Label styleClass="target-input-icon" text="🏷" />
+                    <TextField fx:id="nameField" promptText="Nhập tên sản phẩm..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                </HBox>
             </VBox>
 
-            <HBox spacing="15.0">
-                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                    <Label text="DANH MỤC *" textFill="#9ca3af">
-                        <font>
-                            <Font name="System Bold" size="11.0" />
-                        </font>
-                    </Label>
-                    <ComboBox fx:id="typeComboBox" maxWidth="1.7976931348623157E308" prefHeight="40.0" style="-fx-background-color: #111827; -fx-border-color: #374151; -fx-border-radius: 6;" />
+            <HBox spacing="20.0">
+                <VBox HBox.hgrow="ALWAYS" spacing="8.0" prefWidth="280">
+                    <Label styleClass="target-label" text="- DANH MỤC *" />
+                    <ComboBox fx:id="typeComboBox" maxWidth="1.7976931348623157E308" promptText="Đồng hồ" styleClass="target-combo-box" />
                 </VBox>
-                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                    <Label text="GIÁ KHỞI ĐIỂM ($) *" textFill="#9ca3af">
-                        <font>
-                            <Font name="System Bold" size="11.0" />
-                        </font>
-                    </Label>
-                    <TextField fx:id="priceField" prefHeight="40.0" promptText="\$" style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
-                </VBox>
-            </HBox>
-
-            <HBox spacing="15.0">
-                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                    <Label text="THỜI GIAN KẾT THÚC *" textFill="#9ca3af">
-                        <font>
-                            <Font name="System Bold" size="11.0" />
-                        </font>
-                    </Label>
-                    <TextField fx:id="endTimeField" prefHeight="40.0" promptText="YYYY-MM-DD HH:MM:SS" style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
-                </VBox>
-                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                    <Label text="THÔNG TIN THÊM" textFill="#9ca3af">
-                        <font>
-                            <Font name="System Bold" size="11.0" />
-                        </font>
-                    </Label>
-                    <TextField fx:id="extraInfoField" prefHeight="40.0" promptText="Bảo hành/Tác giả..." style="-fx-background-color: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" />
+                <VBox HBox.hgrow="ALWAYS" spacing="8.0" prefWidth="280">
+                    <Label styleClass="target-label" text="- HÌNH ẢNH (URL)" />
+                    <HBox styleClass="target-input-box">
+                        <Label styleClass="target-input-icon" text="🖼" />
+                        <TextField fx:id="imageUrlField" promptText="https://..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                    </HBox>
                 </VBox>
             </HBox>
 
             <VBox spacing="8.0">
-                <Label text="THÔNG TIN CHI TIẾT" textFill="#9ca3af">
-                    <font>
-                        <Font name="System Bold" size="11.0" />
-                    </font>
-                </Label>
-                <TextArea fx:id="descriptionArea" prefHeight="80.0" promptText="Mô tả sản phẩm..." style="-fx-control-inner-background: #111827; -fx-text-fill: white; -fx-border-color: #374151; -fx-border-radius: 6;" wrapText="true" />
+                <Label styleClass="target-label" text="- MÔ TẢ" />
+                <HBox alignment="TOP_LEFT" styleClass="target-input-box">
+                    <Label styleClass="target-input-icon" text="≡" translateY="10" />
+                    <TextArea fx:id="descriptionArea" prefRowCount="3" promptText="Mô tả tình trạng, nguồn gốc..." styleClass="target-textarea" style="-fx-control-inner-background: #151A22; -fx-background-color: #151A22; -fx-text-fill: white;" wrapText="true" HBox.hgrow="ALWAYS" />
+                </HBox>
             </VBox>
 
-            <HBox alignment="CENTER" spacing="15.0" translateY="5.0">
-                <Button prefHeight="40.0" prefWidth="140.0" style="-fx-background-color: #374151; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Hủy" />
-                <Button fx:id="submitButton" onAction="#handleSubmit" prefHeight="40.0" prefWidth="140.0" style="-fx-background-color: #f59e0b; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="Tạo Phiên" />
+            <Separator style="-fx-background-color: #2A3441; -fx-border-width: 0;" />
+
+            <HBox spacing="15.0">
+                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+                    <Label styleClass="target-label" text="- GIÁ KHỞI ĐIỂM ($) *" />
+                    <HBox styleClass="target-input-box">
+                        <Label styleClass="target-input-icon" text="\$" />
+                        <TextField fx:id="priceField" promptText="VD: 5000" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+                    <Label styleClass="target-label" text="- BƯỚC GIÁ ($) *" />
+                    <HBox styleClass="target-input-box">
+                        <Label styleClass="target-input-icon" text="↗" />
+                        <TextField fx:id="stepPriceField" promptText="VD: 500" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                </VBox>
+                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+                    <Label styleClass="target-label" text="- THỜI GIAN (HOURS) *" />
+                    <HBox styleClass="target-input-box">
+                        <Label styleClass="target-input-icon" text="🕒" />
+                        <TextField fx:id="durationField" promptText="VD: 24" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                    </HBox>
+                </VBox>
             </HBox>
+
+            <Label fx:id="messageLabel" style="-fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-padding: 0 0 0 5;" />
+
+            <HBox spacing="20.0" translateY="5.0">
+                <Button maxWidth="1.7976931348623157E308" onAction="#closePopup" styleClass="btn-target-cancel" text="Hủy" HBox.hgrow="ALWAYS" />
+                <Button maxWidth="1.7976931348623157E308" onAction="#handleSubmit" styleClass="btn-target-submit" text="Tạo Phiên Đấu Giá" HBox.hgrow="ALWAYS" />
+            </HBox>
+
         </VBox>
     </children>
 </StackPane>

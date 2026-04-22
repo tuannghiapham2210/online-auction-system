@@ -1,12 +1,11 @@
 package com.auction;
 
 import com.auction.dao.UserDAO;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -29,7 +28,6 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            // ✅ FIX UTF-8
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream(), "UTF-8")
             );
@@ -145,45 +143,55 @@ public class ClientHandler implements Runnable {
     // ================= ADD ITEM =================
     private void handleAddItem(JsonObject request) {
         System.out.println("Đang xử lý chức năng thêm hàng...");
-
         try {
             String name = request.get("name").getAsString();
             String type = request.get("type").getAsString();
             double startingPrice = request.get("startingPrice").getAsDouble();
-            String endTime = request.get("endTime").getAsString();
             int sellerId = request.get("sellerId").getAsInt();
-            String extraInfo = request.has("extraInfo") ? request.get("extraInfo").getAsString() : "";
 
-            Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, extraInfo);
+            // Lấy thông tin mới
+            String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
+            String description = request.has("description") ? request.get("description").getAsString() : "";
+            double stepPrice = request.get("stepPrice").getAsDouble();
+            int durationHours = request.get("durationHours").getAsInt();
 
-            // 3. Lưu vào Database thông qua DAO
+            // Tính EndTime
+            java.time.LocalDateTime endTarget = java.time.LocalDateTime.now().plusHours(durationHours);
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            String endTime = endTarget.format(formatter);
+
+            // Tạo Object
+            Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, "");
+            newItem.setStepPrice(stepPrice);
+            newItem.setDurationHours(durationHours);
+            newItem.setImageUrl(imageUrl);
+            newItem.setDescription(description);
+
+            // Lưu Database
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
             JsonObject response = new JsonObject();
             if (isSuccess) {
-                // FIX: Sửa lại thành chữ IN HOA để khớp với Client
+                System.out.println("✅ [Database] Đã lưu thành công [" + name + "] vào bảng items!");
                 response.addProperty("status", "SUCCESS");
                 response.addProperty("message", "Đăng bán sản phẩm thành công!");
             } else {
+                System.err.println("❌ [Database] Lỗi không thể lưu sản phẩm!");
                 response.addProperty("status", "FAIL");
-                response.addProperty("message", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu.");
+                response.addProperty("message", "Lỗi khi lưu Database.");
             }
-
-            // FIX: Thực sự gửi gói tin trả về cho Client
             writer.println(response.toString());
 
         } catch (Exception e) {
-            System.err.println("Lỗi khi thêm sản phẩm: " + e.getMessage());
-
-            // Bắt Exception cũng phải báo về cho Client biết để nhả đóng băng giao diện
             JsonObject errorResponse = new JsonObject();
             errorResponse.addProperty("status", "ERROR");
-            errorResponse.addProperty("message", "Lỗi định dạng dữ liệu Server: " + e.getMessage());
+            errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
             writer.println(errorResponse.toString());
         }
     }
 
+    // ================= GET ALL ITEMS =================
     private void handleGetAllItems(JsonObject request) {
         ItemDAO itemDAO = new ItemDAO();
         List<Item> items = itemDAO.getAllItems();
@@ -198,33 +206,29 @@ public class ClientHandler implements Runnable {
         writer.println(response.toString());
     }
 
+    // ================= PLACE BID =================
     private void handlePlaceBid(JsonObject request) {
         try {
             System.out.println("[SERVER] Vừa nhận được yêu cầu từ Client: " + request.toString());
-            // 1. Bóc tách dữ liệu từ JSON
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
 
-            // 2. Tương tác với Database (Khởi tạo DAO cục bộ)
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
 
-            // 3. Thực thi nghiệp vụ lưu trữ
             boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
-            // 4. Nếu Database lưu thành công, cầm loa hét lên cho mọi người biết
             if (updateSuccess && logSuccess) {
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
                 broadcastMsg.addProperty("newPrice", bidAmount);
-                broadcastMsg.addProperty("bidderId", bidderId); // Có thể kèm tên người dùng sau nếu muốn
+                broadcastMsg.addProperty("bidderId", bidderId);
 
                 System.out.println("✅ Đã ghi nhận giá mới. Bắt đầu phát thanh...");
                 broadcast(broadcastMsg);
             } else {
-                // Nếu lỗi DB, chỉ báo lỗi riêng cho cái ông vừa đặt giá thôi (không broadcast)
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
                 errorMsg.addProperty("message", "Lỗi lưu Database khi đặt giá!");
@@ -236,11 +240,8 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // HÀM PHÁT THANH ĐỒNG LOẠT
+    // ================= BROADCAST =================
     private void broadcast(JsonObject message) {
-        // LƯU Ý LOGIC: Bắt buộc phải có 'synchronized'
-        // Vì List activeClients có thể bị thay đổi nếu có ai đó vừa đăng nhập hoặc thoát ra
-        // trong lúc mình đang gửi tin, gây ra lỗi ConcurrentModificationException.
         synchronized (activeClients) {
             for (ClientHandler client : activeClients) {
                 try {

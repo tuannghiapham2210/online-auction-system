@@ -59,7 +59,6 @@ public class DatabaseConnection {
         return connection;
     }
 
-    //automatically creates table if database is empty
     // Hàm tự động tạo ĐẦY ĐỦ CÁC BẢNG nếu database trống
     private void createTables() {
         // 1. Bảng Users
@@ -70,20 +69,24 @@ public class DatabaseConnection {
                 + "role TEXT NOT NULL"
                 + ");";
 
-        // 2. Bảng Items (Thiếu cái này nên nãy giờ update giá toàn tạch)
+        // 2. Bảng Items (ĐÃ ĐƯỢC CẬP NHẬT ĐẦY ĐỦ CÁC CỘT MỚI)
         String sqlItems = "CREATE TABLE IF NOT EXISTS items ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "name TEXT NOT NULL,"
+                + "item_type TEXT NOT NULL,"
                 + "starting_price REAL NOT NULL,"
                 + "current_price REAL NOT NULL,"
+                + "step_price REAL NOT NULL,"
                 + "end_time TEXT NOT NULL,"
-                + "seller_id INTEGER NOT NULL,"
-                + "item_type TEXT NOT NULL,"
+                + "duration_hours INTEGER NOT NULL,"
+                + "image_url TEXT,"
+                + "description TEXT,"
                 + "extra_info TEXT,"
+                + "seller_id INTEGER NOT NULL,"
                 + "FOREIGN KEY (seller_id) REFERENCES users(id)"
                 + ");";
 
-        // 3. Bảng Bids (Thiếu cái này nên lưu lịch sử toàn văng lỗi)
+        // 3. Bảng Bids
         String sqlBids = "CREATE TABLE IF NOT EXISTS bids ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "item_id INTEGER NOT NULL,"
@@ -104,9 +107,8 @@ public class DatabaseConnection {
         }
     }
 
-    // method to verify login (returns true if username and password exist in the database, false otherwise)
+    // method to verify login
     public boolean authenticateUser(String username, String password) {
-        // using prepared statement to prevent SQL injection
         String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
 
         try (java.sql.PreparedStatement pstmt = getConnection().prepareStatement(sql)) {
@@ -114,7 +116,7 @@ public class DatabaseConnection {
             pstmt.setString(2, password);
 
             try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                return rs.next(); // if at least one line is returned -> login successful
+                return rs.next();
             }
 
         } catch (SQLException e) {
@@ -123,31 +125,29 @@ public class DatabaseConnection {
         }
     }
 
-    // method to automatically send test data to database 
+    // method to automatically send test data to database
     private void seedData() {
         String countSql = "SELECT COUNT(*) FROM users";
         try (Statement stmt = connection.createStatement();
              java.sql.ResultSet rs = stmt.executeQuery(countSql)) {
 
-            // if the table is empty, insert 3 test accounts (admin, bidder1, seller1)
+            // if the table is empty, insert 3 test accounts
             if (rs.getInt(1) == 0) {
-                // adding 3 accounts with 3 different roles
                 String insertSql = "INSERT INTO users (username, password, role) VALUES "
                         + "('admin', '123456', 'ADMIN'), "
                         + "('bidder1', '123', 'BIDDER'), "
                         + "('seller1', '123', 'SELLER')";
 
                 stmt.executeUpdate(insertSql);
-                System.out.println("[Database] Successfully seeded 3 test accounts (admin, bidder1, seller1)!");
-            
-                // 2. Bơm tiếp dữ liệu cho bảng items (Sản phẩm)
+                System.out.println("[Database] Successfully seeded 3 test accounts!");
+
+                // Bơm tiếp dữ liệu cho bảng items (CẬP NHẬT CẤU TRÚC MỚI)
                 String countItemsSql = "SELECT COUNT(*) FROM items";
                 try (java.sql.ResultSet rsItems = stmt.executeQuery(countItemsSql)) {
-                    
+
                     if (rsItems.getInt(1) == 0) {
-                        // Cố tình ép id = 1 để khớp với biến giả lập bên Client của bạn
-                        String insertItemSql = "INSERT INTO items (id, name, starting_price, current_price, end_time, seller_id, item_type, extra_info) " +
-                                            "VALUES (1, 'Laptop Gaming ASUS ROG', 15000.0, 15000.0, '2026-12-31 23:59:59', 1, 'ELECTRONICS', '24')";
+                        String insertItemSql = "INSERT INTO items (id, name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
+                                "VALUES (1, 'Laptop Gaming ASUS ROG', 'ELECTRONICS', 15000.0, 15000.0, 500.0, '2026-12-31 23:59:59', 24, 'https://cdn.tgdd.vn/Products/Images/44/304634/asus-rog-strix-scar-18-g834jx-i9-n6039w-thumb-600x600.jpg', 'Máy mới 100% fullbox', '24', 3)";
                         stmt.executeUpdate(insertItemSql);
                         System.out.println("[Database] Bơm thành công 1 sản phẩm mẫu (Laptop)!");
                     }
