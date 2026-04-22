@@ -11,9 +11,8 @@
                 <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
             </padding>
 
-            <HBox alignment="CENTER_LEFT" spacing="8.0">
-                <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #F59E0B;" text="⊕" translateY="-1"/>
-                <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;" text="TẠO PHIÊN ĐẤU GIÁ" />
+            <HBox alignment="CENTER_LEFT">
+                <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;" text="⊕ TẠO PHIÊN ĐẤU GIÁ" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Button onAction="#closePopup" styleClass="btn-close-circle" text="✕" />
             </HBox>
@@ -44,7 +43,7 @@
                 <Label styleClass="target-label" text="- MÔ TẢ" />
                 <HBox alignment="TOP_LEFT" styleClass="target-input-box">
                     <Label styleClass="target-input-icon" text="≡" translateY="10" />
-                    <TextArea fx:id="descriptionArea" prefRowCount="3" promptText="Mô tả tình trạng, nguồn gốc..." styleClass="target-textarea" style="-fx-control-inner-background: #151A22; -fx-background-color: #151A22; -fx-text-fill: white;" wrapText="true" HBox.hgrow="ALWAYS" />
+                    <TextArea fx:id="descriptionArea" prefRowCount="3" promptText="Mô tả tình trạng, nguồn gốc..." styleClass="target-textarea" wrapText="true" HBox.hgrow="ALWAYS" />
                 </HBox>
             </VBox>
 

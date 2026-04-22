@@ -15,7 +15,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         // Lệnh này đi tìm file fxml và phân tích cú pháp cây (Tree) bên trong nó
-        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("add_item.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("login.fxml"));
         Parent root = fxmlLoader.load();
         
         // Bọc cái Root Node đó vào một Scene (bối cảnh) kích thước 640x480

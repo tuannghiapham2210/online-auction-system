@@ -11,21 +11,31 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane styleClass="dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
-   
+<BorderPane styleClass="dashboard-root" stylesheets="@style.css"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.auction.DashboardController">
+
    <left>
-      <VBox prefWidth="250.0" spacing="20.0" styleClass="sidebar" BorderPane.alignment="CENTER">
+      <VBox prefWidth="250.0" spacing="20.0" styleClass="sidebar">
          <padding>
             <Insets bottom="20.0" left="20.0" right="20.0" top="30.0" />
          </padding>
          <children>
-            <Label style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" text="THE AUCTION SYSTEM" />
-            <TextField promptText="Tìm kiếm lô hàng..." style="-fx-background-color: #2D3748; -fx-text-fill: white; -fx-background-radius: 10;" />
-            <VBox spacing="10.0" style="-fx-background-color: #2D3748; -fx-background-radius: 15; -fx-padding: 10;">
+            <Label text="THE AUCTION SYSTEM"
+                   style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" />
+
+            <TextField promptText="Tìm kiếm lô hàng..."
+                       style="-fx-background-color: #2D3748; -fx-text-fill: white; -fx-background-radius: 10;" />
+
+            <VBox spacing="10.0"
+                  style="-fx-background-color: #2D3748; -fx-background-radius: 15; -fx-padding: 10;">
                <children>
-                  <Button maxWidth="Infinity" styleClass="btn-orange" text="Tất cả" />
-                  <Button maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: gray;" text="Đồng hồ" />
-                  <Button maxWidth="Infinity" style="-fx-background-color: transparent; -fx-text-fill: gray;" text="Ô tô" />
+                  <Button text="Tất cả" maxWidth="Infinity" styleClass="btn-orange"/>
+                  <Button text="Đồng hồ" maxWidth="Infinity"
+                          style="-fx-background-color: transparent; -fx-text-fill: gray;"/>
+                  <Button text="Ô tô" maxWidth="Infinity"
+                          style="-fx-background-color: transparent; -fx-text-fill: gray;"/>
                </children>
             </VBox>
          </children>
@@ -33,53 +43,94 @@
    </left>
 
    <center>
-      <VBox spacing="20.0" BorderPane.alignment="CENTER">
+      <VBox spacing="20.0">
          <padding>
             <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
          </padding>
+
          <children>
-            <Label style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" text="Tất cả lô hàng" />
-            
-            <ScrollPane fitToWidth="true" style="-fx-background: #0F131A; -fx-border-color: #0F131A;" VBox.vgrow="ALWAYS">
+
+            <!-- ✅ HEADER CHUẨN -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+               <Label text="Tất cả lô hàng"
+                      style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" />
+
+               <Region HBox.hgrow="ALWAYS"/>
+
+               <!-- ✅ CHỈ 1 BUTTON -->
+               <Button fx:id="btnAddItem"
+                       text="Đăng sản phẩm"
+                       styleClass="btn-orange"
+                       onAction="#handleAddItem"/>
+            </HBox>
+
+            <!-- ✅ GRID -->
+            <ScrollPane fitToWidth="true"
+                        style="-fx-background: #0F131A; -fx-border-color: #0F131A;"
+                        VBox.vgrow="ALWAYS">
+
                <content>
                   <FlowPane fx:id="itemGrid" hgap="30.0" vgap="30.0">
+
                      <children>
-                        
+
+                        <!-- CARD DEMO -->
                         <VBox prefWidth="280.0" spacing="10.0" styleClass="item-card">
                            <padding>
                               <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
                            </padding>
+
                            <children>
                               <HBox>
                                  <children>
-                                    <Label styleClass="badge-live" text="LIVE" />
+                                    <Label text="LIVE" styleClass="badge-live"/>
                                  </children>
                               </HBox>
-                              <Region prefHeight="150.0" style="-fx-background-color: #2D3748; -fx-background-radius: 10;" />
-                              <Label style="-fx-text-fill: gray; -fx-font-size: 12px;" text="LÔ-001 • ĐỒNG HỒ" />
-                              <Label prefHeight="50.0" styleClass="card-title" text="Patek Philippe Grandmaster Chime" wrapText="true" />
+
+                              <Region prefHeight="150.0"
+                                      style="-fx-background-color: #2D3748; -fx-background-radius: 10;" />
+
+                              <Label text="LÔ-001 • ĐỒNG HỒ"
+                                     style="-fx-text-fill: gray; -fx-font-size: 12px;" />
+
+                              <Label text="Patek Philippe Grandmaster Chime"
+                                     styleClass="card-title"
+                                     wrapText="true"
+                                     prefHeight="50.0"/>
+
                               <HBox alignment="BOTTOM_LEFT">
                                  <children>
                                     <VBox>
                                        <children>
-                                          <Label style="-fx-text-fill: gray; -fx-font-size: 10px;" text="GIÁ CAO NHẤT" />
-                                          <Label styleClass="card-price" text="\$15,500" />
+                                          <Label text="GIÁ CAO NHẤT"
+                                                 style="-fx-text-fill: gray; -fx-font-size: 10px;" />
+                                          <Label text="\$15,500" styleClass="card-price"/>
                                        </children>
                                     </VBox>
                                  </children>
                               </HBox>
-                              <Button maxWidth="Infinity" prefHeight="40.0" styleClass="btn-orange" text="Vào Phòng">
+
+                              <!-- ✅ NÚT VÀO PHÒNG -->
+                              <Button text="Vào Phòng"
+                                      maxWidth="Infinity"
+                                      prefHeight="40.0"
+                                      styleClass="btn-orange">
                                  <VBox.margin>
-                                    <Insets top="10.0" />
+                                    <Insets top="10.0"/>
                                  </VBox.margin>
                               </Button>
+
                            </children>
                         </VBox>
-                        </children>
+
+                     </children>
+
                   </FlowPane>
                </content>
             </ScrollPane>
+
          </children>
       </VBox>
    </center>
+
 </BorderPane>

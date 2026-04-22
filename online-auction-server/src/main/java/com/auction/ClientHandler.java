@@ -97,8 +97,15 @@ public class ClientHandler implements Runnable {
         JsonObject response = new JsonObject();
 
         if (isOk) {
+
+            String role = dao.getUserRole(user, pass);
+            int userId = dao.getUserId(user, pass); // ✅ THÊM
+
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Đăng nhập thành công!");
+            response.addProperty("role", role);
+            response.addProperty("userId", userId); // ✅ QUAN TRỌNG
+
         } else {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
