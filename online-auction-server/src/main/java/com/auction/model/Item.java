@@ -3,18 +3,22 @@ package com.auction.model;
 import java.io.Serializable;
 
 public abstract class Item extends Entity implements Serializable {
-    protected String name;
-    protected double startingPrice;
-    protected double currentPrice;
-    protected String endTime;
-    protected int sellerId;
+    //các thuộc tính cần thiết cho một item đấu giá
+    //implements Serializable để có thể chuyển đổi đối tượng thành byte stream (để lưu trữ hoặc truyền qua mạng)
+
+    protected String name; //tên
+    protected double startingPrice; //giá khởi điểm
+    protected double currentPrice; //giá hiện tại
+    protected String endTime; //thời gian kết thúc
+    protected int sellerId; //id người bán
 
     // Các thuộc tính mới
-    protected double stepPrice;
-    protected int durationHours;
-    protected String imageUrl;
-    protected String description;
+    protected double stepPrice; //bước giá (số tiền tối thiểu để tăng giá)
+    protected int durationHours; //thời gian đấu giá tính bằng giờ
+    protected String imageUrl; //đường dẫn hình ảnh
+    protected String description; // mô tả chi tiết về item
 
+    //constructor (hàm khởi tạo)
     public Item(String name, double startingPrice, String endTime, int sellerId) {
         this.name = name;
         this.startingPrice = startingPrice;
@@ -23,9 +27,11 @@ public abstract class Item extends Entity implements Serializable {
         this.sellerId = sellerId;
     }
 
+    // Đa hình (Polymorphism): Ép các lớp con phải tự định nghĩa
     public abstract void printInfo();
     public abstract String getItemType();
 
+    //các setters và getters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public double getStartingPrice() { return startingPrice; }
