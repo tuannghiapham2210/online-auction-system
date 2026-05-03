@@ -128,7 +128,7 @@ public class DatabaseConnection {
             }
 
         } catch (SQLException e) {
-            System.err.println("[Database] Error authenticating user: " + e.getMessage());
+            System.err.println("[Database] Lỗi xác thực người dùng: " + e.getMessage());
             return false;
 
         }
@@ -150,7 +150,7 @@ public class DatabaseConnection {
                         + "('seller1', '123', 'SELLER')";
 
                 stmt.executeUpdate(insertSql);
-                System.out.println("[Database] Successfully seeded 3 test accounts!");
+                System.out.println("[Database] Bơm thành công 3 tài khoản test!");
 
                 // Bơm tiếp dữ liệu cho bảng items 
                 String countItemsSql = "SELECT COUNT(*) FROM items"; // đếm số hàng trong bảng items
@@ -166,7 +166,7 @@ public class DatabaseConnection {
             }
         } catch (SQLException e) {
 
-            System.err.println("[Database] Error seeding data: " + e.getMessage());
+            System.err.println("[Database] Lỗi bơm dữ liệu: " + e.getMessage());
         }
     }
 }
