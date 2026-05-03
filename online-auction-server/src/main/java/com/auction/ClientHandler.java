@@ -16,30 +16,38 @@ import java.util.List;
 
 public class ClientHandler implements Runnable {
 
+    // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
     private Socket clientSocket;
     private PrintWriter writer;
 
+    //constructor
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
     }
 
+    // phương thức run() sẽ được gọi khi thread bắt đầu, chịu trách nhiệm xử lý giao tiếp với client thông qua socket.
+    // Nó đọc dữ liệu từ client, xử lý yêu cầu dựa trên action được gửi lên (ví dụ: LOGIN, REGISTER, ADD_ITEM, GET_ALL_ITEMS, PLACE_BID) và gửi phản hồi lại cho client. 
+    // Nếu có lỗi xảy ra trong quá trình giao tiếp, nó sẽ in lỗi ra console và đảm bảo rằng client được loại bỏ khỏi danh sách activeClients khi kết thúc kết nối.
     @Override
     public void run() {
         try {
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream(), "UTF-8")
-            );
+            // thiết lập luồng đọc sử dụng BufferedReader để đọc dữ liệu từ client, với encoding UTF-8 để hỗ trợ đa ngôn ngữ và tránh lỗi khi client gửi dữ liệu có chứa ký tự đặc biệt
+            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
 
-            this.writer = new PrintWriter(
-                    new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"), true
-            );
+            // thiết lập luồng ghi, với autoFlush = true để đảm bảo rằng dữ liệu được gửi đến client ngay lập tức mà không bị giữ lại trong buffer
+            this.writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"), true);
 
+            // khi một client mới kết nối, nó sẽ được thêm vào danh sách activeClients để có thể nhận được các thông báo broadcast từ server 
+            // sử dụng synchronized để đảm bảo rằng việc thêm client vào danh sách activeClients là an toàn trong môi trường đa luồng 
             synchronized (activeClients) {
                 activeClients.add(this);
             }
 
+            // vòng lặp để liên tục đọc dữ liệu từ client, phương thức readLine() sẽ chặn (block) cho đến khi có một dòng dữ liệu được gửi từ client. 
+            // Khi client gửi dữ liệu, nó sẽ được xử lý dựa trên action được chỉ định trong JSON request và phản hồi sẽ được gửi lại cho client. 
+            // Nếu client ngắt kết nối hoặc có lỗi xảy ra, vòng lặp sẽ kết thúc và client sẽ được loại bỏ khỏi danh sách activeClients.
             String clientMessage;
 
             while ((clientMessage = reader.readLine()) != null) {
@@ -49,22 +57,27 @@ public class ClientHandler implements Runnable {
                 String action = request.get("action").getAsString();
 
                 switch (action) {
-                    case "LOGIN":
+                    case "LOGIN": // xử lý yêu cầu đăng nhập từ client, xác thực thông tin người dùng và trả về phản hồi tương ứng
                         handleLogin(request);
                         break;
+
                     case "REGISTER":
                         handleRegister(request);
                         break;
+
                     case "ADD_ITEM":
                         handleAddItem(request);
                         break;
+
                     case "GET_ALL_ITEMS":
                         handleGetAllItems(request);
                         break;
+
                     case "PLACE_BID":
                         handlePlaceBid(request);
                         break;
-                    default:
+
+                    default: // nếu action không hợp lệ, gửi phản hồi lỗi về client
                         JsonObject res = new JsonObject();
                         res.addProperty("status", "ERROR");
                         res.addProperty("message", "Action không hợp lệ!");
@@ -74,14 +87,20 @@ public class ClientHandler implements Runnable {
 
         } catch (Exception e) {
             System.err.println("Lỗi giao tiếp: " + e.getMessage());
+
         } finally {
+            // khi client ngắt kết nối hoặc có lỗi xảy ra, đảm bảo rằng client được loại bỏ khỏi danh sách activeClients để tránh việc gửi thông báo đến client đã ngắt kết nối và giải phóng tài nguyên liên quan đến kết nối đó
+            // sử dụng synchronized để đảm bảo rằng việc loại bỏ client khỏi danh sách activeClients là an toàn trong môi trường đa luồng
             synchronized (activeClients) {
                 activeClients.remove(this);
             }
+
             try {
                 clientSocket.close();
+
             } catch (Exception e) {
                 e.printStackTrace();
+                
             }
         }
     }
