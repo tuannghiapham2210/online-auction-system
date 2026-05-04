@@ -19,8 +19,8 @@ public class ClientHandler implements Runnable {
     // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
-    private Socket clientSocket;
-    private PrintWriter writer;
+    private Socket clientSocket; // socket đại diện cho kết nối giữa server và client, cho phép giao tiếp hai chiều thông qua luồng dữ liệu (input/output stream)
+    private PrintWriter writer; //printwriter để gửi dữ liệu từ server đến client.
 
     //constructor
     public ClientHandler(Socket socket) {
@@ -50,6 +50,8 @@ public class ClientHandler implements Runnable {
             // Nếu client ngắt kết nối hoặc có lỗi xảy ra, vòng lặp sẽ kết thúc và client sẽ được loại bỏ khỏi danh sách activeClients.
             String clientMessage;
 
+            //readline() sẽ trả về null khi client ngắt kết nối, do đó vòng lặp sẽ dừng lại khi client ngắt kết nối hoặc có lỗi xảy ra trong quá trình đọc dữ liệu.
+            //readline() sẽ block cho đến khi có một dòng dữ liệu được gửi từ client, do đó nếu client không gửi gì và không ngắt kết nối, thread sẽ chờ ở đây mà không tiêu tốn tài nguyên CPU.
             while ((clientMessage = reader.readLine()) != null) {
                 System.out.println("Nhận từ Client: " + clientMessage);
 
@@ -197,11 +199,13 @@ public class ClientHandler implements Runnable {
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
+            //gửi thông báo về client
             JsonObject response = new JsonObject();
             if (isSuccess) {
                 System.out.println("✅ [Database] Đã lưu thành công [" + name + "] vào bảng items!");
                 response.addProperty("status", "SUCCESS");
                 response.addProperty("message", "Đăng bán sản phẩm thành công!");
+
             } else {
                 System.err.println("❌ [Database] Lỗi không thể lưu sản phẩm!");
                 response.addProperty("status", "FAIL");
@@ -219,9 +223,11 @@ public class ClientHandler implements Runnable {
 
     // ================= GET ALL ITEMS =================
     private void handleGetAllItems(JsonObject request) {
+        //lấy danh sách tất cả các sản phẩm thông qua ItemDAO
         ItemDAO itemDAO = new ItemDAO();
         List<Item> items = itemDAO.getAllItems();
 
+        //chuyển đổi danh sách sản phẩm thành JSON để gửi về client
         Gson gson = new Gson();
         JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
 
@@ -229,23 +235,27 @@ public class ClientHandler implements Runnable {
         response.addProperty("status", "SUCCESS");
         response.add("data", arr);
 
+        //gửi phản hồi về client, client sẽ nhận được một JSON chứa danh sách tất cả sản phẩm hiện có trên hệ thống để hiển thị cho người dùng
         writer.println(response.toString());
     }
 
     // ================= PLACE BID =================
     private void handlePlaceBid(JsonObject request) {
         try {
+            // lây dữ liệu từ client gửi lên, bao gồm itemId (ID của sản phẩm đang đấu giá), bidderId (ID của người đặt giá) và bidAmount (số tiền mà người đó muốn đặt)
             System.out.println("[SERVER] Vừa nhận được yêu cầu từ Client: " + request.toString());
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
 
+            // cập nhật giá mới cho sản phẩm trong database và ghi lại giao dịch đặt giá, sử dụng ItemDAO để cập nhật giá hiện tại của sản phẩm và BidTransactionDAO để lưu lại thông tin về giao dịch đặt giá (bao gồm itemId, bidderId và bidAmount)
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
 
             boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
+            //nếu cả việc cập nhật giá mới và ghi lại giao dịch đặt giá đều thành công, server sẽ tạo một thông báo broadcast chứa thông tin về giá mới và người đặt giá, sau đó gửi thông báo này đến tất cả các client đang kết nối để cập nhật giao diện người dùng của họ với giá mới nhất.
             if (updateSuccess && logSuccess) {
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
@@ -272,7 +282,7 @@ public class ClientHandler implements Runnable {
             for (ClientHandler client : activeClients) {
                 try {
                     if (client.writer != null) {
-                        client.writer.println(message.toString());
+                        client.writer.println(message.toString()); // gửi thông báo đến tất cả client đang kết nối, mỗi client sẽ nhận được một JSON chứa thông tin về giá mới và người đặt giá để cập nhật giao diện người dùng của họ với giá mới nhất.
                     }
                 } catch (Exception e) {
                     System.err.println("Lỗi khi gửi dữ liệu cho client: " + e.getMessage());
