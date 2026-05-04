@@ -3,14 +3,20 @@ package com.auction;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;  
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ServerApp {
     private static final int PORT = 8080;
+    private static final int MAX_THREADS = 20; // Giới hạn số lượng thread tối đa (có thể điều chỉnh tùy theo cấu hình server)
 
     public static void main(String[] args) {
         // khởi tạo kết nối database ngay khi server khởi động để đảm bảo rằng database đã sẵn sàng trước khi chấp nhận kết nối từ client
         com.auction.dao.DatabaseConnection.getInstance();
         System.out.println("Starting the Auction Server...");
+
+        // Khởi tạo Thread Pool với số lượng thread cố định
+        ExecutorService pool = Executors.newFixedThreadPool(MAX_THREADS);
 
         // tạo một ServerSocket để lắng nghe kết nối từ client trên port 8080
         // cấu trúc try-with-resources đảm bảo rằng ServerSocket sẽ được đóng tự động khi không còn sử dụng nữa, giúp tránh rò rỉ tài nguyên và đảm bảo rằng server có thể được tắt một cách an toàn khi cần thiết
@@ -26,9 +32,9 @@ public class ServerApp {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Một client đã kết nối với IP: " + clientSocket.getInetAddress().getHostAddress());
 
-                // Tạo ra một luồng mới để xử lý giao tiếp với client, điều này cho phép server có thể xử lý nhiều client cùng lúc mà không bị chặn bởi việc xử lý một client cụ thể nào đó. Mỗi khi một client kết nối, server sẽ tạo một instance của ClientHandler (một lớp riêng biệt chịu trách nhiệm xử lý giao tiếp với client) và chạy nó trong một thread mới để đảm bảo rằng server vẫn có thể tiếp tục chấp nhận các kết nối khác trong khi đang xử lý các yêu cầu từ client hiện tại
-                Thread workerThread = new Thread(new ClientHandler(clientSocket));
-                workerThread.start();
+                // Đưa ClientHandler vào Thread Pool để thực thi. 
+                // Pool sẽ quản lý việc cấp phát thread, tái sử dụng thread cũ và tránh tình trạng tràn bộ nhớ (OutOfMemory) khi có quá nhiều client kết nối.
+                pool.execute(new ClientHandler(clientSocket));
             }
             
         } catch (IOException e) {
