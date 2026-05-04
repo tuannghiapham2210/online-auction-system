@@ -30,6 +30,8 @@ public abstract class Item extends Entity implements Serializable {
     // Đa hình (Polymorphism): Ép các lớp con phải tự định nghĩa
     public abstract void printInfo();
     public abstract String getItemType();
+    public abstract String getExtraInfo();
+
 
     //các setters và getters
     public String getName() { return name; }

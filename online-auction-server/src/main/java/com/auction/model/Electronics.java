@@ -19,6 +19,11 @@ public class Electronics extends Item {
     @Override
     public String getItemType() { return "ELECTRONICS"; }
 
+    @Override 
+    public String getExtraInfo() {
+        return String.valueOf(this.warrantyMonths); //trả về số tháng bảo hành của sản phẩm điện tử dưới dạng chuỗi
+    }
+
     public int getWarranty() {
         return this.warrantyMonths;  //trả về số tháng bảo hành của sản phẩm điện tử
     }

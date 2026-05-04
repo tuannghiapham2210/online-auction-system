@@ -2,11 +2,7 @@ package com.auction.dao;
 
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
-import com.auction.model.Electronics;
-import com.auction.model.Art;
-import com.auction.model.Vehicle;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,8 +19,7 @@ public class ItemDAO {
         String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setString(1, item.getName());
             pstmt.setString(2, item.getClass().getSimpleName().toUpperCase());
@@ -36,15 +31,7 @@ public class ItemDAO {
             pstmt.setString(8, item.getImageUrl());
             pstmt.setString(9, item.getDescription());
 
-            String extra = "";
-            if (item instanceof Electronics) {
-                extra = String.valueOf(((Electronics) item).getWarranty());
-            } else if (item instanceof Art) {
-                extra = ((Art) item).getAuthor();
-            } else if (item instanceof Vehicle) {
-                extra = ((Vehicle) item).getEngineType();
-            }
-            pstmt.setString(10, extra);
+            pstmt.setString(10, item.getExtraInfo());
 
             pstmt.setInt(11, item.getSellerId());
 
@@ -64,8 +51,7 @@ public class ItemDAO {
         List<Item> itemList = new ArrayList<>();
         String sql = "SELECT * FROM items";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
@@ -109,8 +95,7 @@ public class ItemDAO {
         // chỉ update giá nếu như giá mới lớn hơn giá hiện tại
         String sql = "UPDATE items SET current_price = ? WHERE id = ? AND current_price < ?";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setDouble(1, newPrice);
             pstmt.setInt(2, itemId);

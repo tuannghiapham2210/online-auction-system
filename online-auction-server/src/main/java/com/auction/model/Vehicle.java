@@ -18,6 +18,12 @@ public class Vehicle extends Item {
         return "VEHICLE";
     }
 
+    @Override
+    public String getExtraInfo() {
+        return this.engineType;
+    }
+
+
     public String getEngineType() {
         return this.engineType; // Đảm bảo biến của bạn tên là engineType
     }
