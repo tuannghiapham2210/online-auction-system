@@ -19,6 +19,12 @@ public class Art extends Item {
     @Override
     public String getItemType() { return "ART"; }
 
+    @Override
+    public String getExtraInfo() {
+        return this.artistName;
+    }
+
+
     public String getAuthor() {
         return this.artistName; //trả về tên tác giả của tác phẩm nghệ thuật
     }

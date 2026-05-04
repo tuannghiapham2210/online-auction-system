@@ -25,7 +25,7 @@ public class ServerApp {
             System.out.println("Đang chờ kết nối từ client...");
 
             //dùng vòng lặp while vô hạn để liên tục chấp nhận kết nối từ nhiều client khác nhau
-            //mỗi khi có một client kết nối, server tạo một thread riêng để giao tiếp với client đó
+            //mỗi khi có một client kết nối, nếu thread pool còn trống, client đó sẽ được xử lý ngay lập tức. Nếu thread pool đã đầy, client sẽ phải chờ cho đến khi có một thread sẵn sàng để xử lý yêu cầu của nó. Điều này giúp đảm bảo rằng server có thể xử lý nhiều client đồng thời mà không bị quá tải.
             while (true) {
                 
                 //chấp nhận kết nối từ client, phương thức accept() sẽ chặn (block) cho đến khi có một client kết nối đến server. Khi một client kết nối thành công, accept() trả về một Socket đại diện cho kết nối đó, cho phép server giao tiếp với client thông qua Socket này
