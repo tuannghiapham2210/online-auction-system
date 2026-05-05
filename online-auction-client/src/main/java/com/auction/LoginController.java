@@ -36,6 +36,7 @@ public class LoginController {
         messageLabel.setStyle("-fx-text-fill: #f59e0b;");
         messageLabel.setText("Đang đăng nhập...");
 
+        // phải tạo thread mới để giao tiếp với server, điều này tránh UI bị đóng băng khi chờ phản hổi 
         new Thread(() -> {
             try (Socket socket = new Socket("127.0.0.1", 8080);
                  PrintWriter writer = new PrintWriter(
@@ -43,6 +44,7 @@ public class LoginController {
                  BufferedReader reader = new BufferedReader(
                          new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
+                //gửi yêu cầu đăng nhập đến server
                 JsonObject req = new JsonObject();
                 req.addProperty("action", "LOGIN");
                 req.addProperty("username", username);
@@ -50,7 +52,8 @@ public class LoginController {
 
                 writer.println(req.toString());
 
-                String line = reader.readLine();
+                //xử lý phản hổi từ server
+                String line = reader.readLine(); //thread sẽ chờ ở đây cho đến khi server gửi phản hổi, nhưng không làm đóng băng UI vì nó chạy ở thread riêng
                 if (line == null) throw new Exception("No response");
 
                 JsonObject res = JsonParser.parseString(line).getAsJsonObject();
@@ -58,18 +61,20 @@ public class LoginController {
                 String status = res.get("status").getAsString();
                 String message = res.get("message").getAsString();
 
-                // ✅ LẤY ROLE + USERID (AN TOÀN)
+                // LẤY ROLE + USERID (AN TOÀN)
                 String role = res.has("role") ? res.get("role").getAsString() : "bidder";
                 int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
 
+                //update UI phải chạy trên JavaFX Application Thread, nên dùng Platform.runLater để đảm bảo an toàn khi cập nhật giao diện từ thread khác
                 javafx.application.Platform.runLater(() -> {
 
                     if ("SUCCESS".equals(status)) {
 
-                        // ✅ LƯU SESSION
+                        // LƯU SESSION
                         Session.role = role;
                         Session.userId = userId;
 
+                        // animation code
                         messageLabel.setStyle("-fx-text-fill: #00ff99;");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
 
