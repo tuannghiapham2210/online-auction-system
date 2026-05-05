@@ -1,6 +1,10 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Art extends Item {
+    private static final Logger logger = LoggerFactory.getLogger(Art.class);
     //thuộc tính riêng của art
     private String artistName;
 
@@ -14,7 +18,9 @@ public class Art extends Item {
 
     //override phương thức printInfo() và getItemType() để cung cấp thông tin cụ thể cho art
     @Override
-    public void printInfo() { System.out.println("[Nghệ thuật] " + name + " - Tác giả: " + artistName); }
+    public void printInfo() {
+        logger.info("[Art] {} - Author: {}", name, artistName);
+    }
 
     @Override
     public String getItemType() { return "ART"; }

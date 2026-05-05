@@ -1,7 +1,7 @@
 package com.auction.dao;
 
-import com.auction.factory.ItemFactory;
-import com.auction.model.Item;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,7 +9,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.auction.factory.ItemFactory;
+import com.auction.model.Item;
+
 public class ItemDAO {
+    private static final Logger logger = LoggerFactory.getLogger(ItemDAO.class);
 
     // =========================================================================
     // 1. THÊM SẢN PHẨM MỚI (Đã tích hợp 11 cột)
@@ -39,7 +43,7 @@ public class ItemDAO {
             if (rowsAffected > 0) isSuccess = true;
 
         } catch (SQLException e) {
-            System.err.println("Lỗi SQL khi insert Item: " + e.getMessage());
+            logger.error("SQL error while inserting Item: {}", e.getMessage());
         }
         return isSuccess;
     }
@@ -82,7 +86,7 @@ public class ItemDAO {
                 itemList.add(item);
             }
         } catch (Exception e) {
-            System.out.println("Lỗi lấy danh sách sản phẩm: " + e.getMessage());
+            logger.error("Error retrieving item list: {}", e.getMessage());
         }
         return itemList;
     }
@@ -102,12 +106,13 @@ public class ItemDAO {
             pstmt.setDouble(3, newPrice);
 
             int rowsAffected = pstmt.executeUpdate();
+            logger.info("Rows affected: {}", rowsAffected);
             if (rowsAffected > 0) {
                 isSuccess = true;
-                System.out.println("Đã cập nhật thành công giá mới: $" + newPrice + " cho Item ID: " + itemId);
+                logger.info("Successfully updated new price: ${} for Item ID: {}", newPrice, itemId);
             }
         } catch (Exception e) {
-            System.err.println("Lỗi khi update giá Item: " + e.getMessage());
+            logger.error("Error updating Item price: {}", e.getMessage());
         }
         return isSuccess;
     }
