@@ -13,7 +13,7 @@ public class ServerApp {
     public static void main(String[] args) {
         // khởi tạo kết nối database ngay khi server khởi động để đảm bảo rằng database đã sẵn sàng trước khi chấp nhận kết nối từ client
         com.auction.dao.DatabaseConnection.getInstance();
-        System.out.println("Starting the Auction Server...");
+        System.out.println("Đang khởi động server...");
 
         // Khởi tạo Thread Pool với số lượng thread cố định
         ExecutorService pool = Executors.newFixedThreadPool(MAX_THREADS);

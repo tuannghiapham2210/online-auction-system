@@ -1,13 +1,13 @@
 package com.auction.dao;
 
-import com.auction.factory.ItemFactory;
-import com.auction.model.Item;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.auction.factory.ItemFactory;
+import com.auction.model.Item;
 
 public class ItemDAO {
 
@@ -102,6 +102,7 @@ public class ItemDAO {
             pstmt.setDouble(3, newPrice);
 
             int rowsAffected = pstmt.executeUpdate();
+            System.out.println("Rows affected: " + rowsAffected);
             if (rowsAffected > 0) {
                 isSuccess = true;
                 System.out.println("Đã cập nhật thành công giá mới: $" + newPrice + " cho Item ID: " + itemId);
