@@ -1,6 +1,10 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Electronics extends Item {
+    private static final Logger logger = LoggerFactory.getLogger(Electronics.class);
     //thuộc tính riêng của electronics
     private int warrantyMonths;
 
@@ -14,10 +18,14 @@ public class Electronics extends Item {
 
     //override phương thức printInfo() và getItemType() để cung cấp thông tin cụ thể cho electronics
     @Override
-    public void printInfo() { System.out.println("[Điện tử] " + name + " - Bảo hành: " + warrantyMonths + " tháng"); }
+    public void printInfo() {
+        logger.info("[Electronics] {} - Warranty: {} months", name, warrantyMonths);
+    }
 
     @Override
-    public String getItemType() { return "ELECTRONICS"; }
+    public String getItemType() {
+        return "ELECTRONICS";
+    }
 
     @Override 
     public String getExtraInfo() {

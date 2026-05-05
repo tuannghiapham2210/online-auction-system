@@ -1,7 +1,11 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Vehicle extends Item {
-    private String engineType; // Xăng, Điện, Dầu...
+    private static final Logger logger = LoggerFactory.getLogger(Vehicle.class);
+    private String engineType; // Gasoline, Electric, Diesel...
 
     public Vehicle(String name, double startingPrice, String endTime, int sellerId, String engineType) {
         super(name, startingPrice, endTime, sellerId);
@@ -10,7 +14,7 @@ public class Vehicle extends Item {
 
     @Override
     public void printInfo() {
-        System.out.println("[Phương tiện] " + name + " | Động cơ: " + engineType);
+        logger.info("[Vehicle] {} | Engine: {}", name, engineType);
     }
 
     @Override
@@ -23,8 +27,7 @@ public class Vehicle extends Item {
         return this.engineType;
     }
 
-
     public String getEngineType() {
-        return this.engineType; // Đảm bảo biến của bạn tên là engineType
+        return this.engineType; // Ensure your variable is named engineType
     }
 }
