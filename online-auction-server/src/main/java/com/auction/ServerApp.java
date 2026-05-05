@@ -20,8 +20,11 @@ public class ServerApp {
 
         // Create a ServerSocket to listen for client connections on port 8080
         // The try-with-resources structure ensures that the ServerSocket will be automatically closed when no longer in use, preventing resource leaks and ensuring the server can be safely shut down when needed
-        try (ExecutorService pool = Executors.newFixedThreadPool(MAX_THREADS);
-             ServerSocket serverSocket = new ServerSocket(PORT)) {
+        // Khởi tạo Thread Pool ở bên ngoài khối try
+        ExecutorService pool = Executors.newFixedThreadPool(MAX_THREADS);
+
+        // Chỉ để lại ServerSocket ở trong try(...) vì nó có hỗ trợ AutoCloseable
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             logger.info("Server started on port {}", PORT);
             logger.info("Waiting for client connections...");
 
