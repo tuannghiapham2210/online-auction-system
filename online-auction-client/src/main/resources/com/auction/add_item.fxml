@@ -11,8 +11,10 @@
                 <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
             </padding>
 
+            <!-- Tiêu đề được tách để chỉnh màu icon ⊕ -->
             <HBox alignment="CENTER_LEFT">
-                <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white;" text="⊕ TẠO PHIÊN ĐẤU GIÁ" />
+                <Label style="-fx-text-fill: #F59E0B; -fx-font-size: 24px; -fx-font-weight: bold;" text="⊕" />
+                <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 0 0 0 8;" text="TẠO PHIÊN ĐẤU GIÁ" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Button onAction="#closePopup" styleClass="btn-close-circle" text="✕" />
             </HBox>
@@ -47,7 +49,7 @@
                 </HBox>
             </VBox>
 
-            <Separator style="-fx-background-color: #2A3441; -fx-border-width: 0;" />
+            <!-- Đã xóa Separator ở đây theo đúng mẫu Ảnh 2 -->
 
             <HBox spacing="15.0">
                 <VBox HBox.hgrow="ALWAYS" spacing="8.0">

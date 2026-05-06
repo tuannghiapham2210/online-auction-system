@@ -424,11 +424,28 @@
     -fx-prompt-text-fill: #5E6A7D;
     -fx-padding: 12;
 }
+
 .target-textfield:focused, .target-textarea:focused {
     -fx-background-color: transparent;
 }
-.target-textarea .content {
+
+/* Fix triệt để nền trắng của TextArea trong JavaFX */
+.target-textarea .scroll-pane {
     -fx-background-color: transparent;
+}
+
+.target-textarea .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.target-textarea .scroll-pane .content {
+    -fx-background-color: transparent;
+}
+
+/* Xóa viền focus mặc định của ScrollPane bên trong TextArea */
+.target-textarea:focused .scroll-pane {
+    -fx-background-insets: 0;
+    -fx-padding: 0;
 }
 
 /* ComboBox custom */
