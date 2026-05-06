@@ -68,4 +68,13 @@ class ItemFactoryTest {
         assertEquals(30, vehicle.getSellerId());
         assertEquals("Electric", vehicle.getEngineType());
     }
+    @Test
+    void createItem_unknownType_throwsIllegalArgumentException() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> ItemFactory.createItem("BOOK", "Dune", 10.0, "2026-01-01", 1, "n/a")
+        );
+        assertTrue(ex.getMessage().toUpperCase().contains("KHÔNG"));
+        assertTrue(ex.getMessage().toUpperCase().contains("HỆ THỐNG"));
+    }
 }
