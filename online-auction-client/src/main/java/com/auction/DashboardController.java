@@ -9,6 +9,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.BufferedReader;
@@ -46,9 +47,15 @@ public class DashboardController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
             Parent root = loader.load();
 
-            Stage stage = (Stage) itemGrid.getScene().getWindow();
-            stage.setScene(new Scene(root, 600, 500));
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1280, 720));
             stage.setTitle("Đăng sản phẩm");
+            
+            // Xử lý sự kiện khi đóng cửa sổ pop-up (load lại dữ liệu)
+            stage.setOnHidden(event -> loadDataFromServer());
+            
+            stage.showAndWait();
 
         } catch (Exception e) {
             e.printStackTrace();
