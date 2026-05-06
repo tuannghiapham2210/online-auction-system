@@ -1,8 +1,14 @@
 package com.auction.dao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.*;
 
 public class UserDAO {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserDAO.class);
+
 
     private Connection getConnection() {
         return DatabaseConnection.getInstance().getConnection();
@@ -28,7 +34,7 @@ public class UserDAO {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("User registration failed: {}", e.getMessage(), e);
         }
         return false;
     }
@@ -46,7 +52,7 @@ public class UserDAO {
             return rs.next();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Login failed: {}", e.getMessage(), e);
         }
 
         return false;
@@ -68,7 +74,7 @@ public class UserDAO {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to get user role: {}", e.getMessage(), e);
         }
 
         return null;
@@ -88,7 +94,7 @@ public class UserDAO {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to get user id: {}", e.getMessage(), e);
         }
 
         return 0;

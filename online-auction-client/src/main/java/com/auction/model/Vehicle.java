@@ -1,7 +1,12 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Vehicle extends Item {
-    private String engineType; // Xăng, Điện, Dầu...
+    private static final Logger logger = LoggerFactory.getLogger(Vehicle.class);
+
+    private String engineType; // Gas, Electric, Diesel...
 
     public Vehicle(String name, double startingPrice, String endTime, int sellerId, String engineType) {
         super(name, startingPrice, endTime, sellerId);
@@ -10,12 +15,11 @@ public class Vehicle extends Item {
 
     @Override
     public void printInfo() {
-        System.out.println("[Phương tiện] " + name + " | Động cơ: " + engineType);
+        logger.info("Vehicle item: {} - Engine type: {}", name, engineType);
     }
 
     @Override
     public String getItemType() {
         return "VEHICLE";
     }
-
-    }
+}
