@@ -77,4 +77,11 @@ class ItemFactoryTest {
         assertTrue(ex.getMessage().toUpperCase().contains("KHÔNG"));
         assertTrue(ex.getMessage().toUpperCase().contains("HỆ THỐNG"));
     }
+    @Test
+    void createItem_electronics_invalidWarranty_throwsNumberFormatException() {
+        assertThrows(
+                NumberFormatException.class,
+                () -> ItemFactory.createItem("ELECTRONICS", "Phone", 100.0, "2026-12-31", 10, "not-a-number")
+        );
+    }
 }
