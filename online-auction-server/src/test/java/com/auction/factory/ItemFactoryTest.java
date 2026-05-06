@@ -52,4 +52,20 @@ class ItemFactoryTest {
         assertEquals(20, art.getSellerId());
         assertEquals("Leonardo da Vinci", art.getAuthor());
     }
+    @Test
+    void createItem_vehicle_returnsVehicle() {
+        Item item = ItemFactory.createItem("VEHICLE", "Tesla Model S", 50000.0, "2028-02-02", 30, "Electric");
+
+        assertNotNull(item);
+        assertInstanceOf(Vehicle.class, item);
+        assertEquals("VEHICLE", item.getItemType());
+        assertEquals("Electric", item.getExtraInfo());
+
+        Vehicle vehicle = (Vehicle) item;
+        assertEquals("Tesla Model S", vehicle.getName());
+        assertEquals(50000.0, vehicle.getStartingPrice());
+        assertEquals("2028-02-02", vehicle.getEndTime());
+        assertEquals(30, vehicle.getSellerId());
+        assertEquals("Electric", vehicle.getEngineType());
+    }
 }
