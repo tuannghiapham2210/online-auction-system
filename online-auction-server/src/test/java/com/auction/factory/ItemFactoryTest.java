@@ -7,3 +7,12 @@ import com.auction.model.Vehicle;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
+
+class ItemFactoryTest {
+
+    @Test
+    void createItem_nullType_returnsNull() {
+        Item item = ItemFactory.createItem(null, "Phone", 100.0, "2026-12-31", 1, "12");
+        assertNull(item);
+    }
+}
