@@ -36,4 +36,20 @@ class ItemFactoryTest {
         assertEquals(10, electronics.getSellerId());
         assertEquals(18, electronics.getWarranty());
     }
+    @Test
+    void createItem_art_returnsArt() {
+        Item item = ItemFactory.createItem("ART", "Mona Lisa", 1000.0, "2027-01-01", 20, "Leonardo da Vinci");
+
+        assertNotNull(item);
+        assertInstanceOf(Art.class, item);
+        assertEquals("ART", item.getItemType());
+        assertEquals("Leonardo da Vinci", item.getExtraInfo());
+
+        Art art = (Art) item;
+        assertEquals("Mona Lisa", art.getName());
+        assertEquals(1000.0, art.getStartingPrice());
+        assertEquals("2027-01-01", art.getEndTime());
+        assertEquals(20, art.getSellerId());
+        assertEquals("Leonardo da Vinci", art.getAuthor());
+    }
 }
