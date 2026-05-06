@@ -15,4 +15,9 @@ class ItemFactoryTest {
         Item item = ItemFactory.createItem(null, "Phone", 100.0, "2026-12-31", 1, "12");
         assertNull(item);
     }
+    @Test
+    void createItem_emptyType_returnsNull() {
+        Item item = ItemFactory.createItem("", "Phone", 100.0, "2026-12-31", 1, "12");
+        assertNull(item);
+    }
 }
