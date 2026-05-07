@@ -5,9 +5,13 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -123,5 +127,20 @@ public class BidRoomController {
 
             historyLogs.add(0, "🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
         });
+    }
+
+    @FXML
+    private void handleLeaveRoom() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) bidHistoryList.getScene().getWindow();
+            stage.setScene(new Scene(root, 1280, 720));
+            stage.setTitle("Đấu giá - Dashboard");
+
+        } catch (Exception e) {
+            logger.error("Failed to leave room: {}", e.getMessage(), e);
+        }
     }
 }
