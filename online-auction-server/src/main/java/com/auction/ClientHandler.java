@@ -8,6 +8,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
@@ -15,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHandler implements Runnable {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
     // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
     private static final List<ClientHandler> activeClients = new ArrayList<>();
@@ -272,7 +276,7 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (Exception e) {
-            System.err.println("Lỗi xử lý luồng đặt giá: " + e.getMessage());
+            logger.error("Error processing bid stream: {}", e.getMessage());
         }
     }
 

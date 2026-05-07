@@ -1,12 +1,18 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 public class Seller extends User {
+    private static final Logger logger = LoggerFactory.getLogger(Seller.class);
+
     public Seller(String username, String password) {
         super(username, password, "SELLER");
     }
 
     @Override
     public void displayRoleMenu() {
-        System.out.println("Giao diện: Quản lý sản phẩm, Thêm đồ đấu giá");
+        logger.info("Interface: Manage products, Add auction items");
     }
 }
