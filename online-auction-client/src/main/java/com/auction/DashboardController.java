@@ -74,7 +74,7 @@ public class DashboardController {
 
             BidRoomController bidRoomCtrl = loader.getController();
 
-            int myUserId = 1;
+            int myUserId = Session.userId;
 
             bidRoomCtrl.setAuctionData(
                     item.getId(),

@@ -29,8 +29,8 @@ public class AddItemController {
 
     @FXML private Label messageLabel; // Nhãn dùng để hiển thị thông báo lỗi hoặc thành công cho người dùng
 
-    // Giả lập ID của người bán (Seller). Trong thực tế, ID này sẽ được lấy từ phiên đăng nhập (Session) của User.
-    private int currentSellerId = 1;
+    // Lấy ID seller từ phiên đăng nhập (không hardcode)
+    private int currentSellerId = Session.userId;
 
     /**
      * Hàm initialize() được JavaFX tự động gọi ngay sau khi file FXML được load lên.
