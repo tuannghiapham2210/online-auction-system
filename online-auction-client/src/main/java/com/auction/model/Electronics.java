@@ -1,6 +1,11 @@
 package com.auction.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Electronics extends Item {
+    private static final Logger logger = LoggerFactory.getLogger(Electronics.class);
+
     private int warrantyMonths;
 
     public Electronics(String name, double startingPrice, String endTime, int sellerId, int warrantyMonths) {
@@ -9,10 +14,12 @@ public class Electronics extends Item {
     }
 
     @Override
-    public void printInfo() { System.out.println("[Điện tử] " + name + " - Bảo hành: " + warrantyMonths + " tháng"); }
-
-    @Override
-    public String getItemType() { return "ELECTRONICS"; }
-
+    public void printInfo() {
+        logger.info("Electronics item: {} - Warranty: {} months", name, warrantyMonths);
     }
 
+    @Override
+    public String getItemType() {
+        return "ELECTRONICS";
+    }
+}

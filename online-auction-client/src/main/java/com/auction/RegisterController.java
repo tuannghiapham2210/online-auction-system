@@ -12,7 +12,12 @@ import javafx.util.Duration;
 import java.io.*;
 import java.net.Socket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RegisterController {
+
+    private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
 
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
@@ -118,7 +123,7 @@ public class RegisterController {
                     getClass().getResource("login.fxml"));
             usernameField.getScene().setRoot(root);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to navigate to login screen: {}", e.getMessage(), e);
         }
     }
 }

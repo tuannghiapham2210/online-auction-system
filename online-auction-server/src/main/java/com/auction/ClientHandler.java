@@ -8,6 +8,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
@@ -16,12 +18,13 @@ import java.util.List;
 
 public class ClientHandler implements Runnable {
 
-    // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
+    private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
+
+    // List of currently connected clients shared across all ClientHandler instances, so we can broadcast events
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
-    private Socket clientSocket; // socket đại diện cho kết nối giữa server và client, cho phép giao tiếp hai chiều thông qua luồng dữ liệu (input/output stream)
-    private PrintWriter writer; //printwriter để gửi dữ liệu từ server đến client.
-
+    private Socket clientSocket;
+    private PrintWriter writer;
     //constructor
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -53,7 +56,7 @@ public class ClientHandler implements Runnable {
             //readline() sẽ trả về null khi client ngắt kết nối, do đó vòng lặp sẽ dừng lại khi client ngắt kết nối hoặc có lỗi xảy ra trong quá trình đọc dữ liệu.
             //readline() sẽ block cho đến khi có một dòng dữ liệu được gửi từ client, do đó nếu client không gửi gì và không ngắt kết nối, thread sẽ chờ ở đây mà không tiêu tốn tài nguyên CPU.
             while ((clientMessage = reader.readLine()) != null) {
-                System.out.println("Nhận từ Client: " + clientMessage);
+                logger.info("Received message from client: {}", clientMessage);
 
                 JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
                 String action = request.get("action").getAsString();
@@ -88,8 +91,7 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (Exception e) {
-            System.err.println("Lỗi giao tiếp: " + e.getMessage());
-
+            logger.error("Communication error: {}", e.getMessage(), e);
         } finally {
             // khi client ngắt kết nối hoặc có lỗi xảy ra, đảm bảo rằng client được loại bỏ khỏi danh sách activeClients để tránh việc gửi thông báo đến client đã ngắt kết nối và giải phóng tài nguyên liên quan đến kết nối đó
             // sử dụng synchronized để đảm bảo rằng việc loại bỏ client khỏi danh sách activeClients là an toàn trong môi trường đa luồng
@@ -99,10 +101,8 @@ public class ClientHandler implements Runnable {
 
             try {
                 clientSocket.close();
-
             } catch (Exception e) {
-                e.printStackTrace();
-                
+                logger.warn("Failed to close client socket: {}", e.getMessage(), e);
             }
         }
     }
@@ -158,11 +158,11 @@ public class ClientHandler implements Runnable {
             writer.println(response.toString());
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("REGISTER failed: {}", e.getMessage(), e);
 
             JsonObject response = new JsonObject();
             response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi server!");
+            response.addProperty("message", "Server error!");
 
             writer.println(response.toString());
         }
@@ -170,7 +170,7 @@ public class ClientHandler implements Runnable {
 
     // ================= ADD ITEM =================
     private void handleAddItem(JsonObject request) {
-        System.out.println("Đang xử lý chức năng thêm hàng...");
+        logger.info("Processing ADD_ITEM request...");
         try {
             String name = request.get("name").getAsString();
             String type = request.get("type").getAsString();
@@ -202,21 +202,21 @@ public class ClientHandler implements Runnable {
             //gửi thông báo về client
             JsonObject response = new JsonObject();
             if (isSuccess) {
-                System.out.println("✅ [Database] Đã lưu thành công [" + name + "] vào bảng items!");
+                logger.info("Saved item successfully [{}] into items table.", name);
                 response.addProperty("status", "SUCCESS");
-                response.addProperty("message", "Đăng bán sản phẩm thành công!");
-
+                response.addProperty("message", "Item listing created successfully!");
             } else {
-                System.err.println("❌ [Database] Lỗi không thể lưu sản phẩm!");
+                logger.error("Failed to save item [{}] into items table.", name);
                 response.addProperty("status", "FAIL");
-                response.addProperty("message", "Lỗi khi lưu Database.");
+                response.addProperty("message", "Database error while saving the item.");
             }
             writer.println(response.toString());
 
         } catch (Exception e) {
             JsonObject errorResponse = new JsonObject();
             errorResponse.addProperty("status", "ERROR");
-            errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
+            errorResponse.addProperty("message", "Data error: " + e.getMessage());
+            logger.error("ADD_ITEM failed: {}", e.getMessage(), e);
             writer.println(errorResponse.toString());
         }
     }
@@ -243,7 +243,7 @@ public class ClientHandler implements Runnable {
     private void handlePlaceBid(JsonObject request) {
         try {
             // lây dữ liệu từ client gửi lên, bao gồm itemId (ID của sản phẩm đang đấu giá), bidderId (ID của người đặt giá) và bidAmount (số tiền mà người đó muốn đặt)
-            System.out.println("[SERVER] Vừa nhận được yêu cầu từ Client: " + request.toString());
+            logger.info("Received PLACE_BID request: {}", request);
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
@@ -262,17 +262,18 @@ public class ClientHandler implements Runnable {
                 broadcastMsg.addProperty("newPrice", bidAmount);
                 broadcastMsg.addProperty("bidderId", bidderId);
 
-                System.out.println("✅ Đã ghi nhận giá mới. Bắt đầu phát thanh...");
+                logger.info("New bid accepted. Broadcasting price update...");
                 broadcast(broadcastMsg);
             } else {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Lỗi lưu Database khi đặt giá!");
+                errorMsg.addProperty("message", "Database error while placing the bid!");
+                logger.error("Failed to place bid for itemId={}, bidderId={}, bidAmount={}", itemId, bidderId, bidAmount);
                 this.writer.println(errorMsg.toString());
             }
 
         } catch (Exception e) {
-            System.err.println("Lỗi xử lý luồng đặt giá: " + e.getMessage());
+            logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
         }
     }
 
@@ -285,7 +286,7 @@ public class ClientHandler implements Runnable {
                         client.writer.println(message.toString()); // gửi thông báo đến tất cả client đang kết nối, mỗi client sẽ nhận được một JSON chứa thông tin về giá mới và người đặt giá để cập nhật giao diện người dùng của họ với giá mới nhất.
                     }
                 } catch (Exception e) {
-                    System.err.println("Lỗi khi gửi dữ liệu cho client: " + e.getMessage());
+                    logger.error("Failed to send data to client: {}", e.getMessage(), e);
                 }
             }
         }
