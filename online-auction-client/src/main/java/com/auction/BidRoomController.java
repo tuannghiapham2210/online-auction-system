@@ -5,9 +5,13 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -16,7 +20,12 @@ import java.net.Socket;
 
 import com.auction.network.ServerListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BidRoomController {
+
+    private static final Logger logger = LoggerFactory.getLogger(BidRoomController.class);
 
     @FXML private Label itemNameLabel;
     @FXML private Label currentPriceLabel;
@@ -98,11 +107,11 @@ public class BidRoomController {
 
             if (out != null) {
                 out.println(request.toString());
-                System.out.println("[CLIENT] Đã bắn đi gói tin: " + request.toString());
-                bidAmountField.clear(); // Xóa ô nhập sau khi gửi
+                logger.info("Sent PLACE_BID request: {}", request);
+                bidAmountField.clear(); // Clear input after sending
             }
         } catch (NumberFormatException e) {
-            System.out.println("Lỗi: Phải nhập số!");
+            logger.warn("Invalid bid amount. Expected a number, got: {}", bidText, e);
         }
     }
 
@@ -118,5 +127,20 @@ public class BidRoomController {
 
             historyLogs.add(0, "🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
         });
+    }
+
+    @FXML
+    private void handleLeaveRoom() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = (Stage) bidHistoryList.getScene().getWindow();
+            stage.setScene(new Scene(root, 1280, 720));
+            stage.setTitle("Đấu giá - Dashboard");
+
+        } catch (Exception e) {
+            logger.error("Failed to leave room: {}", e.getMessage(), e);
+        }
     }
 }

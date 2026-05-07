@@ -3,9 +3,13 @@ package com.auction.network; // Đã sửa lại cho đúng thư mục của tea
 import com.auction.BidRoomController; // Import Controller ở thư mục ngoài
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 
 public class ServerListener implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(ServerListener.class);
     private BufferedReader in;
     private BidRoomController controller;
 
@@ -19,7 +23,7 @@ public class ServerListener implements Runnable {
         try {
             String message;
             while ((message = in.readLine()) != null) {
-                System.out.println("Client nhận được: " + message);
+                logger.info("Client received message: {}", message);
                 
                 JsonObject json = JsonParser.parseString(message).getAsJsonObject();
                 String action = json.has("action") ? json.get("action").getAsString() : "";
@@ -32,7 +36,7 @@ public class ServerListener implements Runnable {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Ngắt kết nối lắng nghe: " + e.getMessage());
+            logger.warn("Listener disconnected: {}", e.getMessage(), e);
         }
     }
 }

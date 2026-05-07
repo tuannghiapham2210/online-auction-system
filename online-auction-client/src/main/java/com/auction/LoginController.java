@@ -14,8 +14,12 @@ import java.net.Socket;
 
 // ✅ SESSION
 import com.auction.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoginController {
+
+    private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
@@ -99,7 +103,7 @@ public class LoginController {
                                         getClass().getResource("dashboard.fxml"));
                                 usernameField.getScene().setRoot(root);
                             } catch (Exception ex) {
-                                ex.printStackTrace();
+                                logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
                             }
                         });
                         delay.play();
@@ -124,7 +128,7 @@ public class LoginController {
                     getClass().getResource("register.fxml"));
             usernameField.getScene().setRoot(root);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to navigate to register screen: {}", e.getMessage(), e);
         }
     }
 }

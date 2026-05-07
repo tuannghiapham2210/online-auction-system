@@ -1,11 +1,15 @@
 package com.auction.dao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseConnection {
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseConnection.class);
 
     //từ khóa khóa volatile đảm bảo rằng khi một thread cập nhật giá trị của instance, tất cả các thread khác sẽ thấy được sự thay đổi đó ngay lập tức. Điều này ngăn chặn việc tạo ra nhiều instance của singleton trong môi trường đa luồng.
     private static volatile DatabaseConnection instance;
@@ -19,7 +23,7 @@ public class DatabaseConnection {
         try {
             //kết nối đến SQlite và tạo file database nếu chưa tồn tại
             connection = DriverManager.getConnection(DB_URL);
-            System.out.println("[Database] Đã kết nối thành công đến SQLite database!");
+            logger.info("Connected successfully to SQLite database.");
 
             //tự động tạo bảng nếu database trống
             createTables();
@@ -28,8 +32,7 @@ public class DatabaseConnection {
             seedData();
 
         } catch (SQLException e) {
-            System.err.println("[Database] Lỗi kết nối: " + e.getMessage());
-
+            logger.error("Database connection error: {}", e.getMessage(), e);
         }
     }
 
@@ -57,8 +60,7 @@ public class DatabaseConnection {
             }
 
         } catch (SQLException e) {
-            System.err.println("[Database] Lỗi khi mở lại kết nối: " + e.getMessage());
-            
+            logger.error("Failed to re-open SQLite connection: {}", e.getMessage(), e);
         }
         return connection;
     }
@@ -106,10 +108,10 @@ public class DatabaseConnection {
             stmt.execute(sqlUsers);  //dùng execute để thực thi những câu lệnh mang tính khởi tạo.
             stmt.execute(sqlItems);
             stmt.execute(sqlBids);
-            System.out.println("[Database] Đã kiểm tra/khởi tạo thành công 3 bảng: users, items, bids.");
+            logger.info("Ensured database tables exist: users, items, bids.");
 
         } catch (java.sql.SQLException e) {
-            System.err.println("[Database] Lỗi tạo bảng: " + e.getMessage());
+            logger.error("Database table creation error: {}", e.getMessage(), e);
         }
     } //cấu trúc try-with-resources đảm bảo rằng statement sẽ được tự động đóng sau khi thực thi xong, tránh rò rỉ tài nguyên.
 
@@ -128,9 +130,8 @@ public class DatabaseConnection {
             }
 
         } catch (SQLException e) {
-            System.err.println("[Database] Lỗi xác thực người dùng: " + e.getMessage());
+            logger.error("User authentication error: {}", e.getMessage(), e);
             return false;
-
         }
     }
 
@@ -150,7 +151,7 @@ public class DatabaseConnection {
                         + "('seller1', '123', 'SELLER')";
 
                 stmt.executeUpdate(insertSql);
-                System.out.println("[Database] Bơm thành công 3 tài khoản test!");
+                logger.info("Seeded 3 test accounts.");
 
                 // Bơm tiếp dữ liệu cho bảng items 
                 String countItemsSql = "SELECT COUNT(*) FROM items"; // đếm số hàng trong bảng items
@@ -160,13 +161,12 @@ public class DatabaseConnection {
                         String insertItemSql = "INSERT INTO items (id, name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
                                 "VALUES (1, 'Laptop Gaming ASUS ROG', 'ELECTRONICS', 15000.0, 15000.0, 500.0, '2026-12-31 23:59:59', 24, 'https://cdn.tgdd.vn/Products/Images/44/304634/asus-rog-strix-scar-18-g834jx-i9-n6039w-thumb-600x600.jpg', 'Máy mới 100% fullbox', '24', 3)";
                         stmt.executeUpdate(insertItemSql);
-                        System.out.println("[Database] Bơm thành công 1 sản phẩm mẫu (Laptop)!");
+                        logger.info("Seeded 1 sample item (Laptop).");
                     }
                 }
             }
         } catch (SQLException e) {
-
-            System.err.println("[Database] Lỗi bơm dữ liệu: " + e.getMessage());
+            logger.error("Database seeding error: {}", e.getMessage(), e);
         }
     }
 }

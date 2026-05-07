@@ -1,8 +1,13 @@
 package com.auction.dao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.PreparedStatement;
 
 public class BidTransactionDAO {
+
+    private static final Logger logger = LoggerFactory.getLogger(BidTransactionDAO.class);
     
     // Hàm lưu lịch sử đấu giá
     public boolean insertBidTransaction(int itemId, int bidderId, double bidAmount) {
@@ -21,7 +26,7 @@ public class BidTransactionDAO {
                 isSuccess = true;
             }
         } catch (Exception e) {
-            System.err.println("Lỗi khi lưu lịch sử Bid: " + e.getMessage());
+            logger.error("Failed to save bid transaction: {}", e.getMessage(), e);
         }
         return isSuccess;
     }

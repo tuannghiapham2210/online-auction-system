@@ -9,7 +9,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +25,8 @@ import java.util.List;
 import com.auction.Session;
 
 public class DashboardController {
+
+    private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     @FXML private Button btnLogout;
     @FXML private javafx.scene.layout.FlowPane itemGrid;
@@ -46,12 +51,18 @@ public class DashboardController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
             Parent root = loader.load();
 
-            Stage stage = (Stage) itemGrid.getScene().getWindow();
-            stage.setScene(new Scene(root, 600, 500));
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root, 1280, 720));
             stage.setTitle("Đăng sản phẩm");
+            
+            // Xử lý sự kiện khi đóng cửa sổ pop-up (load lại dữ liệu)
+            stage.setOnHidden(event -> loadDataFromServer());
+            
+            stage.showAndWait();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Failed to open Add Item dialog: {}", e.getMessage(), e);
         }
     }
 
@@ -77,8 +88,7 @@ public class DashboardController {
             stage.setTitle("Phòng Đấu Giá: " + item.getName());
 
         } catch (Exception e) {
-            System.err.println("Lỗi khi mở phòng đấu giá: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Failed to open bid room: {}", e.getMessage(), e);
         }
     }
 
@@ -165,7 +175,7 @@ public class DashboardController {
 
             String responseStr = in.readLine();
 
-            System.out.println("[DASHBOARD] Server gửi về: " + responseStr);
+            logger.info("Dashboard received response from server: {}", responseStr);
 
             if (responseStr != null) {
 
@@ -210,7 +220,7 @@ public class DashboardController {
             }
 
         } catch (Exception e) {
-            System.out.println("Lỗi mạng: " + e.getMessage());
+            logger.error("Network error while loading items: {}", e.getMessage(), e);
         }
     }
 
@@ -224,7 +234,7 @@ public class DashboardController {
             stage.setScene(new Scene(root, 640, 480));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to handle logout: {}", e.getMessage(), e);
         }
     }
 }

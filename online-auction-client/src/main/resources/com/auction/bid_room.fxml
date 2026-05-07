@@ -14,6 +14,17 @@
 
 <StackPane styleClass="background" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
    <children>
+      <!-- Top-left: Về sảnh -->
+      <HBox alignment="TOP_LEFT" spacing="10" style="-fx-padding: 20 0 0 20;">
+         <children>
+            <Button onAction="#handleLeaveRoom"
+                    prefHeight="50.0"
+                    prefWidth="190.0"
+                    style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 22px; -fx-background-radius: 18; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1;"
+                    text="↩ Về sảnh" />
+         </children>
+      </HBox>
+
       <VBox alignment="CENTER" maxHeight="750.0" maxWidth="900.0" spacing="20.0">
          <children>
             <VBox spacing="15.0" styleClass="card" VBox.vgrow="NEVER">

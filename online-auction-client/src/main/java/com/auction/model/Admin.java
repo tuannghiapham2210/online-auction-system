@@ -12,6 +12,7 @@ public class Admin extends User {
 
     @Override
     public void displayRoleMenu() {
-        logger.info("Interface: Manage the entire system");
+        logger.info("Role menu: Manage the entire system");
+
     }
 }

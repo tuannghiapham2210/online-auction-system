@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public class Electronics extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Electronics.class);
+
     private int warrantyMonths;
 
     public Electronics(String name, double startingPrice, String endTime, int sellerId, int warrantyMonths) {
@@ -14,6 +15,7 @@ public class Electronics extends Item {
 
     @Override
     public void printInfo() {
+
         logger.info("[Electronics] {} - Warranty: {} months", name, warrantyMonths);
     }
 
@@ -21,3 +23,4 @@ public class Electronics extends Item {
     public String getItemType() { return "ELECTRONICS"; }
 
     }
+

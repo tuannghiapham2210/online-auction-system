@@ -13,6 +13,8 @@ public class Seller extends User {
 
     @Override
     public void displayRoleMenu() {
-        logger.info("Interface: Manage products, Add auction items");
+
+        logger.info("Role menu: Manage products and add auction items");
+
     }
 }

@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 
 public class Vehicle extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Vehicle.class);
+
     private String engineType; // Gasoline, Electric, Diesel...
+
 
     public Vehicle(String name, double startingPrice, String endTime, int sellerId, String engineType) {
         super(name, startingPrice, endTime, sellerId);

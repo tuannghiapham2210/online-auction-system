@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public class Art extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Art.class);
+
     private String artistName;
 
     public Art(String name, double startingPrice, String endTime, int sellerId, String artistName) {
@@ -21,3 +22,4 @@ public class Art extends Item {
     public String getItemType() { return "ART"; }
 
     }
+
