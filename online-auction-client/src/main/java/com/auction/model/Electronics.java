@@ -15,11 +15,12 @@ public class Electronics extends Item {
 
     @Override
     public void printInfo() {
-        logger.info("Electronics item: {} - Warranty: {} months", name, warrantyMonths);
+
+        logger.info("[Electronics] {} - Warranty: {} months", name, warrantyMonths);
     }
 
     @Override
-    public String getItemType() {
-        return "ELECTRONICS";
+    public String getItemType() { return "ELECTRONICS"; }
+
     }
-}
+

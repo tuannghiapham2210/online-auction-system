@@ -20,7 +20,7 @@ public class ClientHandler implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
-    // List of currently connected clients shared across all ClientHandler instances, so we can broadcast events
+    // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
     private Socket clientSocket;
@@ -273,7 +273,7 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (Exception e) {
-            logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
+            logger.error("Error processing bid stream: {}", e.getMessage());
         }
     }
 

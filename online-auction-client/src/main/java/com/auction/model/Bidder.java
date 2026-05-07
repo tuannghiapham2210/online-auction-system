@@ -12,6 +12,6 @@ public class Bidder extends User {
 
     @Override
     public void displayRoleMenu() {
-        logger.info("Role menu: View auction list and place bids");
+        logger.info("Interface: View auction list, Place bids");
     }
 }

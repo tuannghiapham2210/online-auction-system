@@ -6,7 +6,8 @@ import org.slf4j.LoggerFactory;
 public class Vehicle extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Vehicle.class);
 
-    private String engineType; // Gas, Electric, Diesel...
+    private String engineType; // Gasoline, Electric, Diesel...
+
 
     public Vehicle(String name, double startingPrice, String endTime, int sellerId, String engineType) {
         super(name, startingPrice, endTime, sellerId);
@@ -15,11 +16,12 @@ public class Vehicle extends Item {
 
     @Override
     public void printInfo() {
-        logger.info("Vehicle item: {} - Engine type: {}", name, engineType);
+        logger.info("[Vehicle] {} | Engine: {}", name, engineType);
     }
 
     @Override
     public String getItemType() {
         return "VEHICLE";
     }
+
 }

@@ -15,11 +15,11 @@ public class Art extends Item {
 
     @Override
     public void printInfo() {
-        logger.info("Art item: {} - Artist: {}", name, artistName);
+        logger.info("[Art] {} - Author: {}", name, artistName);
     }
 
     @Override
-    public String getItemType() {
-        return "ART";
+    public String getItemType() { return "ART"; }
+
     }
-}
+
