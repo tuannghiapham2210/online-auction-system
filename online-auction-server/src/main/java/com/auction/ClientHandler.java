@@ -97,6 +97,7 @@ public class ClientHandler implements Runnable {
             // sử dụng synchronized để đảm bảo rằng việc loại bỏ client khỏi danh sách activeClients là an toàn trong môi trường đa luồng
             synchronized (activeClients) {
                 activeClients.remove(this);
+                logger.info("A client has just disconnected. Removed from the list.");
             }
 
             try {
@@ -273,7 +274,7 @@ public class ClientHandler implements Runnable {
             }
 
         } catch (Exception e) {
-            logger.error("Error processing bid stream: {}", e.getMessage());
+            logger.error("Error processing bid stream: {}", e.getMessage(), e);
         }
     }
 
