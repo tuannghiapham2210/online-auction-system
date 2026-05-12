@@ -4,8 +4,18 @@ import com.auction.model.Item;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.control.Label;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -19,10 +29,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
-
-// ✅ THÊM SESSION
-import com.auction.Session;
 
 public class DashboardController {
 
@@ -31,42 +39,62 @@ public class DashboardController {
     @FXML private Button btnLogout;
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
-    // ✅ THÊM BUTTON ĐĂNG SẢN PHẨM
     @FXML private Button btnAddItem;
 
     @FXML
     public void initialize() {
         loadDataFromServer();
 
-        // ✅ FIX: CHỈ SELLER MỚI THẤY NÚT
         if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
             btnAddItem.setVisible(false);
         }
     }
 
-    // ================= ADD ITEM =================
     @FXML
     private void handleAddItem() {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
-            Parent root = loader.load();
+            Parent currentRoot = btnAddItem.getScene().getRoot();
+            
+            StackPane rootPane = (StackPane) currentRoot;
+            Node mainContent = rootPane.getChildren().get(0);
 
-            Stage stage = new Stage();
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root, 1280, 720));
-            stage.setTitle("Đăng sản phẩm");
-            
-            // Xử lý sự kiện khi đóng cửa sổ pop-up (load lại dữ liệu)
-            stage.setOnHidden(event -> loadDataFromServer());
-            
-            stage.showAndWait();
+            if (rootPane.lookup("#dark-overlay") != null) {
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
+            Parent addItemGroup = loader.load();
+            AddItemController addItemCtrl = loader.getController();
+
+            GaussianBlur blur = new GaussianBlur(15);
+            mainContent.setEffect(blur);
+
+            Region darkOverlay = new Region();
+            darkOverlay.setId("dark-overlay");
+            darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
+
+            if (addItemGroup instanceof Region) {
+                ((Region) addItemGroup).setMaxSize(
+                        Region.USE_PREF_SIZE, 
+                        Region.USE_PREF_SIZE
+                );
+            }
+
+            rootPane.getChildren().addAll(darkOverlay, addItemGroup);
+
+            addItemCtrl.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, addItemGroup);
+                loadDataFromServer();
+            });
 
         } catch (Exception e) {
             logger.error("Failed to open Add Item dialog: {}", e.getMessage(), e);
         }
     }
 
-    // ================= BID ROOM =================
     private void openBidRoom(Item item) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
@@ -92,62 +120,49 @@ public class DashboardController {
         }
     }
 
-    // ================= ITEM CARD =================
-    private javafx.scene.layout.VBox createItemCard(com.auction.model.Item item) {
-
-        javafx.scene.layout.VBox card = new javafx.scene.layout.VBox();
+    private VBox createItemCard(Item item) {
+        VBox card = new VBox();
         card.setSpacing(10);
         card.getStyleClass().add("item-card");
-        card.setPadding(new javafx.geometry.Insets(15));
+        card.setPadding(new Insets(15));
         card.setPrefWidth(280);
 
-        javafx.scene.layout.HBox badgeBox = new javafx.scene.layout.HBox();
-        javafx.scene.control.Label badge = new javafx.scene.control.Label("LIVE");
+        HBox badgeBox = new HBox();
+        Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
         badgeBox.getChildren().add(badge);
 
-        javafx.scene.layout.Region imageRegion = new javafx.scene.layout.Region();
+        Region imageRegion = new Region();
         imageRegion.setPrefHeight(150);
         imageRegion.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
 
-        javafx.scene.control.Label subtitle =
-                new javafx.scene.control.Label("LÔ-" + item.getId() + " • " + item.getItemType());
+        Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
         subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
 
-        javafx.scene.control.Label title = new javafx.scene.control.Label(item.getName());
+        Label title = new Label(item.getName());
         title.getStyleClass().add("card-title");
         title.setPrefHeight(50);
         title.setWrapText(true);
 
-        javafx.scene.layout.HBox priceHBox = new javafx.scene.layout.HBox();
-        priceHBox.setAlignment(javafx.geometry.Pos.BOTTOM_LEFT);
+        HBox priceHBox = new HBox();
+        priceHBox.setAlignment(Pos.BOTTOM_LEFT);
 
-        javafx.scene.layout.VBox priceVBox = new javafx.scene.layout.VBox();
-
-        javafx.scene.control.Label priceLabel =
-                new javafx.scene.control.Label("GIÁ KHỞI ĐIỂM");
+        VBox priceVBox = new VBox();
+        Label priceLabel = new Label("GIÁ KHỞI ĐIỂM");
         priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
 
-        javafx.scene.control.Label priceValue =
-                new javafx.scene.control.Label("$" + item.getStartingPrice());
+        Label priceValue = new Label("$" + item.getStartingPrice());
         priceValue.getStyleClass().add("card-price");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
         priceHBox.getChildren().add(priceVBox);
 
-        // ✅ NÚT VÀO PHÒNG
-        javafx.scene.control.Button btnEnter =
-                new javafx.scene.control.Button("Vào Phòng");
-
+        Button btnEnter = new Button("Vào Phòng");
         btnEnter.setMaxWidth(Double.MAX_VALUE);
         btnEnter.setPrefHeight(40);
         btnEnter.getStyleClass().add("btn-orange");
 
-        javafx.scene.layout.VBox.setMargin(
-                btnEnter,
-                new javafx.geometry.Insets(10, 0, 0, 0)
-        );
-
+        VBox.setMargin(btnEnter, new Insets(10, 0, 0, 0));
         btnEnter.setOnAction(e -> openBidRoom(item));
 
         card.getChildren().addAll(
@@ -162,9 +177,7 @@ public class DashboardController {
         return card;
     }
 
-    // ================= LOAD DATA =================
     private void loadDataFromServer() {
-
         try (Socket socket = new Socket("localhost", 8080);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
@@ -182,13 +195,10 @@ public class DashboardController {
                 JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
 
                 if (response.get("status").getAsString().equals("SUCCESS")) {
-
                     JsonArray dataArray = response.getAsJsonArray("data");
-
-                    List<Item> items = new java.util.ArrayList<>();
+                    List<Item> items = new ArrayList<>();
 
                     for (int i = 0; i < dataArray.size(); i++) {
-
                         JsonObject obj = dataArray.get(i).getAsJsonObject();
 
                         String name = obj.has("name") ? obj.get("name").getAsString() : "Chưa có tên";
@@ -209,9 +219,8 @@ public class DashboardController {
                         items.add(item);
                     }
 
-                    javafx.application.Platform.runLater(() -> {
+                    Platform.runLater(() -> {
                         itemGrid.getChildren().clear();
-
                         for (Item item : items) {
                             itemGrid.getChildren().add(createItemCard(item));
                         }
@@ -224,7 +233,6 @@ public class DashboardController {
         }
     }
 
-    // ================= LOGOUT =================
     @FXML
     public void handleLogout() {
         try {
