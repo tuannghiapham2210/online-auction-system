@@ -4,7 +4,7 @@ public class Auction extends Entity {
     private int itemId; // Phiên này đang bán món hàng nào?
     private String status; // OPEN, RUNNING, FINISHED, CANCELED
     private int winnerId; // Ai là người đang dẫn đầu/chiến thắng?
-    
+
     public Auction(int itemId, String status) {
         this.itemId = itemId;
         this.status = status;
