@@ -112,7 +112,8 @@ public class DashboardController {
                     item.getId(),
                     item.getName(),
                     item.getCurrentPrice(),
-                    myUserId
+                    myUserId,
+                    item.getEndTime()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();

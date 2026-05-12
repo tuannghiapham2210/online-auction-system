@@ -11,11 +11,16 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import com.auction.network.ServerListener;
 
@@ -30,12 +35,14 @@ public class BidRoomController {
     @FXML private Label currentPriceLabel;
     @FXML private Label highestBidderLabel;
     @FXML private Label statusLabel;
+    @FXML private Label timerLabel;
     @FXML private TextField bidAmountField;
     @FXML private ListView<String> bidHistoryList;
     @FXML private LineChart<String, Number> priceChart;
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<String> historyLogs;
+    private Timeline countdownTimeline;
     
     private Socket socket;
     private PrintWriter out;
@@ -53,7 +60,7 @@ public class BidRoomController {
         bidHistoryList.setItems(historyLogs);
     }
 
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime) {
         this.currentItemId = itemId;
         this.currentUserId = userId;
 
@@ -64,6 +71,35 @@ public class BidRoomController {
         priceSeries.getData().add(new XYChart.Data<>(timeStamp, currentPrice));
 
         connectToServer();
+        startCountdown(endTime);
+    }
+
+    private void startCountdown(String endTimeStr) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
+
+            countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                LocalDateTime now = LocalDateTime.now();
+                if (now.isAfter(endTime)) {
+                    if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+                    countdownTimeline.stop();
+                    bidAmountField.setDisable(true); // Disable bidding when ended
+                } else {
+                    java.time.Duration duration = java.time.Duration.between(now, endTime);
+                    long hours = duration.toHours();
+                    long minutes = duration.toMinutesPart();
+                    long seconds = duration.toSecondsPart();
+                    if (timerLabel != null) {
+                        timerLabel.setText(String.format("Còn lại: %02d:%02d:%02d", hours, minutes, seconds));
+                    }
+                }
+            }));
+            countdownTimeline.setCycleCount(Timeline.INDEFINITE);
+            countdownTimeline.play();
+        } catch (Exception e) {
+            logger.error("Failed to parse end time or start countdown: {}", e.getMessage(), e);
+        }
     }
 
     private void connectToServer() {
@@ -124,6 +160,10 @@ public class BidRoomController {
     @FXML
     private void handleLeaveRoom() {
         try {
+            if (countdownTimeline != null) {
+                countdownTimeline.stop();
+            }
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
             Parent root = loader.load();
 
