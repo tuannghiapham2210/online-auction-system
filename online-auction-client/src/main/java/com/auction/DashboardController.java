@@ -84,7 +84,7 @@ public class DashboardController {
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
-            stage.setScene(new Scene(root, 900, 750));
+            itemGrid.getScene().setRoot(root);
             stage.setTitle("Phòng Đấu Giá: " + item.getName());
 
         } catch (Exception e) {
@@ -231,7 +231,7 @@ public class DashboardController {
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
             Parent root = loader.load();
-            stage.setScene(new Scene(root, 640, 480));
+            btnLogout.getScene().setRoot(root);
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
         } catch (IOException e) {
             logger.error("Failed to handle logout: {}", e.getMessage(), e);

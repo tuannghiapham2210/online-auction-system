@@ -243,20 +243,20 @@ public class ClientHandler implements Runnable {
     // ================= PLACE BID =================
     private void handlePlaceBid(JsonObject request) {
         try {
-            // lây dữ liệu từ client gửi lên, bao gồm itemId (ID của sản phẩm đang đấu giá), bidderId (ID của người đặt giá) và bidAmount (số tiền mà người đó muốn đặt)
+            // getting the bid information from the request by parsing the JSON request object to extract the itemId, bidderId, and bidAmount.
             logger.info("Received PLACE_BID request: {}", request);
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
 
-            // cập nhật giá mới cho sản phẩm trong database và ghi lại giao dịch đặt giá, sử dụng ItemDAO để cập nhật giá hiện tại của sản phẩm và BidTransactionDAO để lưu lại thông tin về giao dịch đặt giá (bao gồm itemId, bidderId và bidAmount)
+            // update the current price of the Item in the database using ItemDAO, and log the bid transaction using BidTransactionDAO.
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
 
             boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
-            //nếu cả việc cập nhật giá mới và ghi lại giao dịch đặt giá đều thành công, server sẽ tạo một thông báo broadcast chứa thông tin về giá mới và người đặt giá, sau đó gửi thông báo này đến tất cả các client đang kết nối để cập nhật giao diện người dùng của họ với giá mới nhất.
+            // if both successful, broadcast the new price to all connected clients.
             if (updateSuccess && logSuccess) {
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
@@ -265,6 +265,8 @@ public class ClientHandler implements Runnable {
 
                 logger.info("New bid accepted. Broadcasting price update...");
                 broadcast(broadcastMsg);
+
+            //otherwise, send an error response back to the bidder and log the failure.
             } else {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
@@ -273,6 +275,7 @@ public class ClientHandler implements Runnable {
                 this.writer.println(errorMsg.toString());
             }
 
+        // handle database errors or errors when parsing the request.
         } catch (Exception e) {
             logger.error("Error processing bid stream: {}", e.getMessage(), e);
         }
@@ -284,8 +287,9 @@ public class ClientHandler implements Runnable {
             for (ClientHandler client : activeClients) {
                 try {
                     if (client.writer != null) {
-                        client.writer.println(message.toString()); // gửi thông báo đến tất cả client đang kết nối, mỗi client sẽ nhận được một JSON chứa thông tin về giá mới và người đặt giá để cập nhật giao diện người dùng của họ với giá mới nhất.
+                        client.writer.println(message.toString());
                     }
+                    
                 } catch (Exception e) {
                     logger.error("Failed to send data to client: {}", e.getMessage(), e);
                 }
