@@ -7,7 +7,6 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
@@ -52,24 +51,18 @@ public class BidRoomController {
         priceChart.getData().add(priceSeries);
         historyLogs = FXCollections.observableArrayList();
         bidHistoryList.setItems(historyLogs);
-        
-        // TUYỆT ĐỐI KHÔNG gọi connectToServer() ở đây nữa!
     }
 
-    // HÀM NHẬN DỮ LIỆU TỪ DASHBOARD TRUYỀN SANG
     public void setAuctionData(int itemId, String itemName, double currentPrice, int userId) {
         this.currentItemId = itemId;
         this.currentUserId = userId;
 
-        // Cập nhật giao diện với dữ liệu thật
         itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + currentPrice);
         
-        // Vẽ điểm giá đầu tiên lên biểu đồ
         String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
         priceSeries.getData().add(new XYChart.Data<>(timeStamp, currentPrice));
 
-        // DỮ LIỆU ĐÃ CÓ ĐẦY ĐỦ -> BẬT KẾT NỐI MẠNG!
         connectToServer();
     }
 
@@ -82,7 +75,6 @@ public class BidRoomController {
 
                 Platform.runLater(() -> statusLabel.setText("🟢 LIVE - Đã kết nối"));
 
-                // Mở "cái tai" lắng nghe Server
                 ServerListener listener = new ServerListener(in, this);
                 new Thread(listener).start();
 
@@ -97,7 +89,6 @@ public class BidRoomController {
         String bidText = bidAmountField.getText();
         if (bidText.isEmpty()) return;
 
-        //sending PLACE_BID request to the server with itemId, bidderId, and bidAmount
         try {
             double bidAmount = Double.parseDouble(bidText);
             JsonObject request = new JsonObject();
@@ -109,7 +100,7 @@ public class BidRoomController {
             if (out != null) {
                 out.println(request.toString());
                 logger.info("Sent PLACE_BID request: {}", request);
-                bidAmountField.clear(); // Clear input after sending
+                bidAmountField.clear();
             }
             
         } catch (NumberFormatException e) {
@@ -117,7 +108,6 @@ public class BidRoomController {
         }
     }
 
-    // Hàm này để ServerListener gọi vào khi nhận được gói tin UPDATE_PRICE
     public void updatePriceRealtime(double newPrice, int bidderId) {
         Platform.runLater(() -> {
             currentPriceLabel.setText("$" + newPrice);
