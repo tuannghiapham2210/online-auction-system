@@ -37,6 +37,7 @@
                     <HBox styleClass="target-input-box">
                         <Label styleClass="target-input-icon" text="🖼" />
                         <TextField fx:id="imageUrlField" promptText="https://..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                        <Button text="Chọn file" onAction="#handleBrowseImage" style="-fx-background-color: #4B5563; -fx-text-fill: white; -fx-background-radius: 4; -fx-cursor: hand; -fx-padding: 4 8;" />
                     </HBox>
                 </VBox>
             </HBox>
