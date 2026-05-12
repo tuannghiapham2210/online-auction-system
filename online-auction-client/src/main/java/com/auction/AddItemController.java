@@ -15,6 +15,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.io.File;
+import javafx.stage.FileChooser;
 
 public class AddItemController {
 
@@ -131,6 +133,20 @@ public class AddItemController {
             stage.close();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void handleBrowseImage() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn ảnh sản phẩm");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        );
+        
+        File selectedFile = fileChooser.showOpenDialog(nameField.getScene().getWindow());
+        if (selectedFile != null) {
+            imageUrlField.setText(selectedFile.toURI().toString());
         }
     }
 }

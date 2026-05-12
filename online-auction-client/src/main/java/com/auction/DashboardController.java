@@ -12,6 +12,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -30,7 +32,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DashboardController {
 
@@ -132,9 +136,21 @@ public class DashboardController {
         badge.getStyleClass().add("badge-live");
         badgeBox.getChildren().add(badge);
 
-        Region imageRegion = new Region();
-        imageRegion.setPrefHeight(150);
-        imageRegion.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+        StackPane imageContainer = new StackPane();
+        imageContainer.setPrefHeight(150);
+        imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+
+        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+            try {
+                ImageView imageView = new ImageView(new Image(item.getImageUrl(), true));
+                imageView.setFitHeight(140);
+                imageView.setFitWidth(240);
+                imageView.setPreserveRatio(true);
+                imageContainer.getChildren().add(imageView);
+            } catch (Exception e) {
+                logger.warn("Could not load image: {}", item.getImageUrl());
+            }
+        }
 
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
         subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
@@ -167,7 +183,7 @@ public class DashboardController {
 
         card.getChildren().addAll(
                 badgeBox,
-                imageRegion,
+                imageContainer,
                 subtitle,
                 title,
                 priceHBox,
@@ -198,6 +214,11 @@ public class DashboardController {
                     JsonArray dataArray = response.getAsJsonArray("data");
                     List<Item> items = new ArrayList<>();
 
+                    Map<String, String> typeMap = new LinkedHashMap<>();
+                    typeMap.put("warranty", "ELECTRONICS");
+                    typeMap.put("engineType", "VEHICLE");
+                    typeMap.put("author", "ART");
+
                     for (int i = 0; i < dataArray.size(); i++) {
                         JsonObject obj = dataArray.get(i).getAsJsonObject();
 
@@ -206,8 +227,18 @@ public class DashboardController {
                         String endTime = obj.has("endTime") ? obj.get("endTime").getAsString() : "";
                         int sellerId = obj.has("sellerId") ? obj.get("sellerId").getAsInt() : 0;
 
-                        String type = obj.has("warranty") ? "ELECTRONICS" : "ART";
-                        String extraInfo = obj.has("warranty") ? obj.get("warranty").getAsString() : "N/A";
+                        logger.info("Raw Item JSON: {}", obj.toString());
+
+                        String type = "ART";
+                        String extraInfo = "N/A";
+                        
+                        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
+                            if (obj.has(entry.getKey())) {
+                                type = entry.getValue();
+                                extraInfo = obj.get(entry.getKey()).getAsString();
+                                break;
+                            }
+                        }
 
                         Item item = com.auction.factory.ItemFactory.createItem(
                                 type, name, startPrice, endTime, sellerId, extraInfo
@@ -217,6 +248,9 @@ public class DashboardController {
                         item.setId(id);
                         if (obj.has("currentPrice")) {
                             item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                        }
+                        if (obj.has("imageUrl")) {
+                            item.setImageUrl(obj.get("imageUrl").getAsString());
                         }
 
                         items.add(item);
