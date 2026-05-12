@@ -61,7 +61,7 @@
                   <VBox spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                      <children>
                         <Label style="-fx-text-fill: gray; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
-                        <LineChart fx:id="priceChart" createSymbols="true" legendVisible="false">
+                        <LineChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart">
                           <xAxis>
                             <CategoryAxis side="BOTTOM" />
                           </xAxis>
@@ -74,7 +74,7 @@
                   <VBox prefWidth="350.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                      <children>
                         <Label style="-fx-text-fill: #2ECC71; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
-                        <ListView fx:id="bidHistoryList" style="-fx-background-color: transparent;" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="bidHistoryList" styleClass="log-list" VBox.vgrow="ALWAYS" />
                      </children>
                   </VBox>
                </children>

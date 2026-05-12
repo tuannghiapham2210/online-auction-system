@@ -153,7 +153,7 @@ public class BidRoomController {
             priceSeries.getData().add(new XYChart.Data<>(timeStamp, newPrice));
             if (priceSeries.getData().size() > 10) priceSeries.getData().remove(0);
 
-            historyLogs.add(0, "🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
+            historyLogs.add(0, "[" + timeStamp + "] 🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
         });
     }
 
