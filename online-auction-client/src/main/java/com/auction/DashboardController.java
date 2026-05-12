@@ -49,17 +49,34 @@ public class DashboardController {
     private void handleAddItem() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
-            Parent root = loader.load();
+            Parent addItemGroup = loader.load();
 
-            Stage stage = new Stage();
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setScene(new Scene(root, 1280, 720));
-            stage.setTitle("Đăng sản phẩm");
-            
-            // Xử lý sự kiện khi đóng cửa sổ pop-up (load lại dữ liệu)
-            stage.setOnHidden(event -> loadDataFromServer());
-            
-            stage.showAndWait();
+            // Lấy root hiện tại của dashboard (tái sử dụng nguyên khung nền cũ)
+            Parent dashboardRoot = btnAddItem.getScene().getRoot();
+
+            // Tạo StackPane mới
+            javafx.scene.layout.StackPane stackPane = new javafx.scene.layout.StackPane();
+
+            // QUAN TRỌNG: Phải set StackPane làm root của Scene TRƯỚC.
+            // Hành động này sẽ gỡ dashboardRoot khỏi Scene, giải phóng nó
+            // để tránh lỗi "node is already the root of a scene"
+            btnAddItem.getScene().setRoot(stackPane);
+
+            // Thêm hiệu ứng blur cho dashboard
+            javafx.scene.effect.GaussianBlur blur = new javafx.scene.effect.GaussianBlur(15);
+            dashboardRoot.setEffect(blur);
+
+            // Tạo lớp phủ mờ màu tối
+            javafx.scene.layout.Region darkOverlay = new javafx.scene.layout.Region();
+            darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+
+            // Đảm bảo popup không bị phóng to toàn màn hình
+            if (addItemGroup instanceof javafx.scene.layout.Region) {
+                ((javafx.scene.layout.Region) addItemGroup).setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+            }
+
+            // Giờ mới an toàn để thêm dashboardRoot vào StackPane
+            stackPane.getChildren().addAll(dashboardRoot, darkOverlay, addItemGroup);
 
         } catch (Exception e) {
             logger.error("Failed to open Add Item dialog: {}", e.getMessage(), e);

@@ -2,6 +2,8 @@ package com.auction;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import com.google.gson.JsonObject;
@@ -164,7 +166,14 @@ public class AddItemController {
     @FXML
     public void closePopup() {
         // Lấy đối tượng Stage (Window) đang chứa ô nameField và ra lệnh đóng nó lại
-        Stage stage = (Stage) nameField.getScene().getWindow();
-        stage.close();
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) nameField.getScene().getWindow();
+            nameField.getScene().setRoot(root);
+            stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
