@@ -42,6 +42,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controller quản lý màn hình chính (Dashboard) của ứng dụng.
+ * <p>
+ * Chịu trách nhiệm tải và hiển thị danh sách các sản phẩm đang đấu giá,
+ * xử lý đếm ngược thời gian cho từng sản phẩm, và điều hướng người dùng
+ * sang các chức năng khác (Thêm sản phẩm, Vào phòng đấu giá, Đăng xuất).
+ */
 public class DashboardController {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
@@ -54,34 +61,49 @@ public class DashboardController {
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
 
+    /**
+     * Hàm tự động chạy khi giao diện được tải lên.
+     * Thực hiện tải dữ liệu từ Server và phân quyền hiển thị nút Thêm sản phẩm.
+     */
     @FXML
     public void initialize() {
+        // 1. Tải danh sách sản phẩm từ Server
         loadDataFromServer();
 
+        // 2. Ẩn nút đăng bán nếu người dùng không có quyền Seller
         if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
             btnAddItem.setVisible(false);
         }
     }
 
+    /**
+     * Xử lý sự kiện khi người dùng click vào nút "Thêm Sản phẩm".
+     * Hiển thị một cửa sổ popup đè lên giao diện hiện tại kèm hiệu ứng làm mờ nền.
+     */
     @FXML
     private void handleAddItem() {
         try {
+            // 1. Lấy container gốc của màn hình hiện tại
             Parent currentRoot = btnAddItem.getScene().getRoot();
-            
+
             StackPane rootPane = (StackPane) currentRoot;
             Node mainContent = rootPane.getChildren().get(0);
 
+            // 2. Chặn việc mở nhiều popup cùng lúc
             if (rootPane.lookup("#dark-overlay") != null) {
                 return;
             }
 
+            // 3. Tải giao diện cửa sổ thêm sản phẩm
             FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
             Parent addItemGroup = loader.load();
             AddItemController addItemCtrl = loader.getController();
 
+            // 4. Áp dụng hiệu ứng làm mờ (Blur) cho background
             GaussianBlur blur = new GaussianBlur(15);
             mainContent.setEffect(blur);
 
+            // 5. Tạo lớp phủ tối màu (Dark overlay)
             Region darkOverlay = new Region();
             darkOverlay.setId("dark-overlay");
             darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
@@ -90,13 +112,15 @@ public class DashboardController {
 
             if (addItemGroup instanceof Region) {
                 ((Region) addItemGroup).setMaxSize(
-                        Region.USE_PREF_SIZE, 
+                        Region.USE_PREF_SIZE,
                         Region.USE_PREF_SIZE
                 );
             }
 
+            // 6. Đưa overlay và popup lên giao diện
             rootPane.getChildren().addAll(darkOverlay, addItemGroup);
 
+            // 7. Thiết lập hành động tự động tải lại dữ liệu khi popup đóng
             addItemCtrl.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, addItemGroup);
@@ -108,17 +132,23 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Chuyển hướng người dùng vào phòng đấu giá trực tiếp của một sản phẩm.
+     * @param item Đối tượng sản phẩm được chọn.
+     */
     private void openBidRoom(Item item) {
         try {
+            // 1. Dừng bộ đếm thời gian của Dashboard
             if (dashboardTimeline != null) {
                 dashboardTimeline.stop();
             }
 
+            // 2. Tải giao diện phòng đấu giá
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
 
+            // 3. Truyền dữ liệu vào phòng đấu
             BidRoomController bidRoomCtrl = loader.getController();
-
             int myUserId = Session.userId;
 
             bidRoomCtrl.setAuctionData(
@@ -130,6 +160,7 @@ public class DashboardController {
                     item.getImageUrl()
             );
 
+            // 4. Chuyển đổi cảnh (Scene)
             Stage stage = (Stage) itemGrid.getScene().getWindow();
             itemGrid.getScene().setRoot(root);
             stage.setTitle("Phòng Đấu Giá: " + item.getName());
@@ -139,13 +170,20 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Tạo một thẻ (Card) giao diện dạng VBox để hiển thị thông tin sản phẩm.
+     * @param item Đối tượng sản phẩm cần hiển thị.
+     * @return Đối tượng VBox chứa toàn bộ giao diện của thẻ.
+     */
     private VBox createItemCard(Item item) {
+        // 1. Khởi tạo thẻ chính (Card)
         VBox card = new VBox();
         card.setSpacing(10);
         card.getStyleClass().add("item-card");
         card.setPadding(new Insets(15));
         card.setPrefWidth(280);
 
+        // 2. Tạo nhãn Badge LIVE và thời gian
         HBox badgeBox = new HBox();
         badgeBox.setAlignment(Pos.CENTER_LEFT);
         Label badge = new Label("LIVE");
@@ -155,6 +193,7 @@ public class DashboardController {
         timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
         badgeBox.getChildren().addAll(badge, timerLabel);
 
+        // 3. Lưu trữ thời gian kết thúc vào Map để Timeline xử lý đếm ngược
         if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -165,6 +204,7 @@ public class DashboardController {
             }
         }
 
+        // 4. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(150);
         imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
@@ -181,6 +221,7 @@ public class DashboardController {
             }
         }
 
+        // 5. Thêm văn bản (ID, Loại, Tên)
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
         subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
 
@@ -189,6 +230,7 @@ public class DashboardController {
         title.setPrefHeight(50);
         title.setWrapText(true);
 
+        // 6. Hiển thị giá hiện tại
         HBox priceHBox = new HBox();
         priceHBox.setAlignment(Pos.BOTTOM_LEFT);
 
@@ -202,6 +244,7 @@ public class DashboardController {
         priceVBox.getChildren().addAll(priceLabel, priceValue);
         priceHBox.getChildren().add(priceVBox);
 
+        // 7. Tạo nút "Vào Phòng" và gắn sự kiện
         Button btnEnter = new Button("Vào Phòng");
         btnEnter.setMaxWidth(Double.MAX_VALUE);
         btnEnter.setPrefHeight(40);
@@ -210,6 +253,7 @@ public class DashboardController {
         VBox.setMargin(btnEnter, new Insets(10, 0, 0, 0));
         btnEnter.setOnAction(e -> openBidRoom(item));
 
+        // 8. Đóng gói tất cả vào thẻ chính
         card.getChildren().addAll(
                 badgeBox,
                 imageContainer,
@@ -222,17 +266,23 @@ public class DashboardController {
         return card;
     }
 
+    /**
+     * Kết nối tới Server để lấy danh sách toàn bộ sản phẩm đang đấu giá.
+     * Phân tích chuỗi JSON trả về, tạo các đối tượng Item và đưa lên lưới hiển thị (Grid).
+     */
     private void loadDataFromServer() {
+        // 1. Mở Socket kết nối I/O an toàn
         try (Socket socket = new Socket("localhost", 8080);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
+            // 2. Gửi yêu cầu lấy danh sách sản phẩm
             JsonObject request = new JsonObject();
             request.addProperty("action", "GET_ALL_ITEMS");
             out.println(request.toString());
 
+            // 3. Nhận và phân tích phản hồi
             String responseStr = in.readLine();
-
             logger.info("Dashboard received response from server: {}", responseStr);
 
             if (responseStr != null) {
@@ -243,11 +293,13 @@ public class DashboardController {
                     JsonArray dataArray = response.getAsJsonArray("data");
                     List<Item> items = new ArrayList<>();
 
+                    // 4. Map dùng để nhận diện loại sản phẩm dựa trên trường đặc thù
                     Map<String, String> typeMap = new LinkedHashMap<>();
                     typeMap.put("warranty", "ELECTRONICS");
                     typeMap.put("engineType", "VEHICLE");
                     typeMap.put("author", "ART");
 
+                    // 5. Duyệt danh sách JSON và khởi tạo đối tượng
                     for (int i = 0; i < dataArray.size(); i++) {
                         JsonObject obj = dataArray.get(i).getAsJsonObject();
 
@@ -260,7 +312,8 @@ public class DashboardController {
 
                         String type = "ART";
                         String extraInfo = "N/A";
-                        
+
+                        // Suy luận loại sản phẩm
                         for (Map.Entry<String, String> entry : typeMap.entrySet()) {
                             if (obj.has(entry.getKey())) {
                                 type = entry.getValue();
@@ -269,6 +322,7 @@ public class DashboardController {
                             }
                         }
 
+                        // Gọi Factory
                         Item item = com.auction.factory.ItemFactory.createItem(
                                 type, name, startPrice, endTime, sellerId, extraInfo
                         );
@@ -285,6 +339,7 @@ public class DashboardController {
                         items.add(item);
                     }
 
+                    // 6. Đưa việc cập nhật UI vào JavaFX Application Thread
                     Platform.runLater(() -> {
                         itemGrid.getChildren().clear();
                         if (dashboardTimeline != null) {
@@ -292,10 +347,12 @@ public class DashboardController {
                         }
                         timerMap.clear();
 
+                        // Đưa các thẻ Card vào lưới hiển thị
                         for (Item item : items) {
                             itemGrid.getChildren().add(createItemCard(item));
                         }
 
+                        // 7. Chạy 1 Timeline duy nhất quản lý đếm ngược cho TẤT CẢ sản phẩm
                         dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
                             LocalDateTime now = LocalDateTime.now();
                             for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
@@ -306,8 +363,8 @@ public class DashboardController {
                                     lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
                                 } else {
                                     java.time.Duration duration = java.time.Duration.between(now, end);
-                                    lbl.setText(String.format("⏳ %02d:%02d:%02d", 
-                                        duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                                    lbl.setText(String.format("⏳ %02d:%02d:%02d",
+                                            duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
                                 }
                             }
                         }));
@@ -322,12 +379,19 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Xử lý sự kiện đăng xuất.
+     * Dừng các luồng đang chạy ngầm và đưa người dùng về lại màn hình Đăng nhập.
+     */
     @FXML
     public void handleLogout() {
         try {
+            // 1. Dừng đếm ngược
             if (dashboardTimeline != null) {
                 dashboardTimeline.stop();
             }
+
+            // 2. Chuyển cảnh về màn hình Login
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
             Parent root = loader.load();

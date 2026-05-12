@@ -8,26 +8,39 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
+/**
+ * Lớp khởi chạy chính (Main Class) cho ứng dụng Client giao diện JavaFX.
+ */
 public class App extends Application {
 
     private static Scene scene;
 
+    /**
+     * Phương thức thiết lập giao diện cửa sổ đầu tiên khi ứng dụng được bật.
+     * @param stage Cửa sổ chính (Window) của ứng dụng.
+     * @throws IOException Bắn ra ngoại lệ nếu hệ thống không tìm thấy file FXML.
+     */
     @Override
     public void start(Stage stage) throws IOException {
-        // Lệnh này đi tìm file fxml và phân tích cú pháp cây (Tree) bên trong nó
+        // 1. Phân tích cú pháp file giao diện đăng nhập
         FXMLLoader fxmlLoader = new FXMLLoader(App.class.getResource("login.fxml"));
         Parent root = fxmlLoader.load();
-        
-        // Bọc cái Root Node đó vào một Scene (bối cảnh) kích thước 640x480
+
+        // 2. Bọc Node gốc vào Scene bối cảnh
         scene = new Scene(root, 640, 480);
-        
+
+        // 3. Cấu hình Stage và hiển thị
         stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
         stage.setScene(scene);
         stage.setMaximized(true);
-        stage.show(); // Hiển thị cửa sổ
+        stage.show();
     }
 
+    /**
+     * Điểm bắt đầu của ứng dụng (Entry point).
+     * @param args Tham số dòng lệnh (hiện không sử dụng).
+     */
     public static void main(String[] args) {
-        launch(); 
+        launch();
     }
 }

@@ -15,6 +15,12 @@ import java.net.Socket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Controller quản lý giao diện Đăng ký tài khoản mới (Register).
+ * <p>
+ * Thu thập thông tin từ người dùng (username, password, role), gửi yêu cầu khởi tạo
+ * lên Server và điều hướng về trang Đăng nhập nếu thành công.
+ */
 public class RegisterController {
 
     private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
@@ -24,11 +30,18 @@ public class RegisterController {
     @FXML private ComboBox<String> roleBox;
     @FXML private Label messageLabel;
 
+    /**
+     * Hàm tự động chạy khi giao diện được tải lên.
+     * Thiết lập các lựa chọn Vai trò (Role) mặc định cho ComboBox.
+     */
     @FXML
     public void initialize() {
         roleBox.getItems().addAll("Bidder", "Seller");
     }
 
+    /**
+     * Xử lý sự kiện khi người dùng nhấn nút Đăng ký.
+     */
     @FXML
     private void handleRegister() {
 
@@ -36,13 +49,14 @@ public class RegisterController {
         String password = passwordField.getText().trim();
         String roleValue = roleBox.getValue();
 
+        // 1. Kiểm tra validation cơ bản
         if (username.isEmpty() || password.isEmpty() || roleValue == null) {
             messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        // ✅ FIX QUAN TRỌNG: tạo biến FINAL cho lambda
+        // 2. Tạo biến FINAL cho vai trò để sử dụng an toàn trong biểu thức Lambda
         final String role;
         if (roleValue.equalsIgnoreCase("Bidder")) {
             role = "BIDDER";
@@ -53,6 +67,7 @@ public class RegisterController {
         messageLabel.setStyle("-fx-text-fill: #f59e0b;");
         messageLabel.setText("Đang đăng ký...");
 
+        // 3. Mở Thread mạng độc lập gửi request lên Server
         new Thread(() -> {
             try (Socket socket = new Socket("127.0.0.1", 8080);
                  PrintWriter writer = new PrintWriter(
@@ -60,6 +75,7 @@ public class RegisterController {
                  BufferedReader reader = new BufferedReader(
                          new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
+                // 4. Đóng gói dữ liệu JSON
                 JsonObject req = new JsonObject();
                 req.addProperty("action", "REGISTER");
                 req.addProperty("username", username);
@@ -68,6 +84,7 @@ public class RegisterController {
 
                 writer.println(req.toString());
 
+                // 5. Đọc và phân tích phản hồi
                 String line = reader.readLine();
                 if (line == null) throw new Exception("No response");
 
@@ -76,6 +93,7 @@ public class RegisterController {
                 String status = res.get("status").getAsString();
                 String message = res.get("message").getAsString();
 
+                // 6. Cập nhật kết quả lên giao diện
                 javafx.application.Platform.runLater(() -> {
 
                     if ("SUCCESS".equals(status)) {
@@ -83,6 +101,7 @@ public class RegisterController {
                         messageLabel.setStyle("-fx-text-fill: #00ff99;");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
 
+                        // 7. Hiệu ứng dấu chấm lửng lúc chuyển trang
                         Timeline dots = new Timeline(
                                 new KeyFrame(Duration.millis(300), e -> {
                                     String text = messageLabel.getText();
@@ -96,6 +115,7 @@ public class RegisterController {
                         dots.setCycleCount(Timeline.INDEFINITE);
                         dots.play();
 
+                        // 8. Chờ 1.5s rồi tự động quay về trang Đăng nhập
                         PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
                         delay.setOnFinished(e -> {
                             dots.stop();
@@ -116,6 +136,9 @@ public class RegisterController {
         }).start();
     }
 
+    /**
+     * Chuyển hướng người dùng quay lại giao diện Đăng nhập (Login).
+     */
     @FXML
     private void goToLogin() {
         try {
