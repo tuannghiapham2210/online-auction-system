@@ -97,6 +97,7 @@ public class BidRoomController {
         String bidText = bidAmountField.getText();
         if (bidText.isEmpty()) return;
 
+        //sending PLACE_BID request to the server with itemId, bidderId, and bidAmount
         try {
             double bidAmount = Double.parseDouble(bidText);
             JsonObject request = new JsonObject();
@@ -110,6 +111,7 @@ public class BidRoomController {
                 logger.info("Sent PLACE_BID request: {}", request);
                 bidAmountField.clear(); // Clear input after sending
             }
+            
         } catch (NumberFormatException e) {
             logger.warn("Invalid bid amount. Expected a number, got: {}", bidText, e);
         }
@@ -136,7 +138,7 @@ public class BidRoomController {
             Parent root = loader.load();
 
             Stage stage = (Stage) bidHistoryList.getScene().getWindow();
-            stage.setScene(new Scene(root, 1280, 720));
+            bidHistoryList.getScene().setRoot(root);
             stage.setTitle("Đấu giá - Dashboard");
 
         } catch (Exception e) {

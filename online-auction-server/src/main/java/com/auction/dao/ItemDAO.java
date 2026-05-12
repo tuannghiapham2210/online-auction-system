@@ -97,22 +97,24 @@ public class ItemDAO {
     public boolean updateCurrentPrice(int itemId, double newPrice) {
         boolean isSuccess = false;
         // chỉ update giá nếu như giá mới lớn hơn giá hiện tại
-        String sql = "UPDATE items SET current_price = ? WHERE id = ? AND current_price < ?";
+        String sql = "UPDATE items SET current_price = ? WHERE id = ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setDouble(1, newPrice);
             pstmt.setInt(2, itemId);
-            pstmt.setDouble(3, newPrice);
 
             int rowsAffected = pstmt.executeUpdate();
             logger.info("Rows affected: {}", rowsAffected);
             if (rowsAffected > 0) {
                 isSuccess = true;
                 logger.info("Successfully updated new price: ${} for Item ID: {}", newPrice, itemId);
+
             }
+            
         } catch (Exception e) {
             logger.error("Error updating Item price: {}", e.getMessage());
+
         }
         return isSuccess;
     }

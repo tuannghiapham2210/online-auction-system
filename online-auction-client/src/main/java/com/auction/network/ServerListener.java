@@ -1,6 +1,6 @@
-package com.auction.network; // Đã sửa lại cho đúng thư mục của team
+package com.auction.network; 
 
-import com.auction.BidRoomController; // Import Controller ở thư mục ngoài
+import com.auction.BidRoomController; 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;
