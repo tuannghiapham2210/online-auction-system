@@ -486,3 +486,70 @@
 .btn-target-submit:hover {
     -fx-background-color: #FBBF24;
 }
+
+/* ================= BID ROOM CHART ================= */
+/* Xóa nền trắng mặc định của Chart */
+.bid-chart {
+    -fx-background-color: transparent;
+}
+
+/* Phần nền vẽ biểu đồ (Plot area) */
+.bid-chart .chart-plot-background {
+    -fx-background-color: #151A22; 
+    -fx-background-radius: 8;
+}
+
+/* Lưới tọa độ (Làm mờ, nét đứt) */
+.bid-chart .chart-vertical-grid-lines,
+.bid-chart .chart-horizontal-grid-lines {
+    -fx-stroke: #2A3441; 
+    -fx-stroke-dash-array: 5 5;
+}
+
+/* Màu chữ của trục X và Y */
+.bid-chart .axis {
+    -fx-tick-label-fill: #A0AABF;
+}
+
+/* Đường Line (Màu cam đồng bộ) */
+.bid-chart .chart-series-line {
+    -fx-stroke: #F59E0B; 
+    -fx-stroke-width: 3px;
+}
+
+/* Các điểm chấm trên Line (Viền cam, lõm trong) */
+.bid-chart .chart-line-symbol {
+    -fx-background-color: #F59E0B, #151A22;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 6px;
+    -fx-padding: 4px;
+}
+
+/* ================= EVENT LOG LISTVIEW ================= */
+.log-list {
+    -fx-background-color: #151A22;
+    -fx-background-radius: 8;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 8;
+    -fx-padding: 4;
+}
+
+/* Từng dòng sự kiện (Log Cell) */
+.log-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #A0AABF;
+    -fx-font-size: 13px;
+    -fx-padding: 8 10;
+    -fx-border-color: transparent transparent #2A3441 transparent; /* Đường kẻ dưới */
+    -fx-border-width: 1;
+}
+
+.log-list .list-cell:empty {
+    -fx-border-color: transparent; /* Xóa kẻ ngang ở các ô trống */
+}
+
+.log-list .list-cell:filled:hover, 
+.log-list .list-cell:filled:selected {
+    -fx-background-color: rgba(46, 204, 113, 0.1); /* Nền xanh lá trong suốt */
+    -fx-text-fill: #2ECC71; /* Chữ xanh lá sáng */
+}

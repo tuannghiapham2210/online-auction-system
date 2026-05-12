@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 public class Electronics extends Item {
     private static final Logger logger = LoggerFactory.getLogger(Electronics.class);
 
-    private int warrantyMonths;
+    private String warrantyMonths;
 
     /**
      * Khởi tạo một sản phẩm điện tử.
@@ -20,7 +20,7 @@ public class Electronics extends Item {
      * @param sellerId ID của người bán.
      * @param warrantyMonths Số tháng bảo hành.
      */
-    public Electronics(String name, double startingPrice, String endTime, int sellerId, int warrantyMonths) {
+    public Electronics(String name, double startingPrice, String endTime, int sellerId, String warrantyMonths) {
         // 1. Gọi constructor của lớp cha để khởi tạo các thuộc tính chung
         super(name, startingPrice, endTime, sellerId);
 
@@ -33,7 +33,7 @@ public class Electronics extends Item {
      */
     @Override
     public void printInfo() {
-        logger.info("[Electronics] {} - Warranty: {} months", name, warrantyMonths);
+        logger.info("[Electronics] {} - Warranty: {}", name, warrantyMonths);
     }
 
     /**
@@ -51,10 +51,9 @@ public class Electronics extends Item {
      */
     @Override
     public String getExtraInfo() {
-        return String.valueOf(this.warrantyMonths);
-    }
-
-    public int getWarranty() {
         return this.warrantyMonths;
+    }
+    public String getWarranty() {
+        return this.warrantyMonths;  //trả về số tháng bảo hành của sản phẩm điện tử
     }
 }

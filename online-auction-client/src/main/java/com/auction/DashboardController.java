@@ -12,6 +12,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -29,8 +34,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DashboardController {
 
@@ -40,6 +50,9 @@ public class DashboardController {
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
+
+    private Timeline dashboardTimeline;
+    private Map<Label, LocalDateTime> timerMap = new HashMap<>();
 
     @FXML
     public void initialize() {
@@ -97,6 +110,10 @@ public class DashboardController {
 
     private void openBidRoom(Item item) {
         try {
+            if (dashboardTimeline != null) {
+                dashboardTimeline.stop();
+            }
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
 
@@ -107,8 +124,10 @@ public class DashboardController {
             bidRoomCtrl.setAuctionData(
                     item.getId(),
                     item.getName(),
-                    item.getStartingPrice(),
-                    myUserId
+                    item.getCurrentPrice(),
+                    myUserId,
+                    item.getEndTime(),
+                    item.getImageUrl()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
@@ -128,13 +147,39 @@ public class DashboardController {
         card.setPrefWidth(280);
 
         HBox badgeBox = new HBox();
+        badgeBox.setAlignment(Pos.CENTER_LEFT);
         Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
-        badgeBox.getChildren().add(badge);
 
-        Region imageRegion = new Region();
-        imageRegion.setPrefHeight(150);
-        imageRegion.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+        Label timerLabel = new Label("⏳ Đang tải...");
+        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+        badgeBox.getChildren().addAll(badge, timerLabel);
+
+        if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime endTime = LocalDateTime.parse(item.getEndTime(), formatter);
+                timerMap.put(timerLabel, endTime);
+            } catch (Exception e) {
+                logger.warn("Could not parse end time for item {}", item.getId());
+            }
+        }
+
+        StackPane imageContainer = new StackPane();
+        imageContainer.setPrefHeight(150);
+        imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+
+        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+            try {
+                ImageView imageView = new ImageView(new Image(item.getImageUrl(), true));
+                imageView.setFitHeight(140);
+                imageView.setFitWidth(240);
+                imageView.setPreserveRatio(true);
+                imageContainer.getChildren().add(imageView);
+            } catch (Exception e) {
+                logger.warn("Could not load image: {}", item.getImageUrl());
+            }
+        }
 
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
         subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
@@ -148,10 +193,10 @@ public class DashboardController {
         priceHBox.setAlignment(Pos.BOTTOM_LEFT);
 
         VBox priceVBox = new VBox();
-        Label priceLabel = new Label("GIÁ KHỞI ĐIỂM");
+        Label priceLabel = new Label("GIÁ HIỆN TẠI");
         priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
 
-        Label priceValue = new Label("$" + item.getStartingPrice());
+        Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
@@ -167,7 +212,7 @@ public class DashboardController {
 
         card.getChildren().addAll(
                 badgeBox,
-                imageRegion,
+                imageContainer,
                 subtitle,
                 title,
                 priceHBox,
@@ -198,6 +243,11 @@ public class DashboardController {
                     JsonArray dataArray = response.getAsJsonArray("data");
                     List<Item> items = new ArrayList<>();
 
+                    Map<String, String> typeMap = new LinkedHashMap<>();
+                    typeMap.put("warranty", "ELECTRONICS");
+                    typeMap.put("engineType", "VEHICLE");
+                    typeMap.put("author", "ART");
+
                     for (int i = 0; i < dataArray.size(); i++) {
                         JsonObject obj = dataArray.get(i).getAsJsonObject();
 
@@ -206,8 +256,18 @@ public class DashboardController {
                         String endTime = obj.has("endTime") ? obj.get("endTime").getAsString() : "";
                         int sellerId = obj.has("sellerId") ? obj.get("sellerId").getAsInt() : 0;
 
-                        String type = obj.has("warranty") ? "ELECTRONICS" : "ART";
-                        String extraInfo = obj.has("warranty") ? obj.get("warranty").getAsString() : "N/A";
+                        logger.info("Raw Item JSON: {}", obj.toString());
+
+                        String type = "ART";
+                        String extraInfo = "N/A";
+                        
+                        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
+                            if (obj.has(entry.getKey())) {
+                                type = entry.getValue();
+                                extraInfo = obj.get(entry.getKey()).getAsString();
+                                break;
+                            }
+                        }
 
                         Item item = com.auction.factory.ItemFactory.createItem(
                                 type, name, startPrice, endTime, sellerId, extraInfo
@@ -215,15 +275,44 @@ public class DashboardController {
 
                         int id = obj.get("id").getAsInt();
                         item.setId(id);
+                        if (obj.has("currentPrice")) {
+                            item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                        }
+                        if (obj.has("imageUrl")) {
+                            item.setImageUrl(obj.get("imageUrl").getAsString());
+                        }
 
                         items.add(item);
                     }
 
                     Platform.runLater(() -> {
                         itemGrid.getChildren().clear();
+                        if (dashboardTimeline != null) {
+                            dashboardTimeline.stop();
+                        }
+                        timerMap.clear();
+
                         for (Item item : items) {
                             itemGrid.getChildren().add(createItemCard(item));
                         }
+
+                        dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                            LocalDateTime now = LocalDateTime.now();
+                            for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
+                                Label lbl = entry.getKey();
+                                LocalDateTime end = entry.getValue();
+                                if (now.isAfter(end)) {
+                                    lbl.setText("ĐÃ KẾT THÚC");
+                                    lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+                                } else {
+                                    java.time.Duration duration = java.time.Duration.between(now, end);
+                                    lbl.setText(String.format("⏳ %02d:%02d:%02d", 
+                                        duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                                }
+                            }
+                        }));
+                        dashboardTimeline.setCycleCount(Timeline.INDEFINITE);
+                        dashboardTimeline.play();
                     });
                 }
             }
@@ -236,6 +325,9 @@ public class DashboardController {
     @FXML
     public void handleLogout() {
         try {
+            if (dashboardTimeline != null) {
+                dashboardTimeline.stop();
+            }
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
             Parent root = loader.load();

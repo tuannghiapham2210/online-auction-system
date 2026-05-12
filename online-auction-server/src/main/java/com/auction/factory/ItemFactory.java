@@ -32,9 +32,7 @@ public class ItemFactory {
         switch (type.toUpperCase()) {
             case "ELECTRONICS":
                 // 1. Xử lý cho đồ điện tử (extraInfo là số tháng bảo hành)
-                int warranty = Integer.parseInt(extraInfo);
-                return new Electronics(name, startingPrice, endTime, sellerId, warranty);
-
+                return new Electronics(name, startingPrice, endTime, sellerId, extraInfo);
             case "ART":
                 // 2. Xử lý cho tác phẩm nghệ thuật (extraInfo là tên tác giả)
                 return new Art(name, startingPrice, endTime, sellerId, extraInfo);
