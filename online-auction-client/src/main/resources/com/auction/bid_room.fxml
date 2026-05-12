@@ -26,14 +26,14 @@
          </children>
       </HBox>
 
-      <VBox alignment="CENTER" maxHeight="750.0" maxWidth="900.0" spacing="20.0">
+      <VBox alignment="CENTER" maxHeight="850.0" maxWidth="1200.0" spacing="20.0">
          <children>
-            <HBox alignment="CENTER_LEFT" spacing="30.0" style="-fx-max-width: 900;" styleClass="card" VBox.vgrow="NEVER">
+            <HBox alignment="CENTER_LEFT" spacing="40.0" style="-fx-max-width: 1200;" styleClass="card" VBox.vgrow="NEVER">
                <children>
                   <!-- Product Image on the left -->
-                  <StackPane prefHeight="200.0" prefWidth="300.0" style="-fx-background-color: #151A22; -fx-background-radius: 10;">
+                  <StackPane prefHeight="250.0" prefWidth="350.0" style="-fx-background-color: #151A22; -fx-background-radius: 10;">
                      <children>
-                        <ImageView fx:id="itemImageView" fitHeight="190.0" fitWidth="290.0" preserveRatio="true" />
+                        <ImageView fx:id="itemImageView" fitHeight="240.0" fitWidth="340.0" preserveRatio="true" />
                      </children>
                   </StackPane>
 
@@ -72,7 +72,7 @@
             <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                <children>
                   <!-- Chart Panel -->
-                  <VBox prefWidth="350.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                  <VBox prefWidth="500.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                      <children>
                         <Label style="-fx-text-fill: gray; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
                         <LineChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart">
@@ -86,7 +86,7 @@
                      </children>
                   </VBox>
                   <!-- Event Log Panel (Larger prefWidth to make it wider) -->
-                  <VBox prefWidth="450.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                  <VBox prefWidth="650.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                      <children>
                         <Label style="-fx-text-fill: #2ECC71; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
                         <ListView fx:id="bidHistoryList" styleClass="log-list" VBox.vgrow="ALWAYS" />
