@@ -107,7 +107,7 @@ public class DashboardController {
             bidRoomCtrl.setAuctionData(
                     item.getId(),
                     item.getName(),
-                    item.getStartingPrice(),
+                    item.getCurrentPrice(),
                     myUserId
             );
 
@@ -148,10 +148,10 @@ public class DashboardController {
         priceHBox.setAlignment(Pos.BOTTOM_LEFT);
 
         VBox priceVBox = new VBox();
-        Label priceLabel = new Label("GIÁ KHỞI ĐIỂM");
+        Label priceLabel = new Label("GIÁ HIỆN TẠI");
         priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
 
-        Label priceValue = new Label("$" + item.getStartingPrice());
+        Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
@@ -215,6 +215,9 @@ public class DashboardController {
 
                         int id = obj.get("id").getAsInt();
                         item.setId(id);
+                        if (obj.has("currentPrice")) {
+                            item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                        }
 
                         items.add(item);
                     }
