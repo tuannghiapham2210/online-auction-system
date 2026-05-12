@@ -14,6 +14,9 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -31,7 +34,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +50,9 @@ public class DashboardController {
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
+
+    private Timeline dashboardTimeline;
+    private Map<Label, LocalDateTime> timerMap = new HashMap<>();
 
     @FXML
     public void initialize() {
@@ -101,6 +110,10 @@ public class DashboardController {
 
     private void openBidRoom(Item item) {
         try {
+            if (dashboardTimeline != null) {
+                dashboardTimeline.stop();
+            }
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
 
@@ -112,7 +125,8 @@ public class DashboardController {
                     item.getId(),
                     item.getName(),
                     item.getCurrentPrice(),
-                    myUserId
+                    myUserId,
+                    item.getEndTime()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
@@ -132,9 +146,23 @@ public class DashboardController {
         card.setPrefWidth(280);
 
         HBox badgeBox = new HBox();
+        badgeBox.setAlignment(Pos.CENTER_LEFT);
         Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
-        badgeBox.getChildren().add(badge);
+
+        Label timerLabel = new Label("⏳ Đang tải...");
+        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+        badgeBox.getChildren().addAll(badge, timerLabel);
+
+        if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime endTime = LocalDateTime.parse(item.getEndTime(), formatter);
+                timerMap.put(timerLabel, endTime);
+            } catch (Exception e) {
+                logger.warn("Could not parse end time for item {}", item.getId());
+            }
+        }
 
         StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(150);
@@ -258,9 +286,32 @@ public class DashboardController {
 
                     Platform.runLater(() -> {
                         itemGrid.getChildren().clear();
+                        if (dashboardTimeline != null) {
+                            dashboardTimeline.stop();
+                        }
+                        timerMap.clear();
+
                         for (Item item : items) {
                             itemGrid.getChildren().add(createItemCard(item));
                         }
+
+                        dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                            LocalDateTime now = LocalDateTime.now();
+                            for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
+                                Label lbl = entry.getKey();
+                                LocalDateTime end = entry.getValue();
+                                if (now.isAfter(end)) {
+                                    lbl.setText("ĐÃ KẾT THÚC");
+                                    lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+                                } else {
+                                    java.time.Duration duration = java.time.Duration.between(now, end);
+                                    lbl.setText(String.format("⏳ %02d:%02d:%02d", 
+                                        duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                                }
+                            }
+                        }));
+                        dashboardTimeline.setCycleCount(Timeline.INDEFINITE);
+                        dashboardTimeline.play();
                     });
                 }
             }
@@ -273,6 +324,9 @@ public class DashboardController {
     @FXML
     public void handleLogout() {
         try {
+            if (dashboardTimeline != null) {
+                dashboardTimeline.stop();
+            }
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
             Parent root = loader.load();
