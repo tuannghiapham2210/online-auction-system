@@ -10,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -36,6 +38,7 @@ public class BidRoomController {
     @FXML private Label highestBidderLabel;
     @FXML private Label statusLabel;
     @FXML private Label timerLabel;
+    @FXML private ImageView itemImageView;
     @FXML private TextField bidAmountField;
     @FXML private ListView<String> bidHistoryList;
     @FXML private LineChart<String, Number> priceChart;
@@ -60,13 +63,21 @@ public class BidRoomController {
         bidHistoryList.setItems(historyLogs);
     }
 
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl) {
         this.currentItemId = itemId;
         this.currentUserId = userId;
 
         itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + currentPrice);
         
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            try {
+                itemImageView.setImage(new Image(imageUrl, true));
+            } catch (Exception e) {
+                logger.warn("Could not load image: {}", imageUrl);
+            }
+        }
+
         String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
         priceSeries.getData().add(new XYChart.Data<>(timeStamp, currentPrice));
 
@@ -153,7 +164,7 @@ public class BidRoomController {
             priceSeries.getData().add(new XYChart.Data<>(timeStamp, newPrice));
             if (priceSeries.getData().size() > 10) priceSeries.getData().remove(0);
 
-            historyLogs.add(0, "🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
+            historyLogs.add(0, "[" + timeStamp + "] 🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
         });
     }
 
