@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane style="-fx-background-color: transparent;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
+<StackPane style="-fx-background-color: transparent;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
     <children>
         <VBox maxWidth="650.0" spacing="20.0" styleClass="modal-container">
             <padding>
@@ -28,14 +28,14 @@
             </VBox>
 
             <HBox spacing="20.0">
-                <VBox HBox.hgrow="ALWAYS" spacing="8.0" prefWidth="280">
+                <VBox prefWidth="280" spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- DANH MỤC *" />
-                    <ComboBox fx:id="typeComboBox" maxWidth="Infinity" promptText="Đồng hồ" styleClass="target-combo-box" />
+                    <ComboBox fx:id="typeComboBox" maxWidth="Infinity" promptText="Danh mục sản phẩm" styleClass="target-combo-box" />
                 </VBox>
-                <VBox HBox.hgrow="ALWAYS" spacing="8.0" prefWidth="280">
+                <VBox prefWidth="280" spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- HÌNH ẢNH (URL)" />
                     <HBox styleClass="target-input-box">
-                        <Label styleClass="target-input-icon" text="🖼" />
+                        <Label styleClass="target-input-icon" text="🖼️" />
                         <TextField fx:id="imageUrlField" promptText="https://..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>
@@ -43,8 +43,18 @@
 
             <VBox spacing="8.0">
                 <Label styleClass="target-label" text="- MÔ TẢ" />
+
+                <!-- Thêm alignment="TOP_LEFT" để ép các thành phần bên trong nổi lên trên cùng -->
                 <HBox alignment="TOP_LEFT" styleClass="target-input-box">
-                    <Label styleClass="target-input-icon" text="≡" translateY="10" />
+
+                    <!-- Dùng mã &#x2139; cho icon Information (ℹ), thêm minWidth để không bị 3 chấm -->
+                    <Label styleClass="target-input-icon" text="&#x2139;" minWidth="-Infinity">
+                        <!-- Đẩy icon xuống 12px để ngang hàng với padding của TextArea -->
+                        <HBox.margin>
+                            <Insets top="12.0" />
+                        </HBox.margin>
+                    </Label>
+
                     <TextArea fx:id="descriptionArea" prefRowCount="3" promptText="Mô tả tình trạng, nguồn gốc..." styleClass="target-textarea" wrapText="true" HBox.hgrow="ALWAYS" />
                 </HBox>
             </VBox>
@@ -52,24 +62,27 @@
             <!-- Đã xóa Separator ở đây theo đúng mẫu Ảnh 2 -->
 
             <HBox spacing="15.0">
-                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- GIÁ KHỞI ĐIỂM ($) *" />
                     <HBox styleClass="target-input-box">
                         <Label styleClass="target-input-icon" text="\$" />
                         <TextField fx:id="priceField" promptText="VD: 5000" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>
-                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- BƯỚC GIÁ ($) *" />
                     <HBox styleClass="target-input-box">
-                        <Label styleClass="target-input-icon" text="↗" />
+                        <!-- Thêm minWidth="-Infinity" và dùng ký tự mũi tên đơn giản -->
+                        <Label styleClass="target-input-icon" text="↗" minWidth="-Infinity" />
                         <TextField fx:id="stepPriceField" promptText="VD: 500" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>
-                <VBox HBox.hgrow="ALWAYS" spacing="8.0">
+
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- THỜI GIAN (HOURS) *" />
                     <HBox styleClass="target-input-box">
-                        <Label styleClass="target-input-icon" text="🕒" />
+                        <!-- Thêm minWidth="-Infinity" và dùng ký tự đồng hồ -->
+                        <Label styleClass="target-input-icon" text="🕒" minWidth="-Infinity" />
                         <TextField fx:id="durationField" promptText="VD: 24" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>

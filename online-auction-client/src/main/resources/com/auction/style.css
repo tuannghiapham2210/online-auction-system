@@ -415,6 +415,7 @@
 .target-input-icon {
     -fx-text-fill: #5E6A7D;
     -fx-font-size: 14px;
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
 }
 
 /* TextField và TextArea bên trong (Xóa nền, xóa viền) */
