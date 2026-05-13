@@ -7,7 +7,7 @@ public class Admin extends User {
     private static final Logger logger = LoggerFactory.getLogger(Admin.class);
 
     public Admin(String username, String password) {
-        super(username, password, "ADMIN");
+        super(username, password, "ADMIN", 1000000);
     }
 
     @Override

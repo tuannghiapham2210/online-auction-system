@@ -6,11 +6,12 @@ package com.auction;
  * Sử dụng các biến tĩnh (static) để đóng vai trò như một bộ nhớ toàn cục (Global State),
  * giúp chia sẻ trạng thái đăng nhập trên toàn bộ các Controller của ứng dụng.
  */
+import com.auction.model.User;
+
 public class Session {
-
-    /** ID định danh duy nhất của người dùng đang đăng nhập. */
     public static int userId;
-
-    /** Vai trò của người dùng trong hệ thống (Ví dụ: ADMIN, SELLER, BIDDER). */
     public static String role;
+    public static String username;
+    public static User user;
+    public static int balance;
 }

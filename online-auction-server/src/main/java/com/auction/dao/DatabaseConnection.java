@@ -90,7 +90,8 @@ public class DatabaseConnection {
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "username TEXT UNIQUE NOT NULL,"
                 + "password TEXT NOT NULL,"
-                + "role TEXT NOT NULL"
+                + "role TEXT NOT NULL,"
+                + "balance INTEGER DEFAULT 0"
                 + ");";
 
         // 2. Chuẩn bị SQL tạo bảng Items (có khóa ngoại trỏ tới users)
@@ -171,10 +172,10 @@ public class DatabaseConnection {
 
             // 1. Kiểm tra bảng users, nếu trống thì tạo 3 tài khoản mẫu
             if (rs.getInt(1) == 0) {
-                String insertSql = "INSERT INTO users (username, password, role) VALUES "
-                        + "('admin', '123456', 'ADMIN'), "
-                        + "('bidder1', '123', 'BIDDER'), "
-                        + "('seller1', '123', 'SELLER')";
+                String insertSql = "INSERT INTO users (username, password, role, balance) VALUES "
+                        + "('admin', '123456', 'ADMIN', 1000000), "
+                        + "('bidder1', '123', 'BIDDER', 0), "
+                        + "('seller1', '123', 'SELLER', 0)";
 
                 stmt.executeUpdate(insertSql);
                 logger.info("Seeded 3 test accounts.");

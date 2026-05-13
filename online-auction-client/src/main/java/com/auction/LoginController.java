@@ -78,6 +78,7 @@ public class LoginController {
                 // 5. Trích xuất Role và UserID một cách an toàn
                 String role = res.has("role") ? res.get("role").getAsString() : "bidder";
                 int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
+                int balance = res.has("balance") ? res.get("balance").getAsInt() : 0;
 
                 // 6. Gói lệnh cập nhật giao diện vào JavaFX Application Thread
                 javafx.application.Platform.runLater(() -> {
@@ -87,6 +88,8 @@ public class LoginController {
                         // 7. Lưu trữ trạng thái phiên làm việc (Session)
                         Session.role = role;
                         Session.userId = userId;
+                        Session.username = username;
+                        Session.balance = balance;
 
                         // 8. Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
                         messageLabel.setStyle("-fx-text-fill: #00ff99;");
