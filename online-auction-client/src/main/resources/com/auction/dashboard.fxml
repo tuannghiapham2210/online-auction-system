@@ -61,13 +61,29 @@
          <children>
 
             <!-- ✅ TOP RIGHT BAR (LOGOUT) -->
-            <HBox alignment="TOP_RIGHT" spacing="10">
-               <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER_RIGHT" spacing="15">
+
+               <!-- SỐ DƯ -->
+               <Label fx:id="lblBalance"
+                     text="Số dư: $0"
+                     style="-fx-text-fill: white;
+                           -fx-font-size: 16px;
+                           -fx-font-weight: bold;" />
+
+               <!-- NẠP TIỀN -->
+               <Button fx:id="btnDeposit"
+                     text="Nạp Tiền"
+                     styleClass="btn-orange"
+                     onAction="#handleDeposit"/>
+
+               <!-- ĐĂNG XUẤT -->
                <Button fx:id="btnLogout"
-                       text="Đăng xuất"
-                       styleClass="btn-orange"
-                       onAction="#handleLogout"/>
+                     text="Đăng xuất"
+                     styleClass="btn-orange"
+                     onAction="#handleLogout"/>
+
             </HBox>
+
 
             <!-- ✅ HEADER CHUẨN -->
             <HBox alignment="CENTER_LEFT" spacing="10">

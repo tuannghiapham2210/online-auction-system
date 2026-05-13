@@ -7,7 +7,7 @@ public class Bidder extends User {
     private static final Logger logger = LoggerFactory.getLogger(Bidder.class);
 
     public Bidder(String username, String password) {
-        super(username, password, "BIDDER");
+        super(username, password, "BIDDER", 0);
     }
 
     @Override

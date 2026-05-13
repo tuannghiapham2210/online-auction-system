@@ -8,7 +8,7 @@ public class Seller extends User {
     private static final Logger logger = LoggerFactory.getLogger(Seller.class);
 
     public Seller(String username, String password) {
-        super(username, password, "SELLER");
+        super(username, password, "SELLER", 0);
     }
 
     @Override

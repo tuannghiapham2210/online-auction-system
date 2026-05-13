@@ -1,6 +1,7 @@
 package com.auction;
 
 import com.auction.model.Item;
+import com.auction.model.User;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -54,6 +55,7 @@ public class DashboardController {
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
     @FXML private Button btnLogout;
+    @FXML private Label lblBalance;
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
@@ -74,6 +76,10 @@ public class DashboardController {
         if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
             btnAddItem.setVisible(false);
         }
+        // HIỂN THỊ SỐ DƯ
+        lblBalance.setText(
+            "Số dư: $" + Session.balance
+        );
     }
 
     /**
@@ -401,4 +407,73 @@ public class DashboardController {
             logger.error("Failed to handle logout: {}", e.getMessage(), e);
         }
     }
+    @FXML
+    private void handleDeposit() {
+
+        try (
+                Socket socket = new Socket("localhost", 8080);
+                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader in = new BufferedReader(
+                        new InputStreamReader(socket.getInputStream()))
+        ) {
+
+            // ================= CREATE REQUEST =================
+            JsonObject request = new JsonObject();
+
+            request.addProperty("action", "DEPOSIT");
+            request.addProperty("username", Session.username);
+            request.addProperty("amount", 1000);
+
+            // ================= SEND =================
+            out.println(request.toString());
+
+            logger.info("Deposit request sent: {}", request);
+
+            // ================= READ RESPONSE =================
+            String responseStr = in.readLine();
+
+            logger.info("Deposit response: {}", responseStr);
+
+            if (responseStr == null) {
+
+                logger.error("Server returned null response");
+                return;
+            }
+
+            // ================= PARSE JSON =================
+            JsonObject response =
+                    JsonParser.parseString(responseStr).getAsJsonObject();
+
+            String status = response.get("status").getAsString();
+
+            // ================= SUCCESS =================
+            if ("SUCCESS".equals(status)) {
+
+        int newBalance =
+                response.get("newBalance").getAsInt();
+
+        // update session
+        Session.balance = newBalance;
+
+        // UPDATE LABEL NGAY
+        lblBalance.setText(
+            "Số dư: $" + Session.balance
+    );
+
+        logger.info(
+                "Deposit success. New balance: {}",
+                newBalance
+        );
+
+}
+
+    } catch (Exception e) {
+
+        logger.error(
+                "Failed to handle deposit request: {}",
+                e.getMessage(),
+                e
+        );
+    }
+}
 }

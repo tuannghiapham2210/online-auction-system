@@ -86,6 +86,10 @@ public class ClientHandler implements Runnable {
                     case "PLACE_BID":
                         handlePlaceBid(request);
                         break;
+                    case "DEPOSIT":
+                        handleDeposit(request);
+                        break;
+
                     default:
                         JsonObject res = new JsonObject();
                         res.addProperty("status", "ERROR");
@@ -126,11 +130,13 @@ public class ClientHandler implements Runnable {
         if (isOk) {
             String role = dao.getUserRole(user, pass);
             int userId = dao.getUserId(user, pass);
+            int balance = dao.getBalanceByUsername(user);
 
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Đăng nhập thành công!");
             response.addProperty("role", role);
             response.addProperty("userId", userId);
+            response.addProperty("balance", balance);
         } else {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
@@ -277,6 +283,7 @@ public class ClientHandler implements Runnable {
                 broadcastMsg.addProperty("newPrice", bidAmount);
                 broadcastMsg.addProperty("bidderId", bidderId);
 
+
                 logger.info("New bid accepted. Broadcasting price update...");
                 broadcast(broadcastMsg);
             } else {
@@ -291,6 +298,91 @@ public class ClientHandler implements Runnable {
             logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
         }
     }
+    private void handleDeposit(JsonObject request) {
+
+        try {
+
+            String username =
+                    request.get("username").getAsString();
+
+            int amount =
+                    request.get("amount").getAsInt();
+
+            logger.info(
+                    "Deposit request from {} amount {}",
+                    username,
+                    amount
+            );
+
+            // ================= UPDATE DATABASE =================
+            UserDAO userDAO = new UserDAO();
+
+            boolean success =
+                    userDAO.depositBalance(username, amount);
+
+            // ================= RESPONSE =================
+            JsonObject response = new JsonObject();
+
+            if (success) {
+
+        // lấy balance mới từ DB
+                int newBalance = userDAO.getBalanceByUsername(username);
+
+                response.addProperty("status", "SUCCESS");
+
+                response.addProperty(
+                "message",
+                "Deposit successful"
+                );
+
+        // QUAN TRỌNG
+                response.addProperty(
+                        "newBalance",
+                        newBalance
+                );
+
+                logger.info(
+                        "Deposit successful for {}. New balance={}",
+                        username,
+                        newBalance
+                );
+
+            } else {
+
+                response.addProperty("status", "FAIL");
+                response.addProperty(
+                        "message",
+                        "Deposit failed"
+                );
+
+                logger.error(
+                        "Deposit failed for {}",
+                        username
+                );
+            }
+
+            writer.println(response.toString());
+
+        } catch (Exception e) {
+
+            logger.error(
+                    "DEPOSIT failed: {}",
+                    e.getMessage(),
+                    e
+            );
+
+            JsonObject response = new JsonObject();
+
+            response.addProperty("status", "ERROR");
+            response.addProperty(
+                    "message",
+                    "Server error"
+            );
+
+            writer.println(response.toString());
+        }
+    }
+
 
     /**
      * Gửi (Broadcast) một thông báo dạng JSON đến tất cả các Client đang kết nối.
