@@ -119,4 +119,88 @@ public class UserDAO {
         }
         return 0;
     }
+    public boolean depositBalance(
+                String username,
+                int amount
+        ) {
+
+            String sql =
+                    "UPDATE users " +
+                            "SET balance = balance + ? " +
+                            "WHERE username = ?";
+
+            try {
+
+                Connection conn = getConnection();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql);
+
+                stmt.setInt(1, amount);
+
+                stmt.setString(2, username);
+
+                int rows =
+                        stmt.executeUpdate();
+
+                stmt.close();
+
+                return rows > 0;
+
+            } catch (Exception e) {
+
+                logger.error(
+                        "Deposit failed: {}",
+                        e.getMessage(),
+                        e
+                );
+            }
+
+            return false;
+        }
+
+        // ================= GET BALANCE =================
+    public int getBalanceByUsername(
+                String username
+        ) {
+
+            String sql =
+                    "SELECT balance FROM users WHERE username = ?";
+
+            try {
+
+                Connection conn = getConnection();
+
+                PreparedStatement stmt =
+                        conn.prepareStatement(sql);
+
+                stmt.setString(1, username);
+
+                ResultSet rs =
+                        stmt.executeQuery();
+
+                int balance = 0;
+
+                if (rs.next()) {
+
+                    balance =
+                            rs.getInt("balance");
+                }
+
+                rs.close();
+                stmt.close();
+
+                return balance;
+
+            } catch (Exception e) {
+
+                logger.error(
+                        "Get balance failed: {}",
+                        e.getMessage(),
+                        e
+                );
+            }
+
+            return 0;
+        }
 }
