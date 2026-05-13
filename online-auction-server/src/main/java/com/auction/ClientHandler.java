@@ -16,73 +16,77 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Xử lý giao tiếp với một Client duy nhất đang kết nối.
+ * <p>
+ * Lớp này thực thi (implement) giao diện Runnable để chạy trên một Thread riêng biệt.
+ * Nó lắng nghe các request dạng JSON từ client (ví dụ: LOGIN, ADD_ITEM, PLACE_BID),
+ * xử lý chúng thông qua tầng DAO, và gửi trả lại các response dạng JSON.
+ */
 public class ClientHandler implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
 
-    // danh sách các client đang kết nối, được chia sẻ giữa tất cả các instance của ClientHandler để có thể phát thanh (broadcast) thông tin đến tất cả client khi có sự kiện mới (ví dụ: giá mới được đặt)
+    /** * Danh sách dùng chung chứa tất cả các Client đang kết nối.
+     * Dùng để broadcast các sự kiện theo thời gian thực (như cập nhật giá) đến tất cả mọi người.
+     */
     private static final List<ClientHandler> activeClients = new ArrayList<>();
 
     private Socket clientSocket;
     private PrintWriter writer;
-    //constructor
+
+    /**
+     * Khởi tạo một ClientHandler mới cho một Socket cụ thể.
+     * @param socket Socket kết nối của client.
+     */
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
     }
 
-    // phương thức run() sẽ được gọi khi thread bắt đầu, chịu trách nhiệm xử lý giao tiếp với client thông qua socket.
-    // Nó đọc dữ liệu từ client, xử lý yêu cầu dựa trên action được gửi lên (ví dụ: LOGIN, REGISTER, ADD_ITEM, GET_ALL_ITEMS, PLACE_BID) và gửi phản hồi lại cho client. 
-    // Nếu có lỗi xảy ra trong quá trình giao tiếp, nó sẽ in lỗi ra console và đảm bảo rằng client được loại bỏ khỏi danh sách activeClients khi kết thúc kết nối.
+    /**
+     * Vòng lặp thực thi chính của Client Thread.
+     * Nó liên tục đọc các message, điều hướng chúng tới các hàm xử lý tương ứng
+     * dựa trên trường "action", và đảm bảo ngắt kết nối an toàn nếu Client rớt mạng.
+     */
     @Override
     public void run() {
         try {
-            // thiết lập luồng đọc sử dụng BufferedReader để đọc dữ liệu từ client, với encoding UTF-8 để hỗ trợ đa ngôn ngữ và tránh lỗi khi client gửi dữ liệu có chứa ký tự đặc biệt
+            // 1. Thiết lập I/O streams với chuẩn mã hóa UTF-8
             BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));
-
-            // thiết lập luồng ghi, với autoFlush = true để đảm bảo rằng dữ liệu được gửi đến client ngay lập tức mà không bị giữ lại trong buffer
             this.writer = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"), true);
 
-            // khi một client mới kết nối, nó sẽ được thêm vào danh sách activeClients để có thể nhận được các thông báo broadcast từ server 
-            // sử dụng synchronized để đảm bảo rằng việc thêm client vào danh sách activeClients là an toàn trong môi trường đa luồng 
+            // 2. Đăng ký client này vào danh sách broadcast một cách an toàn (đồng bộ hóa)
             synchronized (activeClients) {
                 activeClients.add(this);
             }
 
-            // vòng lặp để liên tục đọc dữ liệu từ client, phương thức readLine() sẽ chặn (block) cho đến khi có một dòng dữ liệu được gửi từ client. 
-            // Khi client gửi dữ liệu, nó sẽ được xử lý dựa trên action được chỉ định trong JSON request và phản hồi sẽ được gửi lại cho client. 
-            // Nếu client ngắt kết nối hoặc có lỗi xảy ra, vòng lặp sẽ kết thúc và client sẽ được loại bỏ khỏi danh sách activeClients.
             String clientMessage;
 
-            //readline() sẽ trả về null khi client ngắt kết nối, do đó vòng lặp sẽ dừng lại khi client ngắt kết nối hoặc có lỗi xảy ra trong quá trình đọc dữ liệu.
-            //readline() sẽ block cho đến khi có một dòng dữ liệu được gửi từ client, do đó nếu client không gửi gì và không ngắt kết nối, thread sẽ chờ ở đây mà không tiêu tốn tài nguyên CPU.
+            // 3. Liên tục lắng nghe cho đến khi client ngắt kết nối (reader trả về null)
             while ((clientMessage = reader.readLine()) != null) {
                 logger.info("Received message from client: {}", clientMessage);
 
                 JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
                 String action = request.get("action").getAsString();
 
+                // Điều hướng request
                 switch (action) {
-                    case "LOGIN": // xử lý yêu cầu đăng nhập từ client, xác thực thông tin người dùng và trả về phản hồi tương ứng
+                    case "LOGIN":
                         handleLogin(request);
                         break;
-
                     case "REGISTER":
                         handleRegister(request);
                         break;
-
                     case "ADD_ITEM":
                         handleAddItem(request);
                         break;
-
                     case "GET_ALL_ITEMS":
                         handleGetAllItems(request);
                         break;
-
                     case "PLACE_BID":
                         handlePlaceBid(request);
                         break;
-
-                    default: // nếu action không hợp lệ, gửi phản hồi lỗi về client
+                    default:
                         JsonObject res = new JsonObject();
                         res.addProperty("status", "ERROR");
                         res.addProperty("message", "Action không hợp lệ!");
@@ -93,13 +97,10 @@ public class ClientHandler implements Runnable {
         } catch (Exception e) {
             logger.error("Communication error: {}", e.getMessage(), e);
         } finally {
-            // khi client ngắt kết nối hoặc có lỗi xảy ra, đảm bảo rằng client được loại bỏ khỏi danh sách activeClients để tránh việc gửi thông báo đến client đã ngắt kết nối và giải phóng tài nguyên liên quan đến kết nối đó
-            // sử dụng synchronized để đảm bảo rằng việc loại bỏ client khỏi danh sách activeClients là an toàn trong môi trường đa luồng
+            // 4. Dọn dẹp: Xóa khỏi danh sách activeClients và đóng Socket
             synchronized (activeClients) {
                 activeClients.remove(this);
-                logger.info("A client has just disconnected. Removed from the list.");
             }
-
             try {
                 clientSocket.close();
             } catch (Exception e) {
@@ -108,7 +109,11 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // ================= LOGIN =================
+    /**
+     * Xử lý request đăng nhập.
+     * Xác thực thông tin với Database và trả về role cùng userId nếu thành công.
+     * @param request Đối tượng JSON chứa "username" và "password".
+     */
     private void handleLogin(JsonObject request) {
         String user = request.get("username").getAsString();
         String pass = request.get("password").getAsString();
@@ -119,15 +124,13 @@ public class ClientHandler implements Runnable {
         JsonObject response = new JsonObject();
 
         if (isOk) {
-
             String role = dao.getUserRole(user, pass);
-            int userId = dao.getUserId(user, pass); // ✅ THÊM
+            int userId = dao.getUserId(user, pass);
 
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Đăng nhập thành công!");
             response.addProperty("role", role);
-            response.addProperty("userId", userId); // ✅ QUAN TRỌNG
-
+            response.addProperty("userId", userId);
         } else {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
@@ -136,7 +139,10 @@ public class ClientHandler implements Runnable {
         writer.println(response.toString());
     }
 
-    // ================= REGISTER =================
+    /**
+     * Xử lý đăng ký người dùng mới.
+     * @param request Đối tượng JSON chứa "username", "password", và "role".
+     */
     private void handleRegister(JsonObject request) {
         try {
             String username = request.get("username").getAsString();
@@ -153,82 +159,86 @@ public class ClientHandler implements Runnable {
                 response.addProperty("message", "Đăng ký thành công!");
             } else {
                 response.addProperty("status", "FAIL");
-                response.addProperty("message", "Tài khoản đã tồn tại hoặc lỗi!");
+                response.addProperty("message", "Tài khoản đã tồn tại hoặc có lỗi xảy ra!");
             }
 
             writer.println(response.toString());
 
         } catch (Exception e) {
             logger.error("REGISTER failed: {}", e.getMessage(), e);
-
             JsonObject response = new JsonObject();
             response.addProperty("status", "ERROR");
-            response.addProperty("message", "Server error!");
-
+            response.addProperty("message", "Lỗi Server!");
             writer.println(response.toString());
         }
     }
 
-    // ================= ADD ITEM =================
+    /**
+     * Xử lý request thêm sản phẩm đấu giá mới.
+     * Tính toán thời gian kết thúc (EndTime) dựa trên số giờ đấu giá và lưu vào Database.
+     * @param request Đối tượng JSON chứa chi tiết sản phẩm (name, price, duration...).
+     */
     private void handleAddItem(JsonObject request) {
         logger.info("Processing ADD_ITEM request...");
         try {
+            // 1. Trích xuất dữ liệu cơ bản
             String name = request.get("name").getAsString();
             String type = request.get("type").getAsString();
             double startingPrice = request.get("startingPrice").getAsDouble();
             int sellerId = request.get("sellerId").getAsInt();
 
-            // Lấy thông tin mới
+            // 2. Trích xuất dữ liệu bổ sung (có thể trống)
             String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
             String description = request.has("description") ? request.get("description").getAsString() : "";
             double stepPrice = request.get("stepPrice").getAsDouble();
             int durationHours = request.get("durationHours").getAsInt();
 
-            // Tính EndTime
+            // 3. Tính toán EndTime
             java.time.LocalDateTime endTarget = java.time.LocalDateTime.now().plusHours(durationHours);
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String endTime = endTarget.format(formatter);
 
-            // Tạo Object
+            // 4. Khởi tạo đối tượng Item
             Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, "");
             newItem.setStepPrice(stepPrice);
             newItem.setDurationHours(durationHours);
             newItem.setImageUrl(imageUrl);
             newItem.setDescription(description);
 
-            // Lưu Database
+            // 5. Lưu vào Database
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
-            //gửi thông báo về client
+            // 6. Gửi response phản hồi
             JsonObject response = new JsonObject();
             if (isSuccess) {
                 logger.info("Saved item successfully [{}] into items table.", name);
                 response.addProperty("status", "SUCCESS");
-                response.addProperty("message", "Item listing created successfully!");
+                response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
             } else {
                 logger.error("Failed to save item [{}] into items table.", name);
                 response.addProperty("status", "FAIL");
-                response.addProperty("message", "Database error while saving the item.");
+                response.addProperty("message", "Lỗi Database khi lưu sản phẩm.");
             }
             writer.println(response.toString());
 
         } catch (Exception e) {
             JsonObject errorResponse = new JsonObject();
             errorResponse.addProperty("status", "ERROR");
-            errorResponse.addProperty("message", "Data error: " + e.getMessage());
+            errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
             logger.error("ADD_ITEM failed: {}", e.getMessage(), e);
             writer.println(errorResponse.toString());
         }
     }
 
-    // ================= GET ALL ITEMS =================
+    /**
+     * Lấy toàn bộ danh sách sản phẩm từ Database và gửi cho Client.
+     * @param request Request GET_ALL_ITEMS dạng JSON.
+     */
     private void handleGetAllItems(JsonObject request) {
-        //lấy danh sách tất cả các sản phẩm thông qua ItemDAO
         ItemDAO itemDAO = new ItemDAO();
         List<Item> items = itemDAO.getAllItems();
 
-        //chuyển đổi danh sách sản phẩm thành JSON để gửi về client
         Gson gson = new Gson();
         JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
 
@@ -236,27 +246,31 @@ public class ClientHandler implements Runnable {
         response.addProperty("status", "SUCCESS");
         response.add("data", arr);
 
-        //gửi phản hồi về client, client sẽ nhận được một JSON chứa danh sách tất cả sản phẩm hiện có trên hệ thống để hiển thị cho người dùng
         writer.println(response.toString());
     }
 
-    // ================= PLACE BID =================
+    /**
+     * Xử lý thao tác đặt giá (Place Bid) cho một sản phẩm.
+     * Cập nhật giá hiện tại, ghi log giao dịch, và broadcast giá mới cho tất cả Client nếu thành công.
+     * @param request Đối tượng JSON chứa "itemId", "bidderId", và "bidAmount".
+     */
     private void handlePlaceBid(JsonObject request) {
         try {
-            // getting the bid information from the request by parsing the JSON request object to extract the itemId, bidderId, and bidAmount.
             logger.info("Received PLACE_BID request: {}", request);
+
+            // 1. Trích xuất dữ liệu đặt giá
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
 
-            // update the current price of the Item in the database using ItemDAO, and log the bid transaction using BidTransactionDAO.
+            // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
 
             boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
-            // if both successful, broadcast the new price to all connected clients.
+            // 3. Broadcast cho tất cả Client nếu thành công
             if (updateSuccess && logSuccess) {
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
@@ -265,23 +279,24 @@ public class ClientHandler implements Runnable {
 
                 logger.info("New bid accepted. Broadcasting price update...");
                 broadcast(broadcastMsg);
-
-            //otherwise, send an error response back to the bidder and log the failure.
             } else {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Database error while placing the bid!");
+                errorMsg.addProperty("message", "Lỗi Database khi xử lý đặt giá!");
                 logger.error("Failed to place bid for itemId={}, bidderId={}, bidAmount={}", itemId, bidderId, bidAmount);
                 this.writer.println(errorMsg.toString());
             }
 
-        // handle database errors or errors when parsing the request.
         } catch (Exception e) {
-            logger.error("Error processing bid stream: {}", e.getMessage(), e);
+            logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
         }
     }
 
-    // ================= BROADCAST =================
+    /**
+     * Gửi (Broadcast) một thông báo dạng JSON đến tất cả các Client đang kết nối.
+     * Thường dùng cho các bản cập nhật thời gian thực như có người đặt giá mới.
+     * @param message Đối tượng JSON cần gửi cho mọi người.
+     */
     private void broadcast(JsonObject message) {
         synchronized (activeClients) {
             for (ClientHandler client : activeClients) {
@@ -289,7 +304,6 @@ public class ClientHandler implements Runnable {
                     if (client.writer != null) {
                         client.writer.println(message.toString());
                     }
-                    
                 } catch (Exception e) {
                     logger.error("Failed to send data to client: {}", e.getMessage(), e);
                 }

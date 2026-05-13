@@ -12,12 +12,18 @@ import java.util.List;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
 
+/**
+ * Lớp DAO quản lý các thao tác Database liên quan đến sản phẩm (Item).
+ * Bao gồm các chức năng: thêm sản phẩm mới, lấy danh sách sản phẩm và cập nhật giá.
+ */
 public class ItemDAO {
     private static final Logger logger = LoggerFactory.getLogger(ItemDAO.class);
 
-    // =========================================================================
-    // 1. THÊM SẢN PHẨM MỚI (Đã tích hợp 11 cột)
-    // =========================================================================
+    /**
+     * Thêm một sản phẩm mới vào bảng items trong Database.
+     * @param item Đối tượng Item chứa đầy đủ thông tin cần lưu.
+     * @return true nếu thêm thành công, ngược lại là false.
+     */
     public boolean insertItem(Item item) {
         boolean isSuccess = false;
         String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
@@ -25,6 +31,7 @@ public class ItemDAO {
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
+            // 1. Gán các giá trị cơ bản cho câu lệnh SQL
             pstmt.setString(1, item.getName());
             pstmt.setString(2, item.getClass().getSimpleName().toUpperCase());
             pstmt.setDouble(3, item.getStartingPrice());
@@ -34,23 +41,24 @@ public class ItemDAO {
             pstmt.setInt(7, item.getDurationHours());
             pstmt.setString(8, item.getImageUrl());
             pstmt.setString(9, item.getDescription());
-
             pstmt.setString(10, item.getExtraInfo());
-
             pstmt.setInt(11, item.getSellerId());
 
+            // 2. Thực thi lệnh INSERT
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) isSuccess = true;
 
         } catch (SQLException e) {
-            logger.error("SQL error while inserting Item: {}", e.getMessage());
+            logger.error("SQL error while inserting Item: {}", e.getMessage(), e);
         }
         return isSuccess;
     }
 
-    // =========================================================================
-    // 2. LẤY TẤT CẢ SẢN PHẨM (Phục vụ màn hình Dashboard)
-    // =========================================================================
+    /**
+     * Lấy toàn bộ danh sách sản phẩm hiện có trong hệ thống.
+     * Phục vụ cho việc hiển thị trên Dashboard của người dùng.
+     * @return Danh sách (List) chứa các đối tượng Item.
+     */
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
         String sql = "SELECT * FROM items";
@@ -59,6 +67,7 @@ public class ItemDAO {
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
+                // 1. Trích xuất dữ liệu từ ResultSet
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
                 double startingPrice = rs.getDouble("starting_price");
@@ -67,14 +76,12 @@ public class ItemDAO {
                 int sellerId = rs.getInt("seller_id");
                 String itemType = rs.getString("item_type");
                 String extraInfo = rs.getString("extra_info");
-
-                // Lấy thêm các cột mới phục vụ UI
                 double stepPrice = rs.getDouble("step_price");
                 int durationHours = rs.getInt("duration_hours");
                 String imageUrl = rs.getString("image_url");
                 String description = rs.getString("description");
 
-                // Tạo đối tượng Item
+                // 2. Sử dụng ItemFactory để tạo đúng loại đối tượng Item
                 Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
                 item.setId(id);
                 item.setCurrentPrice(currentPrice);
@@ -86,35 +93,35 @@ public class ItemDAO {
                 itemList.add(item);
             }
         } catch (Exception e) {
-            logger.error("Error retrieving item list: {}", e.getMessage());
+            logger.error("Error retrieving item list: {}", e.getMessage(), e);
         }
         return itemList;
     }
 
-    // =========================================================================
-    // 3. CẬP NHẬT GIÁ (Phục vụ luồng Đấu giá Real-time)
-    // =========================================================================
+    /**
+     * Cập nhật giá hiện tại cho một sản phẩm khi có lượt đặt giá mới.
+     * Lưu ý: Chỉ cập nhật nếu giá mới cao hơn giá hiện tại trong Database.
+     * @param itemId ID của sản phẩm cần cập nhật.
+     * @param newPrice Giá đấu mới do người dùng đặt.
+     * @return true nếu cập nhật thành công, ngược lại là false.
+     */
     public boolean updateCurrentPrice(int itemId, double newPrice) {
         boolean isSuccess = false;
-        // chỉ update giá nếu như giá mới lớn hơn giá hiện tại
-        String sql = "UPDATE items SET current_price = ? WHERE id = ?";
+        String sql = "UPDATE items SET current_price = ? WHERE id = ? AND current_price < ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setDouble(1, newPrice);
             pstmt.setInt(2, itemId);
+            pstmt.setDouble(3, newPrice);
 
             int rowsAffected = pstmt.executeUpdate();
-            logger.info("Rows affected: {}", rowsAffected);
             if (rowsAffected > 0) {
                 isSuccess = true;
                 logger.info("Successfully updated new price: ${} for Item ID: {}", newPrice, itemId);
-
             }
-            
         } catch (Exception e) {
-            logger.error("Error updating Item price: {}", e.getMessage());
-
+            logger.error("Error updating Item price: {}", e.getMessage(), e);
         }
         return isSuccess;
     }

@@ -12,11 +12,16 @@ import javafx.util.Duration;
 import java.io.*;
 import java.net.Socket;
 
-// ✅ SESSION
 import com.auction.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Controller quản lý giao diện Đăng nhập (Login).
+ * <p>
+ * Chịu trách nhiệm xác thực thông tin người dùng với Server,
+ * lưu trữ phiên đăng nhập (Session) và chuyển hướng sang màn hình Dashboard nếu thành công.
+ */
 public class LoginController {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
@@ -25,12 +30,17 @@ public class LoginController {
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
 
+    /**
+     * Xử lý sự kiện khi người dùng nhấn nút Đăng nhập.
+     * Kiểm tra tính hợp lệ của dữ liệu đầu vào và mở kết nối Socket để gửi yêu cầu xác thực.
+     */
     @FXML
     private void handleLogin() {
 
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
+        // 1. Kiểm tra validation cơ bản (chặn bỏ trống)
         if (username.isEmpty() || password.isEmpty()) {
             messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
@@ -40,7 +50,7 @@ public class LoginController {
         messageLabel.setStyle("-fx-text-fill: #f59e0b;");
         messageLabel.setText("Đang đăng nhập...");
 
-        // phải tạo thread mới để giao tiếp với server, điều này tránh UI bị đóng băng khi chờ phản hổi 
+        // 2. Tạo Thread mới để giao tiếp với Server (tránh làm đóng băng UI)
         new Thread(() -> {
             try (Socket socket = new Socket("127.0.0.1", 8080);
                  PrintWriter writer = new PrintWriter(
@@ -48,7 +58,7 @@ public class LoginController {
                  BufferedReader reader = new BufferedReader(
                          new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
-                //gửi yêu cầu đăng nhập đến server
+                // 3. Đóng gói và gửi yêu cầu đăng nhập (Payload JSON)
                 JsonObject req = new JsonObject();
                 req.addProperty("action", "LOGIN");
                 req.addProperty("username", username);
@@ -56,8 +66,8 @@ public class LoginController {
 
                 writer.println(req.toString());
 
-                //xử lý phản hổi từ server
-                String line = reader.readLine(); //thread sẽ chờ ở đây cho đến khi server gửi phản hổi, nhưng không làm đóng băng UI vì nó chạy ở thread riêng
+                // 4. Chờ luồng đọc phản hồi từ Server
+                String line = reader.readLine();
                 if (line == null) throw new Exception("No response");
 
                 JsonObject res = JsonParser.parseString(line).getAsJsonObject();
@@ -65,20 +75,20 @@ public class LoginController {
                 String status = res.get("status").getAsString();
                 String message = res.get("message").getAsString();
 
-                // LẤY ROLE + USERID (AN TOÀN)
+                // 5. Trích xuất Role và UserID một cách an toàn
                 String role = res.has("role") ? res.get("role").getAsString() : "bidder";
                 int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
 
-                //update UI phải chạy trên JavaFX Application Thread, nên dùng Platform.runLater để đảm bảo an toàn khi cập nhật giao diện từ thread khác
+                // 6. Gói lệnh cập nhật giao diện vào JavaFX Application Thread
                 javafx.application.Platform.runLater(() -> {
 
                     if ("SUCCESS".equals(status)) {
 
-                        // LƯU SESSION
+                        // 7. Lưu trữ trạng thái phiên làm việc (Session)
                         Session.role = role;
                         Session.userId = userId;
 
-                        // animation code
+                        // 8. Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
                         messageLabel.setStyle("-fx-text-fill: #00ff99;");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
 
@@ -95,6 +105,7 @@ public class LoginController {
                         dots.setCycleCount(Timeline.INDEFINITE);
                         dots.play();
 
+                        // 9. Độ trễ 1.5s trước khi chuyển cảnh sang Dashboard
                         PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
                         delay.setOnFinished(e -> {
                             dots.stop();
@@ -121,6 +132,9 @@ public class LoginController {
         }).start();
     }
 
+    /**
+     * Chuyển hướng người dùng sang giao diện Đăng ký tài khoản (Register).
+     */
     @FXML
     private void goToRegister() {
         try {
