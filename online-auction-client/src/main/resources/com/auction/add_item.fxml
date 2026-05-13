@@ -22,7 +22,7 @@
             <VBox spacing="8.0">
                 <Label styleClass="target-label" text="- TÊN SẢN PHẨM *" />
                 <HBox styleClass="target-input-box">
-                    <Label styleClass="target-input-icon" text="🏷" />
+                    <Label styleClass="target-input-icon" text="&#x1F3F7;" />
                     <TextField fx:id="nameField" promptText="Nhập tên sản phẩm..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                 </HBox>
             </VBox>
@@ -35,7 +35,7 @@
                 <VBox prefWidth="280" spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label styleClass="target-label" text="- HÌNH ẢNH (URL)" />
                     <HBox styleClass="target-input-box">
-                        <Label styleClass="target-input-icon" text="🖼️" />
+                        <Label styleClass="target-input-icon" text="&#x1F5BC;" />
                         <TextField fx:id="imageUrlField" promptText="https://..." styleClass="target-textfield" HBox.hgrow="ALWAYS" />
                         <Button text="Chọn file" onAction="#handleBrowseImage" style="-fx-background-color: #4B5563; -fx-text-fill: white; -fx-background-radius: 4; -fx-cursor: hand; -fx-padding: 4 8;" />
                     </HBox>

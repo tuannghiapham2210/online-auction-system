@@ -415,6 +415,10 @@
 .target-input-icon {
     -fx-text-fill: #5E6A7D;
     -fx-font-size: 14px;
+    /* Ép dùng font hệ thống chứa Emoji */
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+    /* Ngăn chặn JavaFX tự động biến icon thành dấu 3 chấm */
+    -fx-min-width: USE_PREF_SIZE;
 }
 
 /* TextField và TextArea bên trong (Xóa nền, xóa viền) */
