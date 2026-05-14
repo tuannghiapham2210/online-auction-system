@@ -19,33 +19,42 @@
    <BorderPane styleClass="dashboard-root" stylesheets="@style.css">
 
    <left>
-      <VBox prefWidth="250.0" spacing="20.0" styleClass="sidebar">
+      <VBox prefWidth="300.0" spacing="25.0" styleClass="sidebar-premium">
          <padding>
-            <Insets bottom="20.0" left="20.0" right="20.0" top="30.0" />
+            <Insets bottom="30.0" left="25.0" right="25.0" top="40.0" />
          </padding>
          <children>
-            <Label text="THE AUCTION SYSTEM"
-                   style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;" />
+            <!-- Logo & Title Section -->
+            <HBox alignment="CENTER_LEFT" spacing="12.0">
+                <Label text="&#x269C;" styleClass="logo-icon-premium" />
+                <VBox spacing="0.0">
+                    <Label text="THE AUCTION" styleClass="logo-text-main" />
+                    <Label text="SYSTEM" styleClass="logo-text-accent" />
+                    <Label text="Sàn đấu giá trực tuyến. Khám phá các lô hàng cao cấp." styleClass="logo-subtitle" wrapText="true" />
+                </VBox>
+            </HBox>
 
-            <TextField fx:id="searchField"
-                       promptText="Tìm kiếm lô hàng..."
-                       style="-fx-background-color: #2D3748; -fx-text-fill: white; -fx-background-radius: 10;" />
+            <!-- Search Bar -->
+            <HBox alignment="CENTER_LEFT" styleClass="search-box-premium">
+                <Label text="&#x1F50D;" styleClass="search-icon-premium" />
+                <TextField fx:id="searchField"
+                           promptText="Tìm kiếm lô hàng..."
+                           styleClass="search-field-premium" HBox.hgrow="ALWAYS" />
+            </HBox>
 
             <!-- ✅ ADD ITEM (Under searching bar) -->
             <Button fx:id="btnAddItem"
                     text="Đăng sản phẩm"
-                    styleClass="btn-orange"
+                    styleClass="btn-premium-add"
                     onAction="#handleAddItem"
                     maxWidth="Infinity"/>
 
-            <VBox spacing="10.0"
-                  style="-fx-background-color: #2D3748; -fx-background-radius: 15; -fx-padding: 10;">
+            <!-- Category Menu -->
+            <VBox spacing="8.0" styleClass="category-menu-premium">
                <children>
-                  <Button text="Tất cả" maxWidth="Infinity" styleClass="btn-orange"/>
-                  <Button text="Đồng hồ" maxWidth="Infinity"
-                          style="-fx-background-color: transparent; -fx-text-fill: gray;"/>
-                  <Button text="Ô tô" maxWidth="Infinity"
-                          style="-fx-background-color: transparent; -fx-text-fill: gray;"/>
+                  <Button text="Tất cả" maxWidth="Infinity" alignment="BASELINE_LEFT" styleClass="menu-item-active"/>
+                  <Button text="Đồng hồ" maxWidth="Infinity" alignment="BASELINE_LEFT" styleClass="menu-item-inactive"/>
+                  <Button text="Ô tô" maxWidth="Infinity" alignment="BASELINE_LEFT" styleClass="menu-item-inactive"/>
                </children>
             </VBox>
          </children>
@@ -53,34 +62,41 @@
    </left>
 
    <center>
-      <VBox spacing="20.0">
+      <VBox spacing="25.0">
          <padding>
-            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+            <Insets bottom="40.0" left="40.0" right="40.0" top="40.0" />
          </padding>
 
          <children>
 
             <!-- ✅ TOP RIGHT BAR (LOGOUT) -->
-            <HBox alignment="CENTER_RIGHT" spacing="15">
+            <HBox alignment="CENTER_RIGHT" spacing="20">
 
-               <!-- SỐ DƯ -->
-               <Label fx:id="lblBalance"
-                     text="Số dư: $0"
-                     style="-fx-text-fill: white;
-                           -fx-font-size: 16px;
-                           -fx-font-weight: bold;" />
+               <!-- Left Card — Wallet Balance -->
+               <HBox styleClass="header-card" alignment="CENTER_LEFT" spacing="15">
+                   <HBox alignment="CENTER_LEFT" spacing="10">
+                       <Label text="&#x1F4B3;" styleClass="wallet-icon"/>
+                       <VBox alignment="CENTER_LEFT">
+                           <Label text="Số dư ví:" styleClass="wallet-label"/>
+                           <Label fx:id="lblBalance" text="\$0" styleClass="wallet-balance"/>
+                       </VBox>
+                   </HBox>
+                   <Button fx:id="btnDeposit" text="NẠP" styleClass="btn-deposit-neon" onAction="#handleDeposit"/>
+               </HBox>
 
-               <!-- NẠP TIỀN -->
-               <Button fx:id="btnDeposit"
-                     text="Nạp Tiền"
-                     styleClass="btn-orange"
-                     onAction="#handleDeposit"/>
-
-               <!-- ĐĂNG XUẤT -->
-               <Button fx:id="btnLogout"
-                     text="Đăng xuất"
-                     styleClass="btn-orange"
-                     onAction="#handleLogout"/>
+               <!-- Right Card — User Profile -->
+               <HBox styleClass="header-card" alignment="CENTER_LEFT" spacing="15">
+                   <VBox alignment="CENTER_RIGHT">
+                       <Label fx:id="lblUsername" text="seller" styleClass="profile-username"/>
+                       <Label fx:id="lblRole" text="SELLER" styleClass="profile-role-badge"/>
+                   </VBox>
+                   <Label fx:id="lblAvatar" text="S" styleClass="profile-avatar"/>
+                   <Button fx:id="btnLogout" styleClass="btn-logout-square" onAction="#handleLogout">
+                       <graphic>
+                           <Label text="&#x238B;" styleClass="logout-icon"/>
+                       </graphic>
+                   </Button>
+               </HBox>
 
             </HBox>
 
@@ -88,14 +104,14 @@
             <!-- ✅ HEADER CHUẨN -->
             <HBox alignment="CENTER_LEFT" spacing="10">
                <Label text="Tất cả lô hàng"
-                      style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" />
+                      style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: 900; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" />
 
                <Region HBox.hgrow="ALWAYS"/>
             </HBox>
 
             <!-- ✅ GRID -->
             <ScrollPane fitToWidth="true"
-                        style="-fx-background: #0F131A; -fx-border-color: #0F131A;"
+                        styleClass="premium-scroll-pane"
                         VBox.vgrow="ALWAYS">
 
                <content>

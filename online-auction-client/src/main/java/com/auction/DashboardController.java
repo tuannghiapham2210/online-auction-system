@@ -59,6 +59,9 @@ public class DashboardController {
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
+    @FXML private Label lblUsername;
+    @FXML private Label lblRole;
+    @FXML private Label lblAvatar;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -73,13 +76,26 @@ public class DashboardController {
         loadDataFromServer();
 
         // 2. Ẩn nút đăng bán nếu người dùng không có quyền Seller
-        if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
-            btnAddItem.setVisible(false);
+        if (btnAddItem != null) {
+            if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
+                btnAddItem.setVisible(false);
+            }
         }
+        
         // HIỂN THỊ SỐ DƯ
-        lblBalance.setText(
-            "Số dư: $" + Session.balance
-        );
+        if (lblBalance != null) {
+            lblBalance.setText("$" + Session.balance);
+        }
+
+        if (lblUsername != null && Session.username != null) {
+            lblUsername.setText(Session.username);
+        }
+        if (lblRole != null && Session.role != null) {
+            lblRole.setText(Session.role.toUpperCase());
+        }
+        if (lblAvatar != null && Session.username != null && !Session.username.isEmpty()) {
+            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
+        }
     }
 
     /**
@@ -213,7 +229,7 @@ public class DashboardController {
         // 4. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(150);
-        imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+        imageContainer.setStyle("-fx-background-color: #071226; -fx-background-radius: 16; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 16;");
 
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
             try {
@@ -229,7 +245,7 @@ public class DashboardController {
 
         // 5. Thêm văn bản (ID, Loại, Tên)
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
-        subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
+        subtitle.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: bold;");
 
         Label title = new Label(item.getName());
         title.getStyleClass().add("card-title");
@@ -242,7 +258,7 @@ public class DashboardController {
 
         VBox priceVBox = new VBox();
         Label priceLabel = new Label("GIÁ HIỆN TẠI");
-        priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+        priceLabel.setStyle("-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: bold;");
 
         Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");
@@ -465,7 +481,7 @@ private void handleDeposit() {
 
             // update balance label
             lblBalance.setText(
-                    "Số dư: $" + Session.balance
+                    "$" + Session.balance
             );
         });
 
