@@ -8,35 +8,25 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 
-<!-- LỚP NGOÀI CÙNG: StackPane giúp hiển thị các Notification đè lên trên (Overlay) -->
-<StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
+<!-- LỚP NGOÀI CÙNG: StackPane giúp hiển thị các Notification và các Layer đè lên nhau -->
+<StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
    <children>
 
-      <!-- LỚP THỨ 2: VBox căn giữa toàn bộ nội dung (Tạo hiệu ứng Boxed Layout) -->
-      <VBox alignment="TOP_CENTER" style="-fx-padding: 20 15 30 15;">
+      <!-- LAYER 1: CHỨA CÁC CARD SẢN PHẨM & BIỂU ĐỒ -->
+      <!-- alignment="CENTER" giúp căn giữa toàn bộ khối nội dung giữa màn hình -->
+      <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 20;">
          <children>
-
-            <!-- LỚP THỨ 3: Giới hạn chiều rộng tối đa 1250px để tạo lề 2 bên -->
-            <VBox maxWidth="1250.0" spacing="20.0" VBox.vgrow="ALWAYS">
+            <!-- Hạ maxWidth xuống 1000px để giao diện gọn gàng và có viền đen xung quanh giống hình 2 -->
+            <VBox maxWidth="1000.0" spacing="20.0" VBox.vgrow="NEVER">
                <children>
 
-                  <!-- Top: Nút Về Sảnh (VBox.vgrow="NEVER" để không bị giãn theo chiều dọc) -->
-                  <HBox alignment="CENTER_LEFT" VBox.vgrow="NEVER">
-                     <children>
-                        <Button onAction="#handleLeaveRoom"
-                                prefHeight="45.0"
-                                prefWidth="160.0"
-                                style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 18px; -fx-background-radius: 18; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1; -fx-cursor: hand;"
-                                text="↩ Về sảnh" />
-                     </children>
-                  </HBox>
-
-                  <!-- Middle: Thông tin Sản phẩm (Sẽ tự động giãn ngang lấp đầy) -->
+                  <!-- Middle: Thông tin Sản phẩm -->
                   <HBox alignment="CENTER_LEFT" spacing="30.0" styleClass="card" VBox.vgrow="NEVER">
                      <children>
                         <!-- Product Image -->
@@ -49,7 +39,7 @@
                         <!-- Auction details -->
                         <VBox spacing="15.0" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label fx:id="itemNameLabel" styleClass="title" style="-fx-font-size: 28px;" text="Đang tải dữ liệu sản phẩm..." />
+                              <Label fx:id="itemNameLabel" style="-fx-font-size: 28px;" styleClass="title" text="Đang tải dữ liệu sản phẩm..." />
 
                               <HBox alignment="CENTER_LEFT" spacing="20.0">
                                  <children>
@@ -60,7 +50,6 @@
                                           <Label fx:id="highestBidderLabel" styleClass="header-sub" text="Chưa có người trả giá" />
                                        </children>
                                     </VBox>
-                                    <!-- Region này đẩy đồng hồ về góc sát bên phải -->
                                     <Region HBox.hgrow="ALWAYS" />
                                     <VBox alignment="CENTER_RIGHT" spacing="10.0">
                                        <children>
@@ -74,7 +63,8 @@
                               <HBox alignment="CENTER" spacing="15.0">
                                  <children>
                                     <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="\$ Nhập giá thầu..." styleClass="input-box" HBox.hgrow="ALWAYS" />
-                                    <Button onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="PHÁT GIÁ" />
+                                    <!-- Đã thêm defaultButton="true" để bắt phím Enter -->
+                                    <Button defaultButton="true" onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="PHÁT GIÁ" />
                                  </children>
                               </HBox>
                            </children>
@@ -114,5 +104,15 @@
             </VBox>
          </children>
       </VBox>
+
+      <!-- LAYER 2: CHỨA NÚT "VỀ SẢNH" NẰM ĐÈ LÊN TRÊN -->
+      <!-- pickOnBounds="false" rất quan trọng, giúp các vùng trống của AnchorPane không chặn click chuột của VBox bên dưới -->
+      <AnchorPane pickOnBounds="false">
+         <children>
+            <!-- Đã ghim chết nút vào góc top="20" và left="20", thêm cancelButton="true" để bắt phím ESC -->
+            <Button cancelButton="true" onAction="#handleLeaveRoom" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1; -fx-cursor: hand;" text="↩ Về sảnh" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
+         </children>
+      </AnchorPane>
+
    </children>
 </StackPane>

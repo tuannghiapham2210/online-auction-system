@@ -277,112 +277,114 @@ public class DashboardController {
      * Phân tích chuỗi JSON trả về, tạo các đối tượng Item và đưa lên lưới hiển thị (Grid).
      */
     private void loadDataFromServer() {
-        // 1. Mở Socket kết nối I/O an toàn
-        try (Socket socket = new Socket("localhost", 8080);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        new Thread(() -> {
+            // 1. Mở Socket kết nối I/O an toàn
+            try (Socket socket = new Socket("localhost", 8080);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            // 2. Gửi yêu cầu lấy danh sách sản phẩm
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "GET_ALL_ITEMS");
-            out.println(request.toString());
+                // 2. Gửi yêu cầu lấy danh sách sản phẩm
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "GET_ALL_ITEMS");
+                out.println(request.toString());
 
-            // 3. Nhận và phân tích phản hồi
-            String responseStr = in.readLine();
-            logger.info("Dashboard received response from server: {}", responseStr);
+                // 3. Nhận và phân tích phản hồi
+                String responseStr = in.readLine();
+                logger.info("Dashboard received response from server: {}", responseStr);
 
-            if (responseStr != null) {
+                if (responseStr != null) {
 
-                JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
+                    JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
 
-                if (response.get("status").getAsString().equals("SUCCESS")) {
-                    JsonArray dataArray = response.getAsJsonArray("data");
-                    List<Item> items = new ArrayList<>();
+                    if (response.get("status").getAsString().equals("SUCCESS")) {
+                        JsonArray dataArray = response.getAsJsonArray("data");
+                        List<Item> items = new ArrayList<>();
 
-                    // 4. Map dùng để nhận diện loại sản phẩm dựa trên trường đặc thù
-                    Map<String, String> typeMap = new LinkedHashMap<>();
-                    typeMap.put("warranty", "ELECTRONICS");
-                    typeMap.put("engineType", "VEHICLE");
-                    typeMap.put("author", "ART");
+                        // 4. Map dùng để nhận diện loại sản phẩm dựa trên trường đặc thù
+                        Map<String, String> typeMap = new LinkedHashMap<>();
+                        typeMap.put("warranty", "ELECTRONICS");
+                        typeMap.put("engineType", "VEHICLE");
+                        typeMap.put("author", "ART");
 
-                    // 5. Duyệt danh sách JSON và khởi tạo đối tượng
-                    for (int i = 0; i < dataArray.size(); i++) {
-                        JsonObject obj = dataArray.get(i).getAsJsonObject();
+                        // 5. Duyệt danh sách JSON và khởi tạo đối tượng
+                        for (int i = 0; i < dataArray.size(); i++) {
+                            JsonObject obj = dataArray.get(i).getAsJsonObject();
 
-                        String name = obj.has("name") ? obj.get("name").getAsString() : "Chưa có tên";
-                        double startPrice = obj.has("startingPrice") ? obj.get("startingPrice").getAsDouble() : 0;
-                        String endTime = obj.has("endTime") ? obj.get("endTime").getAsString() : "";
-                        int sellerId = obj.has("sellerId") ? obj.get("sellerId").getAsInt() : 0;
+                            String name = obj.has("name") ? obj.get("name").getAsString() : "Chưa có tên";
+                            double startPrice = obj.has("startingPrice") ? obj.get("startingPrice").getAsDouble() : 0;
+                            String endTime = obj.has("endTime") ? obj.get("endTime").getAsString() : "";
+                            int sellerId = obj.has("sellerId") ? obj.get("sellerId").getAsInt() : 0;
 
-                        logger.info("Raw Item JSON: {}", obj.toString());
+                            logger.info("Raw Item JSON: {}", obj.toString());
 
-                        String type = "ART";
-                        String extraInfo = "N/A";
+                            String type = "ART";
+                            String extraInfo = "N/A";
 
-                        // Suy luận loại sản phẩm
-                        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
-                            if (obj.has(entry.getKey())) {
-                                type = entry.getValue();
-                                extraInfo = obj.get(entry.getKey()).getAsString();
-                                break;
-                            }
-                        }
-
-                        // Gọi Factory
-                        Item item = com.auction.factory.ItemFactory.createItem(
-                                type, name, startPrice, endTime, sellerId, extraInfo
-                        );
-
-                        int id = obj.get("id").getAsInt();
-                        item.setId(id);
-                        if (obj.has("currentPrice")) {
-                            item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
-                        }
-                        if (obj.has("imageUrl")) {
-                            item.setImageUrl(obj.get("imageUrl").getAsString());
-                        }
-
-                        items.add(item);
-                    }
-
-                    // 6. Đưa việc cập nhật UI vào JavaFX Application Thread
-                    Platform.runLater(() -> {
-                        itemGrid.getChildren().clear();
-                        if (dashboardTimeline != null) {
-                            dashboardTimeline.stop();
-                        }
-                        timerMap.clear();
-
-                        // Đưa các thẻ Card vào lưới hiển thị
-                        for (Item item : items) {
-                            itemGrid.getChildren().add(createItemCard(item));
-                        }
-
-                        // 7. Chạy 1 Timeline duy nhất quản lý đếm ngược cho TẤT CẢ sản phẩm
-                        dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-                            LocalDateTime now = LocalDateTime.now();
-                            for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
-                                Label lbl = entry.getKey();
-                                LocalDateTime end = entry.getValue();
-                                if (now.isAfter(end)) {
-                                    lbl.setText("ĐÃ KẾT THÚC");
-                                    lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
-                                } else {
-                                    java.time.Duration duration = java.time.Duration.between(now, end);
-                                    lbl.setText(String.format("⏳ %02d:%02d:%02d",
-                                            duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                            // Suy luận loại sản phẩm
+                            for (Map.Entry<String, String> entry : typeMap.entrySet()) {
+                                if (obj.has(entry.getKey())) {
+                                    type = entry.getValue();
+                                    extraInfo = obj.get(entry.getKey()).getAsString();
+                                    break;
                                 }
                             }
-                        }));
-                        dashboardTimeline.setCycleCount(Timeline.INDEFINITE);
-                        dashboardTimeline.play();
-                    });
-                }
-            }
 
-        } catch (Exception e) {
-            logger.error("Network error while loading items: {}", e.getMessage(), e);
-        }
+                            // Gọi Factory
+                            Item item = com.auction.factory.ItemFactory.createItem(
+                                    type, name, startPrice, endTime, sellerId, extraInfo
+                            );
+
+                            int id = obj.get("id").getAsInt();
+                            item.setId(id);
+                            if (obj.has("currentPrice")) {
+                                item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                            }
+                            if (obj.has("imageUrl")) {
+                                item.setImageUrl(obj.get("imageUrl").getAsString());
+                            }
+
+                            items.add(item);
+                        }
+
+                        // 6. Đưa việc cập nhật UI vào JavaFX Application Thread
+                        Platform.runLater(() -> {
+                            itemGrid.getChildren().clear();
+                            if (dashboardTimeline != null) {
+                                dashboardTimeline.stop();
+                            }
+                            timerMap.clear();
+
+                            // Đưa các thẻ Card vào lưới hiển thị
+                            for (Item item : items) {
+                                itemGrid.getChildren().add(createItemCard(item));
+                            }
+
+                            // 7. Chạy 1 Timeline duy nhất quản lý đếm ngược cho TẤT CẢ sản phẩm
+                            dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+                                LocalDateTime now = LocalDateTime.now();
+                                for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
+                                    Label lbl = entry.getKey();
+                                    LocalDateTime end = entry.getValue();
+                                    if (now.isAfter(end)) {
+                                        lbl.setText("ĐÃ KẾT THÚC");
+                                        lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+                                    } else {
+                                        java.time.Duration duration = java.time.Duration.between(now, end);
+                                        lbl.setText(String.format("⏳ %02d:%02d:%02d",
+                                                duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
+                                    }
+                                }
+                            }));
+                            dashboardTimeline.setCycleCount(Timeline.INDEFINITE);
+                            dashboardTimeline.play();
+                        });
+                    }
+                }
+
+            } catch (Exception e) {
+                logger.error("Network error while loading items: {}", e.getMessage(), e);
+            }
+        }).start();
     }
 
     /**
