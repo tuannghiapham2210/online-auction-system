@@ -84,6 +84,39 @@
         </GridPane>
 
         <!-- INPUT -->
-        
+        <VBox spacing="12">
+
+            <Label text="HOẶC NHẬP SỐ TIỀN TÙY CHỈNH"
+                   styleClass="deposit-subtitle"/>
+
+            <HBox alignment="CENTER_LEFT"
+                spacing="10"
+                prefHeight="55"
+                styleClass="deposit-input-wrapper">
+
+                <Label text="\$"
+                    styleClass="deposit-dollar"/>
+
+                <Spinner fx:id="spinnerAmount"
+                        editable="true"
+                        prefWidth="400"
+                        prefHeight="55"
+                        styleClass="deposit-spinner"/>
+
+            </HBox>
+
+        </VBox>
+
+        <!-- MESSAGE -->
+        <Label fx:id="lblMessage"/>
+
+        <!-- CONFIRM -->
+        <Button text="XÁC NHẬN NẠP"
+                prefWidth="320"
+                prefHeight="60"
+                onAction="#handleDeposit"
+                styleClass="deposit-confirm-btn"/>
+
+    </VBox>
 
 </StackPane>
