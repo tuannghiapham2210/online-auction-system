@@ -63,23 +63,24 @@
             <!-- ✅ TOP RIGHT BAR (LOGOUT) -->
             <HBox alignment="CENTER_RIGHT" spacing="15">
 
-               <!-- SỐ DƯ -->
-               <Label fx:id="lblBalance"
-                     text="Số dư: $0"
-                     style="-fx-text-fill: white;
-                           -fx-font-size: 16px;
-                           -fx-font-weight: bold;" />
+               <!-- Balance Indicator Pill -->
+               <HBox alignment="CENTER" spacing="8" style="-fx-background-color: #1F2937; -fx-background-radius: 20; -fx-padding: 8 18; -fx-border-color: #374151; -fx-border-radius: 20;">
+                   <Label text="💎" style="-fx-font-size: 14px;" />
+                   <Label fx:id="lblBalance"
+                          text="Số dư: $0"
+                          style="-fx-text-fill: #34D399; -fx-font-size: 14px; -fx-font-weight: bold;" />
+               </HBox>
 
                <!-- NẠP TIỀN -->
                <Button fx:id="btnDeposit"
                      text="Nạp Tiền"
-                     styleClass="btn-orange"
+                     styleClass="btn-deposit-pill"
                      onAction="#handleDeposit"/>
 
                <!-- ĐĂNG XUẤT -->
                <Button fx:id="btnLogout"
                      text="Đăng xuất"
-                     styleClass="btn-orange"
+                     styleClass="btn-logout-pill"
                      onAction="#handleLogout"/>
 
             </HBox>

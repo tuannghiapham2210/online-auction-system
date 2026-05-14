@@ -708,3 +708,48 @@
     -fx-scale-x: 1.5;
     -fx-scale-y: 1.5;
 }
+
+/* ================= TOP RIGHT ACTION BUTTONS ================= */
+.btn-deposit-pill {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 9 20 9 20;
+    -fx-cursor: hand;
+    -fx-background-color: #F59E0B; 
+    -fx-text-fill: #111827;
+}
+
+.btn-deposit-pill:hover {
+    -fx-background-color: #D97706;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.4), 10, 0, 0, 2);
+}
+
+.btn-deposit-pill:pressed {
+    -fx-background-color: #B45309;
+}
+
+.btn-logout-pill {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 9 20 9 20;
+    -fx-cursor: hand;
+    -fx-background-color: transparent;
+    -fx-text-fill: #9CA3AF;
+    -fx-border-color: #4B5563;
+    -fx-border-radius: 20;
+    -fx-border-width: 1.5;
+}
+
+.btn-logout-pill:hover {
+    -fx-background-color: #EF4444; 
+    -fx-border-color: #EF4444;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.4), 10, 0, 0, 2);
+}
+
+.btn-logout-pill:pressed {
+    -fx-background-color: #DC2626;
+    -fx-border-color: #DC2626;
+}
