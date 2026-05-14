@@ -19,11 +19,11 @@
    <children>
 
       <!-- LAYER 1: CHỨA CÁC CARD SẢN PHẨM & BIỂU ĐỒ -->
-      <!-- alignment="CENTER" giúp căn giữa toàn bộ khối nội dung giữa màn hình -->
-      <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 20;">
+      <!-- ĐIỀU CHỈNH: Đổi padding top thành 70 để đẩy toàn bộ khối này lùi xuống dưới một chút -->
+      <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 70 20 20 20;">
          <children>
-            <!-- Hạ maxWidth xuống 1000px để giao diện gọn gàng và có viền đen xung quanh giống hình 2 -->
-            <VBox maxWidth="1000.0" spacing="20.0" VBox.vgrow="NEVER">
+            <!-- ĐIỀU CHỈNH: Giảm maxWidth xuống 920px để các khối nhỏ lại, tạo lề 2 bên rộng hơn -->
+            <VBox maxWidth="920.0" spacing="20.0" VBox.vgrow="NEVER">
                <children>
 
                   <!-- Middle: Thông tin Sản phẩm -->
@@ -63,7 +63,6 @@
                               <HBox alignment="CENTER" spacing="15.0">
                                  <children>
                                     <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="\$ Nhập giá thầu..." styleClass="input-box" HBox.hgrow="ALWAYS" />
-                                    <!-- Đã thêm defaultButton="true" để bắt phím Enter -->
                                     <Button defaultButton="true" onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="PHÁT GIÁ" />
                                  </children>
                               </HBox>
@@ -76,7 +75,7 @@
                   <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                      <children>
                         <!-- Chart Panel -->
-                        <VBox prefWidth="400.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                        <VBox prefWidth="380.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                            <children>
                               <Label style="-fx-text-fill: gray; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
                               <LineChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart" VBox.vgrow="ALWAYS">
@@ -91,7 +90,7 @@
                         </VBox>
 
                         <!-- Event Log Panel -->
-                        <VBox prefWidth="600.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                        <VBox prefWidth="540.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
                            <children>
                               <Label style="-fx-text-fill: #2ECC71; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
                               <ListView fx:id="bidHistoryList" styleClass="log-list" VBox.vgrow="ALWAYS" />
@@ -106,11 +105,10 @@
       </VBox>
 
       <!-- LAYER 2: CHỨA NÚT "VỀ SẢNH" NẰM ĐÈ LÊN TRÊN -->
-      <!-- pickOnBounds="false" rất quan trọng, giúp các vùng trống của AnchorPane không chặn click chuột của VBox bên dưới -->
       <AnchorPane pickOnBounds="false">
          <children>
-            <!-- Đã ghim chết nút vào góc top="20" và left="20", thêm cancelButton="true" để bắt phím ESC -->
-            <Button cancelButton="true" onAction="#handleLeaveRoom" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1; -fx-cursor: hand;" text="↩ Về sảnh" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
+            <!-- Đẩy nút vào sát góc hơn một chút để cân đối với viền đen -->
+            <Button cancelButton="true" onAction="#handleLeaveRoom" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1; -fx-cursor: hand;" text="↩ Về sảnh" AnchorPane.leftAnchor="25.0" AnchorPane.topAnchor="20.0" />
          </children>
       </AnchorPane>
 
