@@ -557,9 +557,6 @@
     -fx-background-color: rgba(46, 204, 113, 0.1); /* Nền xanh lá trong suốt */
     -fx-text-fill: #2ECC71; /* Chữ xanh lá sáng */
 }
-/* style.css */
-
-
 /* =========================
    DEPOSIT POPUP
 ========================= */
@@ -711,7 +708,6 @@
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
 }
-
 
 /* =========================
    CONFIRM BUTTON
