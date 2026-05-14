@@ -59,6 +59,9 @@ public class DashboardController {
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
+    @FXML private Label lblUsername;
+    @FXML private Label lblRole;
+    @FXML private Label lblAvatar;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -73,13 +76,26 @@ public class DashboardController {
         loadDataFromServer();
 
         // 2. Ẩn nút đăng bán nếu người dùng không có quyền Seller
-        if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
-            btnAddItem.setVisible(false);
+        if (btnAddItem != null) {
+            if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
+                btnAddItem.setVisible(false);
+            }
         }
+        
         // HIỂN THỊ SỐ DƯ
-        lblBalance.setText(
-            "Số dư: $" + Session.balance
-        );
+        if (lblBalance != null) {
+            lblBalance.setText("$" + Session.balance);
+        }
+
+        if (lblUsername != null && Session.username != null) {
+            lblUsername.setText(Session.username);
+        }
+        if (lblRole != null && Session.role != null) {
+            lblRole.setText(Session.role.toUpperCase());
+        }
+        if (lblAvatar != null && Session.username != null && !Session.username.isEmpty()) {
+            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
+        }
     }
 
     /**
@@ -465,7 +481,7 @@ private void handleDeposit() {
 
             // update balance label
             lblBalance.setText(
-                    "Số dư: $" + Session.balance
+                    "$" + Session.balance
             );
         });
 

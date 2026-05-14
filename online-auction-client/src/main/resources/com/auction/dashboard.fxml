@@ -61,27 +61,33 @@
          <children>
 
             <!-- ✅ TOP RIGHT BAR (LOGOUT) -->
-            <HBox alignment="CENTER_RIGHT" spacing="15">
+            <HBox alignment="CENTER_RIGHT" spacing="20">
 
-               <!-- Balance Indicator Pill -->
-               <HBox alignment="CENTER" spacing="8" style="-fx-background-color: #1F2937; -fx-background-radius: 20; -fx-padding: 8 18; -fx-border-color: #374151; -fx-border-radius: 20;">
-                   <Label text="💎" style="-fx-font-size: 14px;" />
-                   <Label fx:id="lblBalance"
-                          text="Số dư: $0"
-                          style="-fx-text-fill: #34D399; -fx-font-size: 14px; -fx-font-weight: bold;" />
+               <!-- Left Card — Wallet Balance -->
+               <HBox styleClass="header-card" alignment="CENTER_LEFT" spacing="15">
+                   <HBox alignment="CENTER_LEFT" spacing="10">
+                       <Label text="&#x1F4B3;" styleClass="wallet-icon"/>
+                       <VBox alignment="CENTER_LEFT">
+                           <Label text="Số dư ví:" styleClass="wallet-label"/>
+                           <Label fx:id="lblBalance" text="\$0" styleClass="wallet-balance"/>
+                       </VBox>
+                   </HBox>
+                   <Button fx:id="btnDeposit" text="NẠP" styleClass="btn-deposit-neon" onAction="#handleDeposit"/>
                </HBox>
 
-               <!-- NẠP TIỀN -->
-               <Button fx:id="btnDeposit"
-                     text="Nạp Tiền"
-                     styleClass="btn-deposit-pill"
-                     onAction="#handleDeposit"/>
-
-               <!-- ĐĂNG XUẤT -->
-               <Button fx:id="btnLogout"
-                     text="Đăng xuất"
-                     styleClass="btn-logout-pill"
-                     onAction="#handleLogout"/>
+               <!-- Right Card — User Profile -->
+               <HBox styleClass="header-card" alignment="CENTER_LEFT" spacing="15">
+                   <VBox alignment="CENTER_RIGHT">
+                       <Label fx:id="lblUsername" text="seller" styleClass="profile-username"/>
+                       <Label fx:id="lblRole" text="SELLER" styleClass="profile-role-badge"/>
+                   </VBox>
+                   <Label fx:id="lblAvatar" text="S" styleClass="profile-avatar"/>
+                   <Button fx:id="btnLogout" styleClass="btn-logout-square" onAction="#handleLogout">
+                       <graphic>
+                           <Label text="&#x238B;" styleClass="logout-icon"/>
+                       </graphic>
+                   </Button>
+               </HBox>
 
             </HBox>
 
