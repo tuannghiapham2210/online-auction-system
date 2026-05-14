@@ -229,7 +229,7 @@ public class DashboardController {
         // 4. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
         imageContainer.setPrefHeight(150);
-        imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+        imageContainer.setStyle("-fx-background-color: #071226; -fx-background-radius: 16; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 16;");
 
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
             try {
@@ -245,7 +245,7 @@ public class DashboardController {
 
         // 5. Thêm văn bản (ID, Loại, Tên)
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
-        subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
+        subtitle.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: bold;");
 
         Label title = new Label(item.getName());
         title.getStyleClass().add("card-title");
@@ -258,7 +258,7 @@ public class DashboardController {
 
         VBox priceVBox = new VBox();
         Label priceLabel = new Label("GIÁ HIỆN TẠI");
-        priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+        priceLabel.setStyle("-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: bold;");
 
         Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");

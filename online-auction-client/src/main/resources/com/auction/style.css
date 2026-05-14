@@ -310,24 +310,33 @@
 
 /* Màu nền tổng thể siêu tối của Dashboard */
 .dashboard-root {
-    -fx-background-color: #0F131A;
+    -fx-background-color: radial-gradient(center 50% 50%, radius 75%, #0B1730 0%, #071226 100%);
 }
 
-/* Thanh Sidebar bên trái */
-.sidebar {
-    -fx-background-color: #161B22;
-    -fx-background-radius: 0 20 20 0;
+/* Fix ScrollPane Background to allow global gradient through */
+.premium-scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.premium-scroll-pane .viewport {
+    -fx-background-color: transparent;
 }
 
 /* Thẻ Card Sản phẩm */
 .item-card {
-    -fx-background-color: #1A202C;
-    -fx-background-radius: 15;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 10, 0, 0, 5);
+    -fx-background-color: linear-gradient(to bottom right, #111C36, rgba(17, 28, 54, 0.85));
+    -fx-background-radius: 24;
+    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-border-radius: 24;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.08), 20, 0, 0, 5);
 }
 .item-card:hover {
-    -fx-effect: dropshadow(gaussian, rgba(243, 156, 18, 0.3), 15, 0, 0, 5);
-    -fx-translate-y: -2px; /* Hiệu ứng nảy lên khi di chuột */
+    -fx-background-color: linear-gradient(to bottom right, #162447, rgba(22, 36, 71, 0.95));
+    -fx-border-color: rgba(255, 255, 255, 0.15);
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.4), 30, 0, 0, 8);
+    -fx-translate-y: -4px;
 }
 
 /* Chữ hiển thị */
@@ -337,22 +346,25 @@
     -fx-font-weight: bold;
 }
 .card-price {
-    -fx-text-fill: white;
+    -fx-text-fill: #39FF14;
     -fx-font-size: 20px;
     -fx-font-weight: 900;
+    -fx-effect: dropshadow(gaussian, rgba(57, 255, 20, 0.25), 8, 0, 0, 0);
 }
 
 /* Nút bấm Cam */
 .btn-orange {
-    -fx-background-color: #F39C12;
-    -fx-text-fill: #0F131A;
+    -fx-background-color: linear-gradient(to right, #F59E0B, #D97706);
+    -fx-text-fill: #0B1730;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
-    -fx-background-radius: 8;
+    -fx-background-radius: 12;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.3), 10, 0, 0, 2);
 }
 .btn-orange:hover {
-    -fx-background-color: #E67E22;
+    -fx-background-color: linear-gradient(to right, #FBBF24, #F59E0B);
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.5), 15, 0, 0, 3);
 }
 
 /* Các nhãn Badge (LIVE, Sắp diễn ra) */
@@ -868,10 +880,10 @@
 
 /* ================= PREMIUM SIDEBAR ================= */
 .sidebar-premium {
-    -fx-background-color: rgba(11, 23, 48, 0.6);
-    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-background-color: rgba(11, 23, 48, 0.25);
+    -fx-border-color: rgba(255, 255, 255, 0.02);
     -fx-border-width: 0 1 0 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 20, 0, 5, 0);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 30, 0, 5, 0);
 }
 
 .logo-icon-premium {

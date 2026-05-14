@@ -111,7 +111,7 @@
 
             <!-- ✅ GRID -->
             <ScrollPane fitToWidth="true"
-                        style="-fx-background: #0F131A; -fx-border-color: #0F131A;"
+                        styleClass="premium-scroll-pane"
                         VBox.vgrow="ALWAYS">
 
                <content>
