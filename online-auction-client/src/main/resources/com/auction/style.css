@@ -142,13 +142,13 @@
     -fx-background-color: #f59e0b;
     -fx-text-fill: black;
 }
-/*Them
+
 /* ================= ENHANCE UI (ADD ONLY) ================= */
 
 /* CARD TO HƠN + CENTER ĐẸP */
 .card {
-    -fx-max-width: 650;
-    -fx-padding: 50;
+    /* Đã XÓA -fx-max-width: 650; tại đây để container tự do giãn nở */
+    -fx-padding: 25; /* GIẢM từ 50 xuống 25 để tránh chiếm hết không gian màn nhỏ */
 
     /* glow mạnh hơn */
     -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.45), 70, 0.35, 0, 20);
@@ -310,7 +310,7 @@
 
 /* Màu nền tổng thể siêu tối của Dashboard */
 .dashboard-root {
-    -fx-background-color: #0F131A; 
+    -fx-background-color: #0F131A;
 }
 
 /* Thanh Sidebar bên trái */
@@ -415,13 +415,11 @@
 .target-input-icon {
     -fx-text-fill: #5E6A7D;
     -fx-font-size: 14px;
-    /* Ép dùng font hệ thống chứa Emoji */
     -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
-    /* Ngăn chặn JavaFX tự động biến icon thành dấu 3 chấm */
     -fx-min-width: USE_PREF_SIZE;
 }
 
-/* TextField và TextArea bên trong (Xóa nền, xóa viền) */
+/* TextField và TextArea bên trong */
 .target-textfield, .target-textarea {
     -fx-background-color: transparent;
     -fx-text-fill: white;
@@ -433,7 +431,7 @@
     -fx-background-color: transparent;
 }
 
-/* Fix triệt để nền trắng của TextArea trong JavaFX */
+/* Fix triệt để nền trắng của TextArea */
 .target-textarea .scroll-pane {
     -fx-background-color: transparent;
 }
@@ -446,7 +444,7 @@
     -fx-background-color: transparent;
 }
 
-/* Xóa viền focus mặc định của ScrollPane bên trong TextArea */
+/* Xóa viền focus mặc định */
 .target-textarea:focused .scroll-pane {
     -fx-background-insets: 0;
     -fx-padding: 0;
@@ -492,36 +490,30 @@
 }
 
 /* ================= BID ROOM CHART ================= */
-/* Xóa nền trắng mặc định của Chart */
 .bid-chart {
     -fx-background-color: transparent;
 }
 
-/* Phần nền vẽ biểu đồ (Plot area) */
 .bid-chart .chart-plot-background {
-    -fx-background-color: #151A22; 
+    -fx-background-color: #151A22;
     -fx-background-radius: 8;
 }
 
-/* Lưới tọa độ (Làm mờ, nét đứt) */
 .bid-chart .chart-vertical-grid-lines,
 .bid-chart .chart-horizontal-grid-lines {
-    -fx-stroke: #2A3441; 
+    -fx-stroke: #2A3441;
     -fx-stroke-dash-array: 5 5;
 }
 
-/* Màu chữ của trục X và Y */
 .bid-chart .axis {
     -fx-tick-label-fill: #A0AABF;
 }
 
-/* Đường Line (Màu cam đồng bộ) */
 .bid-chart .chart-series-line {
-    -fx-stroke: #F59E0B; 
+    -fx-stroke: #F59E0B;
     -fx-stroke-width: 3px;
 }
 
-/* Các điểm chấm trên Line (Viền cam, lõm trong) */
 .bid-chart .chart-line-symbol {
     -fx-background-color: #F59E0B, #151A22;
     -fx-background-insets: 0, 2;
@@ -538,25 +530,25 @@
     -fx-padding: 4;
 }
 
-/* Từng dòng sự kiện (Log Cell) */
 .log-list .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #A0AABF;
     -fx-font-size: 13px;
     -fx-padding: 8 10;
-    -fx-border-color: transparent transparent #2A3441 transparent; /* Đường kẻ dưới */
+    -fx-border-color: transparent transparent #2A3441 transparent;
     -fx-border-width: 1;
 }
 
 .log-list .list-cell:empty {
-    -fx-border-color: transparent; /* Xóa kẻ ngang ở các ô trống */
+    -fx-border-color: transparent;
 }
 
-.log-list .list-cell:filled:hover, 
+.log-list .list-cell:filled:hover,
 .log-list .list-cell:filled:selected {
-    -fx-background-color: rgba(46, 204, 113, 0.1); /* Nền xanh lá trong suốt */
-    -fx-text-fill: #2ECC71; /* Chữ xanh lá sáng */
+    -fx-background-color: rgba(46, 204, 113, 0.1);
+    -fx-text-fill: #2ECC71;
 }
+
 /* =========================
    DEPOSIT POPUP
 ========================= */
@@ -568,33 +560,19 @@
 .deposit-popup {
     -fx-background-color: #1E293B;
     -fx-background-radius: 32;
-
     -fx-border-color: rgba(255,255,255,0.08);
     -fx-border-radius: 32;
-
-    -fx-effect: dropshadow(
-        gaussian,
-        rgba(0,0,0,0.45),
-        35,
-        0.2,
-        0,
-        8
-    );
-     -fx-padding: 30;
-
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 35, 0.2, 0, 8);
+    -fx-padding: 30;
     -fx-max-width: 520;
     -fx-max-height: 520;
-
     -fx-pref-width: 520;
     -fx-pref-height: 520;
 }
 
-
 /* =========================
    HEADER
 ========================= */
-
-
 
 .deposit-icon {
     -fx-font-size: 34px;
@@ -609,14 +587,11 @@
 .deposit-close-btn {
     -fx-background-color: #2B3A52;
     -fx-background-radius: 100;
-
     -fx-text-fill: #CBD5E1;
     -fx-font-size: 18px;
     -fx-font-weight: bold;
-
     -fx-min-width: 46px;
     -fx-min-height: 46px;
-
     -fx-cursor: hand;
 }
 
@@ -624,37 +599,28 @@
     -fx-background-color: #334155;
 }
 
-
 /* =========================
    AMOUNT BUTTONS
 ========================= */
 
 .deposit-amount-btn {
-
     -fx-background-color: #26354A;
     -fx-background-radius: 18;
-
     -fx-border-color: #42556F;
     -fx-border-radius: 18;
-
     -fx-text-fill: white;
     -fx-font-size: 22px;
     -fx-font-weight: 700;
-
     -fx-pref-width: 210px;
     -fx-pref-height: 90px;
-
     -fx-cursor: hand;
 }
 
 .deposit-amount-btn:hover {
-
     -fx-background-color: #334155;
     -fx-border-color: #34D399;
-
     -fx-translate-y: -2;
 }
-
 
 /* =========================
    SUBTITLE
@@ -666,22 +632,16 @@
     -fx-font-weight: bold;
 }
 
-
 /* =========================
    INPUT
 ========================= */
 
 .deposit-input-wrapper {
-
     -fx-background-color: #0F172A;
-
     -fx-background-radius: 18;
-
     -fx-border-color: #334155;
     -fx-border-radius: 18;
-
     -fx-padding: 0 20 0 20;
-
     -fx-pref-height: 78px;
 }
 
@@ -691,16 +651,11 @@
 }
 
 .deposit-input {
-
     -fx-background-color: transparent;
-
     -fx-text-fill: white;
     -fx-prompt-text-fill: #64748B;
-
     -fx-font-size: 24px;
-
     -fx-border-width: 0;
-
     -fx-pref-height: 70px;
 }
 
@@ -716,22 +671,18 @@
 .deposit-confirm-btn{
     -fx-background-color: #27d79a;
     -fx-background-radius: 22;
-
     -fx-font-size: 20px;
     -fx-font-weight: 700;
-
     -fx-text-fill: #04111d;
-
     -fx-cursor: hand;
 }
 
 .deposit-confirm-btn:hover {
-
     -fx-opacity: 0.92;
-
     -fx-scale-x: 1.01;
     -fx-scale-y: 1.01;
 }
+
 .deposit-spinner {
     -fx-background-color: transparent;
 }
@@ -745,19 +696,15 @@
 
 .deposit-spinner .increment-arrow-button,
 .deposit-spinner .decrement-arrow-button {
-
     -fx-background-color: #26354A;
-
     -fx-pref-width: 16px;
     -fx-pref-height: 12px;
-
     -fx-background-radius: 4;
 }
 
 .deposit-spinner .increment-arrow,
 .deposit-spinner .decrement-arrow {
     -fx-background-color: white;
-
     -fx-scale-x: 1.5;
     -fx-scale-y: 1.5;
 }
