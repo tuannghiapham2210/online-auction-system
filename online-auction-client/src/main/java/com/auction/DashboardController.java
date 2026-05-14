@@ -408,69 +408,74 @@ public class DashboardController {
         }
     }
     @FXML
-    private void handleDeposit() {
+private void handleDeposit() {
 
-        try (
-                Socket socket = new Socket("localhost", 8080);
-                PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(socket.getInputStream()))
-        ) {
+    try {
 
-            // ================= CREATE REQUEST =================
-            JsonObject request = new JsonObject();
+        Parent currentRoot = btnAddItem.getScene().getRoot();
 
-            request.addProperty("action", "DEPOSIT");
-            request.addProperty("username", Session.username);
-            request.addProperty("amount", 1000);
+        StackPane rootPane = (StackPane) currentRoot;
+        Node mainContent = rootPane.getChildren().get(0);
 
-            // ================= SEND =================
-            out.println(request.toString());
+        // chặn mở nhiều popup
+        if (rootPane.lookup("#dark-overlay") != null) {
+            return;
+        }
 
-            logger.info("Deposit request sent: {}", request);
+        FXMLLoader loader =
+                new FXMLLoader(getClass().getResource("deposit.fxml"));
 
-            // ================= READ RESPONSE =================
-            String responseStr = in.readLine();
+        Parent depositGroup = loader.load();
 
-            logger.info("Deposit response: {}", responseStr);
+        DepositController depositController =
+                loader.getController();
 
-            if (responseStr == null) {
+        // blur nền
+        GaussianBlur blur = new GaussianBlur(15);
+        mainContent.setEffect(blur);
 
-                logger.error("Server returned null response");
-                return;
-            }
+        // overlay tối
+        Region darkOverlay = new Region();
+        darkOverlay.setId("dark-overlay");
 
-            // ================= PARSE JSON =================
-            JsonObject response =
-                    JsonParser.parseString(responseStr).getAsJsonObject();
-
-            String status = response.get("status").getAsString();
-
-            // ================= SUCCESS =================
-            if ("SUCCESS".equals(status)) {
-
-        int newBalance =
-                response.get("newBalance").getAsInt();
-
-        // update session
-        Session.balance = newBalance;
-
-        // UPDATE LABEL NGAY
-        lblBalance.setText(
-            "Số dư: $" + Session.balance
-    );
-
-        logger.info(
-                "Deposit success. New balance: {}",
-                newBalance
+        darkOverlay.setStyle(
+                "-fx-background-color: rgba(0,0,0,0.6);"
         );
 
-}
+        darkOverlay.setMaxSize(
+                Double.MAX_VALUE,
+                Double.MAX_VALUE
+        );
+
+        darkOverlay.setOnMouseClicked(
+                e -> depositController.closePopup()
+        );
+
+        // callback đóng popup
+        depositController.setOnCloseCallback(() -> {
+
+            mainContent.setEffect(null);
+
+            rootPane.getChildren().removeAll(
+                    darkOverlay,
+                    depositGroup
+            );
+
+            // update balance label
+            lblBalance.setText(
+                    "Số dư: $" + Session.balance
+            );
+        });
+
+        rootPane.getChildren().addAll(
+                darkOverlay,
+                depositGroup
+        );
 
     } catch (Exception e) {
 
         logger.error(
-                "Failed to handle deposit request: {}",
+                "Failed to open deposit dialog: {}",
                 e.getMessage(),
                 e
         );
