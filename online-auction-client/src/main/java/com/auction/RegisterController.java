@@ -7,6 +7,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.css.PseudoClass;
 import javafx.util.Duration;
 
 import java.io.*;
@@ -25,6 +28,7 @@ public class RegisterController {
 
     private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
 
+    @FXML private Button registerButton;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> roleBox;
@@ -37,6 +41,25 @@ public class RegisterController {
     @FXML
     public void initialize() {
         roleBox.getItems().addAll("Bidder", "Seller");
+
+        PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
+
+        // Bắt sự kiện phím Enter để làm hiệu ứng lún nút đồ họa CSS
+        registerButton.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        registerButton.pseudoClassStateChanged(pressedClass, true);
+                    }
+                });
+                
+                newScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        registerButton.pseudoClassStateChanged(pressedClass, false);
+                    }
+                });
+            }
+        });
     }
 
     /**

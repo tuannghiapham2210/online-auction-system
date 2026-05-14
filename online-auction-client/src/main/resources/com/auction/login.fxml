@@ -53,7 +53,8 @@
          </HBox>
 
          <!-- BUTTON -->
-         <Button text="Đăng nhập"
+         <Button fx:id="loginButton"
+                 text="Đăng nhập"
                  onAction="#handleLogin"
                  styleClass="main-btn"
                  defaultButton="true"
