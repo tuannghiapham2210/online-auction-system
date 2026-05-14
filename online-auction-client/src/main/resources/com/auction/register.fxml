@@ -3,75 +3,51 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.auction.RegisterController"
-           stylesheets="@style.css"
-           styleClass="background">
+<StackPane styleClass="background" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.auction.RegisterController">
 
     <VBox alignment="CENTER" spacing="30">
 
         <!-- HEADER -->
         <VBox alignment="CENTER" spacing="5">
-            <Label text="🔨" styleClass="logo-icon"/>
+            <Label styleClass="logo-icon" text="🔨" />
             <HBox alignment="CENTER">
-                <Label text="THE AUCTION" styleClass="title"/>
-                <Label text=" SYSTEM" styleClass="title-accent"/>
+                <Label styleClass="title" text="THE AUCTION" />
+                <Label styleClass="title-accent" text=" SYSTEM" />
             </HBox>
-            <Label text="Tham gia đấu giá ngay hôm nay"
-                   styleClass="header-sub"/>
+            <Label styleClass="header-sub" text="Tham gia đấu giá ngay hôm nay" />
         </VBox>
 
         <!-- CARD -->
-        <VBox spacing="20"
-              alignment="CENTER"
-              styleClass="card"
-              maxWidth="650">
+        <VBox alignment="CENTER" maxWidth="650" spacing="20" styleClass="card">
 
 
             <!-- TAB -->
-            <HBox spacing="5" alignment="CENTER" styleClass="tab-container">
-                <Label text="Đăng Nhập"
-                       styleClass="switch-btn"
-                       onMouseClicked="#goToLogin"/>
-                <Label text="Đăng Ký"
-                       styleClass="switch-active"/>
+            <HBox alignment="CENTER" spacing="5" styleClass="tab-container">
+                <Label onMouseClicked="#goToLogin" styleClass="switch-btn" text="Đăng Nhập" />
+                <Label styleClass="switch-active" text="Đăng Ký" />
             </HBox>
 
             <!-- USERNAME -->
-            <HBox styleClass="input-box" maxWidth="Infinity">
-                <Label text="👤" styleClass="input-icon"/>
-                <TextField fx:id="usernameField"
-                           promptText="Nhập tài khoản"
-                           maxWidth="Infinity"/>
+            <HBox maxWidth="Infinity" styleClass="input-box">
+                <Label styleClass="input-icon" text="👤" />
+                <TextField fx:id="usernameField" maxWidth="Infinity" prefHeight="43.0" prefWidth="386.0" promptText="Nhập tài khoản" />
             </HBox>
 
             <!-- PASSWORD -->
-            <HBox styleClass="input-box" maxWidth="Infinity">
-                <Label text="🔒" styleClass="input-icon"/>
-                <PasswordField fx:id="passwordField"
-                               promptText="Nhập mật khẩu"
-                               maxWidth="Infinity"/>
+            <HBox maxWidth="Infinity" styleClass="input-box">
+                <Label styleClass="input-icon" text="🔒" />
+                <PasswordField fx:id="passwordField" maxWidth="Infinity" prefHeight="43.0" prefWidth="388.0" promptText="Nhập mật khẩu" />
             </HBox>
 
             <!-- ROLE -->
-            <ComboBox fx:id="roleBox"
-                      promptText="Chọn vai trò"
-                      styleClass="combo-box"
-                      maxWidth="Infinity"/>
+            <ComboBox fx:id="roleBox" maxWidth="Infinity" promptText="Chọn vai trò" styleClass="combo-box" />
 
             <!-- BUTTON -->
-            <Button fx:id="registerButton"
-                    text="Tham gia ngay"
-                    onAction="#handleRegister"
-                    styleClass="main-btn"
-                    defaultButton="true"
-                    maxWidth="Infinity"/>
+            <Button fx:id="registerButton" defaultButton="true" maxWidth="Infinity" onAction="#handleRegister" styleClass="main-btn" text="Tham gia ngay" />
 
-            <Label text="Quay lại đăng nhập"
-                   styleClass="switch-btn"
-                   onMouseClicked="#goToLogin"/>
+            <Label onMouseClicked="#goToLogin" styleClass="switch-btn" text="Quay lại đăng nhập" />
 
-            <Label fx:id="messageLabel"/>
+            <Label fx:id="messageLabel" />
 
         </VBox>
     </VBox>
