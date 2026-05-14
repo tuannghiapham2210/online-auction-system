@@ -7,6 +7,9 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.css.PseudoClass;
 import javafx.util.Duration;
 
 import java.io.*;
@@ -26,9 +29,33 @@ public class LoginController {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
+    @FXML private Button loginButton;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
+
+    @FXML
+    public void initialize() {
+        PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
+
+        // Lắng nghe sự kiện ngay khi nút được thêm vào Scene (Hiển thị lên màn hình)
+        loginButton.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                // Dùng EventFilter để bắt sự kiện trước khi bị "defaultButton" consume mất
+                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        loginButton.pseudoClassStateChanged(pressedClass, true); // Ép trạng thái đồ họa CSS :pressed
+                    }
+                });
+                
+                newScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+                    if (event.getCode() == KeyCode.ENTER) {
+                        loginButton.pseudoClassStateChanged(pressedClass, false); // Gỡ trạng thái đồ họa CSS :pressed
+                    }
+                });
+            }
+        });
+    }
 
     /**
      * Xử lý sự kiện khi người dùng nhấn nút Đăng nhập.

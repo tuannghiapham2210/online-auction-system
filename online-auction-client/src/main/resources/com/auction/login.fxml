@@ -33,7 +33,7 @@
             <Label text="Đăng Nhập" styleClass="switch-active"/>
             <Label text="Đăng Ký"
                    styleClass="switch-btn"
-                   onMouseClicked="#goToRegister"/>
+                   onMouseClicked="#goToRegister" />
          </HBox>
 
          <!-- USERNAME -->
@@ -53,9 +53,11 @@
          </HBox>
 
          <!-- BUTTON -->
-         <Button text="Đăng nhập"
+         <Button fx:id="loginButton"
+                 text="Đăng nhập"
                  onAction="#handleLogin"
                  styleClass="main-btn"
+                 defaultButton="true"
                  maxWidth="Infinity"/>
 
          <Label fx:id="messageLabel"/>

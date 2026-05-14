@@ -60,9 +60,11 @@
                       maxWidth="Infinity"/>
 
             <!-- BUTTON -->
-            <Button text="Tham gia ngay"
+            <Button fx:id="registerButton"
+                    text="Tham gia ngay"
                     onAction="#handleRegister"
                     styleClass="main-btn"
+                    defaultButton="true"
                     maxWidth="Infinity"/>
 
             <Label text="Quay lại đăng nhập"
