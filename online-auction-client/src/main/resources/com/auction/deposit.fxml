@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Spinner?>
+
+<StackPane xmlns="http://javafx.com/javafx/17"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.auction.DepositController"
+           prefWidth="700"
+           prefHeight="600"
+           stylesheets="@style.css">
+
+    <!-- Overlay -->
+    <Region styleClass="deposit-overlay"/>
+
+    <!-- Popup -->
+    <VBox fx:id="depositRoot"
+      alignment="TOP_CENTER"
+      spacing="22"
+      prefWidth="520"
+      prefHeight="520"
+      styleClass="deposit-popup">
+
+        <padding>
+            <Insets top="30" right="30" bottom="30" left="30"/>
+        </padding>
+
+        <!-- HEADER -->
+        <HBox alignment="CENTER_LEFT"
+            spacing="18">
+
+            <Label text="💳"
+                styleClass="deposit-icon"/>
+
+            <Label text="Nạp Số Dư"
+                styleClass="deposit-title"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button text="✕"
+                    onAction="#handleClose"
+                    styleClass="deposit-close-btn"/>
+        </HBox>
+
+        <!-- BUTTONS -->
+        <GridPane hgap="12"
+          vgap="12"
+          alignment="CENTER">
+
+            <Button fx:id="btn10k"
+                    text="+$10,000"
+                    prefWidth="140"
+                    prefHeight="70"
+                    GridPane.columnIndex="0"
+                    GridPane.rowIndex="0"
+                    styleClass="deposit-amount-btn"/>
+
+            <Button fx:id="btn50k"
+                    text="+$50,000"
+                    prefWidth="140"
+                    prefHeight="70"
+                    GridPane.columnIndex="1"
+                    GridPane.rowIndex="0"
+                    styleClass="deposit-amount-btn"/>
+
+            <Button fx:id="btn100k"
+                    text="+$100,000"
+                    prefWidth="140"
+                    prefHeight="70"
+                    GridPane.columnIndex="0"
+                    GridPane.rowIndex="1"
+                    styleClass="deposit-amount-btn"/>
+
+            <Button fx:id="btn500k"
+                    text="+$500,000"
+                    prefWidth="140"
+                    prefHeight="70"
+                    GridPane.columnIndex="1"
+                    GridPane.rowIndex="1"
+                    styleClass="deposit-amount-btn"/>
+
+        </GridPane>
+
+        <!-- INPUT -->
+        <VBox spacing="12">
+
+            <Label text="HOẶC NHẬP SỐ TIỀN TÙY CHỈNH"
+                   styleClass="deposit-subtitle"/>
+
+            <HBox alignment="CENTER_LEFT"
+                spacing="10"
+                prefHeight="55"
+                styleClass="deposit-input-wrapper">
+
+                <Label text="\$"
+                    styleClass="deposit-dollar"/>
+
+                <Spinner fx:id="spinnerAmount"
+                        editable="true"
+                        prefWidth="400"
+                        prefHeight="55"
+                        styleClass="deposit-spinner"/>
+
+            </HBox>
+
+        </VBox>
+
+        <!-- MESSAGE -->
+        <Label fx:id="lblMessage"/>
+
+        <!-- CONFIRM -->
+        <Button text="XÁC NHẬN NẠP"
+                prefWidth="320"
+                prefHeight="60"
+                onAction="#handleDeposit"
+                styleClass="deposit-confirm-btn"/>
+
+    </VBox>
+
+</StackPane>

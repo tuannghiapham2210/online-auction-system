@@ -557,3 +557,211 @@
     -fx-background-color: rgba(46, 204, 113, 0.1); /* Nền xanh lá trong suốt */
     -fx-text-fill: #2ECC71; /* Chữ xanh lá sáng */
 }
+/* style.css */
+
+
+/* =========================
+   DEPOSIT POPUP
+========================= */
+
+.deposit-overlay {
+    -fx-background-color: rgba(0,0,0,0.65);
+}
+
+.deposit-popup {
+    -fx-background-color: #1E293B;
+    -fx-background-radius: 32;
+
+    -fx-border-color: rgba(255,255,255,0.08);
+    -fx-border-radius: 32;
+
+    -fx-effect: dropshadow(
+        gaussian,
+        rgba(0,0,0,0.45),
+        35,
+        0.2,
+        0,
+        8
+    );
+     -fx-padding: 30;
+
+    -fx-max-width: 520;
+    -fx-max-height: 520;
+
+    -fx-pref-width: 520;
+    -fx-pref-height: 520;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+
+
+.deposit-icon {
+    -fx-font-size: 34px;
+}
+
+.deposit-title {
+    -fx-text-fill: white;
+    -fx-font-size: 34px;
+    -fx-font-weight: 800;
+}
+
+.deposit-close-btn {
+    -fx-background-color: #2B3A52;
+    -fx-background-radius: 100;
+
+    -fx-text-fill: #CBD5E1;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+
+    -fx-min-width: 46px;
+    -fx-min-height: 46px;
+
+    -fx-cursor: hand;
+}
+
+.deposit-close-btn:hover {
+    -fx-background-color: #334155;
+}
+
+
+/* =========================
+   AMOUNT BUTTONS
+========================= */
+
+.deposit-amount-btn {
+
+    -fx-background-color: #26354A;
+    -fx-background-radius: 18;
+
+    -fx-border-color: #42556F;
+    -fx-border-radius: 18;
+
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+
+    -fx-pref-width: 210px;
+    -fx-pref-height: 90px;
+
+    -fx-cursor: hand;
+}
+
+.deposit-amount-btn:hover {
+
+    -fx-background-color: #334155;
+    -fx-border-color: #34D399;
+
+    -fx-translate-y: -2;
+}
+
+
+/* =========================
+   SUBTITLE
+========================= */
+
+.deposit-subtitle {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+
+/* =========================
+   INPUT
+========================= */
+
+.deposit-input-wrapper {
+
+    -fx-background-color: #0F172A;
+
+    -fx-background-radius: 18;
+
+    -fx-border-color: #334155;
+    -fx-border-radius: 18;
+
+    -fx-padding: 0 20 0 20;
+
+    -fx-pref-height: 78px;
+}
+
+.deposit-dollar {
+    -fx-text-fill: #64748B;
+    -fx-font-size: 34px;
+}
+
+.deposit-input {
+
+    -fx-background-color: transparent;
+
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #64748B;
+
+    -fx-font-size: 24px;
+
+    -fx-border-width: 0;
+
+    -fx-pref-height: 70px;
+}
+
+.deposit-input:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+
+/* =========================
+   CONFIRM BUTTON
+========================= */
+
+.deposit-confirm-btn{
+    -fx-background-color: #27d79a;
+    -fx-background-radius: 22;
+
+    -fx-font-size: 20px;
+    -fx-font-weight: 700;
+
+    -fx-text-fill: #04111d;
+
+    -fx-cursor: hand;
+}
+
+.deposit-confirm-btn:hover {
+
+    -fx-opacity: 0.92;
+
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+}
+.deposit-spinner {
+    -fx-background-color: transparent;
+}
+
+.deposit-spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 24px;
+    -fx-border-width: 0;
+}
+
+.deposit-spinner .increment-arrow-button,
+.deposit-spinner .decrement-arrow-button {
+
+    -fx-background-color: #26354A;
+
+    -fx-pref-width: 16px;
+    -fx-pref-height: 12px;
+
+    -fx-background-radius: 4;
+}
+
+.deposit-spinner .increment-arrow,
+.deposit-spinner .decrement-arrow {
+    -fx-background-color: white;
+
+    -fx-scale-x: 1.5;
+    -fx-scale-y: 1.5;
+}
