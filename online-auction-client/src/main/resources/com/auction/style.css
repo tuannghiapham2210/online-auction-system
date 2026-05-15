@@ -536,7 +536,7 @@
 .bid-chart .chart-area-symbol {
     -fx-background-color: #f9a825, white;
     -fx-background-insets: 0, 3;
-    -fx-background-radius: 10px;
+    -fx-background-radius: 50px;
     -fx-padding: 8px;
 }
 /* ================= EVENT LOG LISTVIEW ================= */

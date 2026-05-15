@@ -198,6 +198,7 @@ public class BidRoomController {
         StackPane customNode = new StackPane();
         Region symbol = new Region();
         symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
+        symbol.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         Label priceLbl = new Label("$" + currentPrice);
         priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
         priceLbl.setTranslateY(-25);
@@ -302,6 +303,7 @@ public class BidRoomController {
             request.addProperty("itemId", currentItemId);
             request.addProperty("bidderId", currentUserId);
             request.addProperty("bidAmount", bidAmount);
+            request.addProperty("username", Session.username);
 
             // 2. Gửi request lên Server
             if (out != null) {
@@ -335,6 +337,7 @@ public class BidRoomController {
             StackPane customNode = new StackPane();
             Region symbol = new Region();
             symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
+            symbol.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
             Label priceLbl = new Label("$" + newPrice);
             priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
             priceLbl.setTranslateY(-25);
