@@ -1,5 +1,6 @@
 .root {
     -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-color: #1A1D27;
 }
 
 /* ================= BACKGROUND ================= */
@@ -310,7 +311,7 @@
 
 /* Màu nền tổng thể siêu tối của Dashboard */
 .dashboard-root {
-    -fx-background-color: radial-gradient(center 50% 50%, radius 75%, #0B1730 0%, #071226 100%);
+    -fx-background-color: #1A1D27;
 }
 
 /* Fix ScrollPane Background to allow global gradient through */
@@ -504,61 +505,69 @@
 /* ================= BID ROOM CHART ================= */
 .bid-chart {
     -fx-background-color: transparent;
+    -fx-padding: 20px 10px 10px 10px;
 }
 
 .bid-chart .chart-plot-background {
-    -fx-background-color: #151A22;
-    -fx-background-radius: 8;
+    -fx-background-color: transparent;
 }
 
 .bid-chart .chart-vertical-grid-lines,
 .bid-chart .chart-horizontal-grid-lines {
-    -fx-stroke: #2A3441;
-    -fx-stroke-dash-array: 5 5;
+    -fx-stroke: transparent;
 }
 
 .bid-chart .axis {
-    -fx-tick-label-fill: #A0AABF;
+    -fx-tick-label-fill: transparent;
+    -fx-tick-mark-visible: false;
+    -fx-minor-tick-visible: false;
 }
 
-.bid-chart .chart-series-line {
-    -fx-stroke: #F59E0B;
+.bid-chart .chart-series-area-line {
+    -fx-stroke: #FFA500;
     -fx-stroke-width: 3px;
 }
 
-.bid-chart .chart-line-symbol {
-    -fx-background-color: #F59E0B, #151A22;
-    -fx-background-insets: 0, 2;
-    -fx-background-radius: 6px;
-    -fx-padding: 4px;
+.bid-chart .chart-series-area-fill {
+    -fx-fill: linear-gradient(to bottom, rgba(255, 165, 0, 0.4) 0%, transparent 100%);
 }
 
+
+.bid-chart .chart-line-symbol {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
 /* ================= EVENT LOG LISTVIEW ================= */
 .log-list {
-    -fx-background-color: #151A22;
-    -fx-background-radius: 8;
-    -fx-border-color: #2A3441;
-    -fx-border-radius: 8;
-    -fx-padding: 4;
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
 }
 
 .log-list .list-cell {
     -fx-background-color: transparent;
-    -fx-text-fill: #A0AABF;
-    -fx-font-size: 13px;
-    -fx-padding: 8 10;
-    -fx-border-color: transparent transparent #2A3441 transparent;
-    -fx-border-width: 1;
+    -fx-padding: 10px;
 }
 
 .log-list .list-cell:empty {
-    -fx-border-color: transparent;
+    -fx-background-color: transparent;
 }
 
 .log-list .list-cell:filled:hover,
 .log-list .list-cell:filled:selected {
-    -fx-background-color: rgba(46, 204, 113, 0.1);
-    -fx-text-fill: #2ECC71;
+    -fx-background-color: rgba(255, 165, 0, 0.1);
+}
+
+.active-bid-row {
+    -fx-border-color: #FFA500;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-background-color: rgba(255, 165, 0, 0.05);
+}
+
+.active-bid-row .price-label {
+    -fx-text-fill: #FFD700 !important;
 }
 
 /* =========================
