@@ -196,15 +196,15 @@ public class BidRoomController {
         XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
 
         StackPane customNode = new StackPane();
-        Region symbol = new Region();
-        symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
-        symbol.setMinSize(16, 16);
-        symbol.setMaxSize(16, 16);
-        symbol.setPrefSize(16, 16);
+        customNode.setStyle("-fx-background-color: transparent;");
+        Circle dot = new Circle(6);
+        dot.setFill(Color.web("#f9a825"));
+        dot.setStroke(Color.WHITE);
+        dot.setStrokeWidth(2);
         Label priceLbl = new Label("$" + currentPrice);
         priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
         priceLbl.setTranslateY(-25);
-        customNode.getChildren().addAll(symbol, priceLbl);
+        customNode.getChildren().addAll(dot, priceLbl);
         initialData.setNode(customNode);
         
         priceSeries.getData().add(initialData);
@@ -337,15 +337,15 @@ public class BidRoomController {
             XYChart.Data<String, Number> newData = new XYChart.Data<>(timeStamp, newPrice);
 
             StackPane customNode = new StackPane();
-            Region symbol = new Region();
-            symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
-            symbol.setMinSize(16, 16);
-            symbol.setMaxSize(16, 16);
-            symbol.setPrefSize(16, 16);
+            customNode.setStyle("-fx-background-color: transparent;");
+            Circle dot = new Circle(6);
+            dot.setFill(Color.web("#f9a825"));
+            dot.setStroke(Color.WHITE);
+            dot.setStrokeWidth(2);
             Label priceLbl = new Label("$" + newPrice);
             priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
             priceLbl.setTranslateY(-25);
-            customNode.getChildren().addAll(symbol, priceLbl);
+            customNode.getChildren().addAll(dot, priceLbl);
             newData.setNode(customNode);
             
             priceSeries.getData().add(newData);
@@ -356,18 +356,18 @@ public class BidRoomController {
 
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
-                if (symbol != null) {
+                if (dot != null) {
                     Tooltip tooltip = new Tooltip("Live: $" + newPrice);
                     tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-                    Tooltip.install(symbol, tooltip);
+                    Tooltip.install(dot, tooltip);
 
-                    ScaleTransition st = new ScaleTransition(Duration.millis(800), symbol);
+                    ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
                     st.setByX(0.5);
                     st.setByY(0.5);
                     st.setAutoReverse(true);
                     st.setCycleCount(Timeline.INDEFINITE);
 
-                    FadeTransition ft = new FadeTransition(Duration.millis(800), symbol);
+                    FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
                     ft.setFromValue(1.0);
                     ft.setToValue(0.5);
                     ft.setAutoReverse(true);

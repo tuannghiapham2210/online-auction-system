@@ -532,16 +532,9 @@
 }
 
 
-.bid-chart .chart-line-symbol,
-.bid-chart .chart-area-symbol {
-    -fx-background-color: #f9a825, white;
-    -fx-background-insets: 0, 3;
-    -fx-background-radius: 50px;
+.bid-chart .chart-line-symbol {
+    -fx-background-color: transparent;
     -fx-padding: 0;
-    -fx-min-width: 16px;
-    -fx-min-height: 16px;
-    -fx-max-width: 16px;
-    -fx-max-height: 16px;
 }
 /* ================= EVENT LOG LISTVIEW ================= */
 .log-list {
