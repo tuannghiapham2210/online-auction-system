@@ -15,6 +15,8 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -189,9 +191,8 @@ public class DashboardController {
     private VBox createItemCard(Item item) {
         // 1. Khởi tạo thẻ chính (Card)
         VBox card = new VBox();
-        card.setSpacing(10);
+        card.setSpacing(0);
         card.getStyleClass().add("item-card");
-        card.setPadding(new Insets(15));
         card.setPrefWidth(280);
 
         // 2. Tạo nhãn Badge LIVE và thời gian
@@ -201,8 +202,15 @@ public class DashboardController {
         Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
 
+        FadeTransition fadeLive = new FadeTransition(Duration.seconds(1.2), badge);
+        fadeLive.setFromValue(1.0);
+        fadeLive.setToValue(0.3);
+        fadeLive.setCycleCount(Animation.INDEFINITE);
+        fadeLive.setAutoReverse(true);
+        fadeLive.play();
+
         Label timerLabel = new Label("⏳ Đang tải...");
-        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold;");
         
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -224,7 +232,7 @@ public class DashboardController {
         viewerCount.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;");
         viewerBadge.getChildren().addAll(eyeIcon, viewerCount);
 
-        badgeBox.getChildren().addAll(badge, timerLabel, spacer, viewerBadge);
+        badgeBox.getChildren().addAll(badge, spacer, viewerBadge);
 
         // 3. Lưu trữ thời gian kết thúc vào Map để Timeline xử lý đếm ngược
         if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
@@ -243,7 +251,7 @@ public class DashboardController {
         imageContainer.setMinHeight(180);
         imageContainer.setMaxHeight(180);
         imageContainer.setMaxWidth(Double.MAX_VALUE);
-        imageContainer.setStyle("-fx-padding: 0; -fx-background-color: #2D3748; -fx-background-radius: 10;");
+        imageContainer.setStyle("-fx-padding: 0; -fx-background-color: white; -fx-background-radius: 10 10 0 0;");
 
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
             try {
@@ -254,7 +262,7 @@ public class DashboardController {
                 imageRect.heightProperty().bind(imageContainer.heightProperty());
                 
                 // Khắc phục lỗi hiển thị do ImagePattern không tự cập nhật khi tải ảnh ngầm
-                imageRect.setFill(Color.web("#374151")); // Background chờ (Placeholder)
+                imageRect.setFill(Color.WHITE); // Background chờ (Placeholder)
                 if (productImage.getProgress() == 1.0) {
                     if (!productImage.isError()) imageRect.setFill(new ImagePattern(productImage));
                 } else {
@@ -267,7 +275,7 @@ public class DashboardController {
                 
                 Rectangle clipRect = new Rectangle();
                 clipRect.widthProperty().bind(imageContainer.widthProperty());
-                clipRect.heightProperty().bind(imageContainer.heightProperty());
+                clipRect.heightProperty().bind(imageContainer.heightProperty().add(24));
                 clipRect.setArcWidth(24);
                 clipRect.setArcHeight(24);
                 imageRect.setClip(clipRect);
@@ -291,9 +299,9 @@ public class DashboardController {
         title.setPrefHeight(50);
         title.setWrapText(true);
 
-        // 6. Hiển thị giá hiện tại
-        HBox priceHBox = new HBox();
-        priceHBox.setAlignment(Pos.BOTTOM_LEFT);
+        // 6. Hiển thị giá hiện tại và thời gian đếm ngược
+        HBox bottomRow = new HBox();
+        bottomRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox priceVBox = new VBox();
         Label priceLabel = new Label("GIÁ HIỆN TẠI");
@@ -303,7 +311,17 @@ public class DashboardController {
         priceValue.getStyleClass().add("card-price");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
-        priceHBox.getChildren().add(priceVBox);
+        
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+        
+        VBox timerVBox = new VBox();
+        timerVBox.setAlignment(Pos.CENTER_RIGHT);
+        Label timerTitle = new Label("CÒN LẠI");
+        timerTitle.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+        
+        timerVBox.getChildren().addAll(timerTitle, timerLabel);
+        bottomRow.getChildren().addAll(priceVBox, bottomSpacer, timerVBox);
 
         // 7. Tạo nút "Vào Phòng" và gắn sự kiện
         Button btnEnter = new Button("Vào Phòng");
@@ -314,13 +332,30 @@ public class DashboardController {
         VBox.setMargin(btnEnter, new Insets(10, 0, 0, 0));
         btnEnter.setOnAction(e -> openBidRoom(item));
 
+        // Thêm đường kẻ phân cách (Separator Line)
+        Region separatorLine = new Region();
+        separatorLine.setMinHeight(1);
+        separatorLine.setPrefHeight(1);
+        separatorLine.setMaxHeight(1);
+        separatorLine.setMaxWidth(280 * 0.75);
+        separatorLine.setStyle("-fx-background-color: #4B5563;");
+        HBox separatorContainer = new HBox(separatorLine);
+        separatorContainer.setAlignment(Pos.CENTER);
+
         // 8. Đóng gói tất cả vào thẻ chính
-        card.getChildren().addAll(
-                imageContainer,
+        VBox contentBox = new VBox(10);
+        contentBox.setPadding(new Insets(15));
+        contentBox.getChildren().addAll(
                 subtitle,
                 title,
-                priceHBox,
+                separatorContainer,
+                bottomRow,
                 btnEnter
+        );
+
+        card.getChildren().addAll(
+                imageContainer,
+                contentBox
         );
 
         return card;
@@ -421,7 +456,7 @@ public class DashboardController {
                                     LocalDateTime end = entry.getValue();
                                     if (now.isAfter(end)) {
                                         lbl.setText("ĐÃ KẾT THÚC");
-                                        lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+                                        lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
                                     } else {
                                         java.time.Duration duration = java.time.Duration.between(now, end);
                                         lbl.setText(String.format("⏳ %02d:%02d:%02d",
