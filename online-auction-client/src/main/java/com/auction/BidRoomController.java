@@ -7,7 +7,12 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.chart.LineChart;
+import javafx.scene.Node;
+import javafx.scene.text.Text;
+import javafx.animation.FadeTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -59,12 +64,12 @@ public class BidRoomController {
     @FXML private Label timerLabel;
     @FXML private ImageView itemImageView;
     @FXML private TextField bidAmountField;
-    @FXML private ListView<String> bidHistoryList;
+    @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
-    @FXML private LineChart<String, Number> priceChart;
+    @FXML private AreaChart<String, Number> priceChart;
 
     private XYChart.Series<String, Number> priceSeries;
-    private ObservableList<String> historyLogs;
+    private ObservableList<BidEvent> historyLogs;
     private Timeline countdownTimeline;
 
     private Socket socket;
@@ -74,6 +79,20 @@ public class BidRoomController {
     private int currentItemId;
     private int currentUserId;
     private boolean isNotificationShowing = false;
+
+    public static class BidEvent {
+        public String timestamp;
+        public int bidderId;
+        public String username;
+        public double price;
+
+        public BidEvent(String timestamp, int bidderId, String username, double price) {
+            this.timestamp = timestamp;
+            this.bidderId = bidderId;
+            this.username = username;
+            this.price = price;
+        }
+    }
 
     /**
      * Hàm tự động chạy khi load FXML.
@@ -89,6 +108,60 @@ public class BidRoomController {
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
         bidHistoryList.setItems(historyLogs);
+
+        bidHistoryList.setCellFactory(lv -> new ListCell<BidEvent>() {
+            @Override
+            protected void updateItem(BidEvent item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    getStyleClass().remove("active-bid-row");
+                } else {
+                    HBox root = new HBox(15);
+                    root.setAlignment(Pos.CENTER_LEFT);
+
+                    StackPane avatar = new StackPane();
+                    Circle circle = new Circle(18, Color.web("#4A5568"));
+                    Text initials = new Text(item.username != null && !item.username.isEmpty() ? item.username.substring(0, 1).toUpperCase() : "U");
+                    initials.setFill(Color.WHITE);
+                    initials.setStyle("-fx-font-weight: bold; -fx-font-size: 11px;");
+                    avatar.getChildren().addAll(circle, initials);
+
+                    VBox details = new VBox(3);
+                    Label username = new Label(item.username != null ? item.username : "Khách");
+                    username.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
+                    Label time = new Label(item.timestamp);
+                    time.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 11px;");
+                    details.getChildren().addAll(username, time);
+
+                    Label badge = new Label("MỚI");
+                    badge.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 10px; -fx-padding: 3 6; -fx-background-radius: 4;");
+                    badge.setVisible(getIndex() == 0);
+                    badge.setManaged(getIndex() == 0);
+
+                    Region spacer = new Region();
+                    HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                    Label priceLabel = new Label("$" + item.price);
+                    priceLabel.getStyleClass().add("price-label");
+                    priceLabel.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+                    root.getChildren().addAll(avatar, details, badge, spacer, priceLabel);
+                    setGraphic(root);
+
+                    if (getIndex() == 0) {
+                        if (!getStyleClass().contains("active-bid-row")) {
+                            getStyleClass().add("active-bid-row");
+                        }
+                        priceLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 14px; -fx-font-weight: bold;");
+                    } else {
+                        getStyleClass().remove("active-bid-row");
+                        priceLabel.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 14px; -fx-font-weight: bold;");
+                    }
+                }
+            }
+        });
     }
 
     /**
@@ -120,7 +193,18 @@ public class BidRoomController {
 
         // 4. Đánh dấu điểm giá khởi đầu trên biểu đồ
         String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-        priceSeries.getData().add(new XYChart.Data<>(timeStamp, currentPrice));
+        XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
+
+        StackPane customNode = new StackPane();
+        Region symbol = new Region();
+        symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
+        Label priceLbl = new Label("$" + currentPrice);
+        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+        priceLbl.setTranslateY(-25);
+        customNode.getChildren().addAll(symbol, priceLbl);
+        initialData.setNode(customNode);
+        
+        priceSeries.getData().add(initialData);
 
         // 5. Mở kết nối mạng và chạy bộ đếm ngược
         connectToServer();
@@ -235,21 +319,56 @@ public class BidRoomController {
      * Cập nhật giao diện theo thời gian thực khi có người đặt giá thành công (Do ServerListener gọi).
      * @param newPrice Mức giá mới nhất.
      * @param bidderId ID của người vừa đặt giá thành công.
+     * @param username Tên của người dùng vừa đặt giá thành công.
      */
-    public void updatePriceRealtime(double newPrice, int bidderId) {
+    public void updatePriceRealtime(double newPrice, int bidderId, String username) {
         // 1. Gói lệnh cập nhật giao diện vào Platform.runLater
         Platform.runLater(() -> {
             // Cập nhật nhãn giá và người dẫn đầu
             currentPriceLabel.setText("$" + newPrice);
-            highestBidderLabel.setText("Dẫn đầu: Người chơi #" + bidderId);
+            highestBidderLabel.setText("Dẫn đầu: " + username);
 
             // 2. Thêm điểm dữ liệu mới vào biểu đồ (giữ tối đa 10 điểm để tránh rối mắt)
             String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-            priceSeries.getData().add(new XYChart.Data<>(timeStamp, newPrice));
+            XYChart.Data<String, Number> newData = new XYChart.Data<>(timeStamp, newPrice);
+
+            StackPane customNode = new StackPane();
+            Region symbol = new Region();
+            symbol.getStyleClass().addAll("chart-line-symbol", "chart-area-symbol");
+            Label priceLbl = new Label("$" + newPrice);
+            priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+            priceLbl.setTranslateY(-25);
+            customNode.getChildren().addAll(symbol, priceLbl);
+            newData.setNode(customNode);
+            
+            priceSeries.getData().add(newData);
             if (priceSeries.getData().size() > 10) priceSeries.getData().remove(0);
 
             // 3. Thêm log vào danh sách lịch sử (đẩy lên vị trí đầu tiên index = 0)
-            historyLogs.add(0, "[" + timeStamp + "] 🔥 Người chơi #" + bidderId + " đặt giá: $" + newPrice);
+            historyLogs.add(0, new BidEvent(timeStamp, bidderId, username, newPrice));
+
+            // 4. Custom indicator pulse overlay with Tooltip on the newest node
+            Platform.runLater(() -> {
+                if (symbol != null) {
+                    Tooltip tooltip = new Tooltip("Live: $" + newPrice);
+                    tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
+                    Tooltip.install(symbol, tooltip);
+
+                    ScaleTransition st = new ScaleTransition(Duration.millis(800), symbol);
+                    st.setByX(0.5);
+                    st.setByY(0.5);
+                    st.setAutoReverse(true);
+                    st.setCycleCount(Timeline.INDEFINITE);
+
+                    FadeTransition ft = new FadeTransition(Duration.millis(800), symbol);
+                    ft.setFromValue(1.0);
+                    ft.setToValue(0.5);
+                    ft.setAutoReverse(true);
+                    ft.setCycleCount(Timeline.INDEFINITE);
+
+                    new ParallelTransition(st, ft).play();
+                }
+            });
         });
     }
 
