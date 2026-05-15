@@ -311,7 +311,7 @@
 
 /* Màu nền tổng thể siêu tối của Dashboard */
 .dashboard-root {
-    -fx-background-color: #1A1D27;
+    -fx-background-color: #151A22;
 }
 
 /* Fix ScrollPane Background to allow global gradient through */
@@ -895,12 +895,11 @@
     -fx-text-fill: #EF4444;
 }
 
-/* ================= PREMIUM SIDEBAR ================= */
+/* ================= PREMIUM SIDEBAR & TOPBAR ================= */
 .sidebar-premium {
-    -fx-background-color: rgba(11, 23, 48, 0.25);
-    -fx-border-color: rgba(255, 255, 255, 0.02);
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(255, 255, 255, 0.04);
     -fx-border-width: 0 1 0 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 30, 0, 5, 0);
 }
 
 .logo-icon-premium {
@@ -999,4 +998,91 @@
 .menu-item-inactive:hover {
     -fx-background-color: rgba(255, 255, 255, 0.05);
     -fx-text-fill: white;
+}
+
+/* ================= OUTLINE ADD BUTTON (GIỐNG ẢNH 1) ================= */
+.btn-outline-add {
+    -fx-background-color: transparent;
+    -fx-border-color: #F59E0B;
+    -fx-border-radius: 12;
+    -fx-text-fill: #F59E0B;
+    -fx-font-weight: 900;
+    -fx-font-size: 13px;
+    -fx-padding: 12;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.btn-outline-add:hover {
+    -fx-background-color: rgba(245, 158, 11, 0.1);
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.2), 10, 0, 0, 0);
+    -fx-translate-y: -1;
+}
+
+.btn-outline-add:pressed {
+    -fx-background-color: rgba(245, 158, 11, 0.2);
+    -fx-translate-y: 1;
+}
+
+/* ================= DANH MỤC CONTAINER (GIỐNG ẢNH 2) ================= */
+.category-container-premium {
+    -fx-background-color: rgba(255, 255, 255, 0.02); /* Nền mờ để phân biệt với background chính */
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(255, 255, 255, 0.08); /* Viền mờ viền xám nhạt */
+    -fx-border-radius: 16;
+    -fx-padding: 15 10 15 10; /* Khoảng cách lề bên trong container */
+}
+
+/* Fix nhẹ lại padding của menu item cho gọn gàng trong container mới */
+.menu-item-active, .menu-item-inactive {
+    -fx-padding: 10 16;
+}
+/* ================= CUSTOM SCROLLBAR CHO DARK THEME ================= */
+
+/* Làm trong suốt nền của thanh cuộn */
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+/* Phần rãnh trượt (Track) - Để nền tối mờ */
+.scroll-bar:vertical .track,
+.scroll-bar:horizontal .track {
+    -fx-background-color: rgba(255, 255, 255, 0.02);
+    -fx-border-color: transparent;
+    -fx-background-radius: 8;
+}
+
+/* Phần thanh kéo (Thumb) - Màu xám trong suốt, bo tròn */
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 8;
+}
+
+/* Hiệu ứng hover cho thanh kéo: đổi sang màu Cam tiệp với Theme */
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: rgba(245, 158, 11, 0.5); /* Màu cam mờ */
+}
+
+/* Hiệu ứng click (pressed) cho thanh kéo */
+.scroll-bar:vertical .thumb:pressed,
+.scroll-bar:horizontal .thumb:pressed {
+    -fx-background-color: rgba(245, 158, 11, 0.8);
+}
+
+/* Ẩn hai nút mũi tên (lên/xuống) ở hai đầu cho giao diện gọn gàng */
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0;
+    -fx-pref-width: 0;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-shape: " ";
+    -fx-padding: 0;
 }
