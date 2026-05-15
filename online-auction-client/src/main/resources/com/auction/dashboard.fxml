@@ -82,10 +82,10 @@
                         <VBox spacing="4" styleClass="category-container-premium">
                             <Label text="DANH MỤC" style="-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: 800; -fx-padding: 0 0 8 10; -fx-letter-spacing: 1px;" />
 
-                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-active" text="&#x2756;   Tất cả" />
-                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F3A8;   Art" />
-                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F697;   Vehicle" />
-                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F4BB;   Electronics" />
+                            <Button onAction="#filterAll" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-active" text="&#x2756;   Tất cả" />
+                            <Button onAction="#filterArt" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F3A8;   Art" />
+                            <Button onAction="#filterVehicle" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F697;   Vehicle" />
+                            <Button onAction="#filterElectronics" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F4BB;   Electronics" />
                         </VBox>
 
                         <Button fx:id="btnAddItem" maxWidth="Infinity" onAction="#handleAddItem" styleClass="btn-outline-add" text="&#x2795; ĐĂNG BÁN SẢN PHẨM" />
