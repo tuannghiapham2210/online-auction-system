@@ -291,8 +291,18 @@ public class DashboardController {
         imageContainer.getChildren().add(badgeBox);
 
         // 5. Thêm văn bản (ID, Loại, Tên)
-        Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
-        subtitle.setStyle("-fx-text-fill: gray; -fx-font-size: 12px;");
+        Label lotBadge = new Label("LÔ-" + item.getId());
+        lotBadge.setStyle("-fx-text-fill: #FFA500; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #151821; -fx-background-radius: 4px; -fx-padding: 3px 6px;");
+        
+        Region tagSpacer = new Region();
+        HBox.setHgrow(tagSpacer, Priority.ALWAYS);
+        
+        Label typeBadge = new Label(item.getItemType());
+        typeBadge.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #151821; -fx-background-radius: 4px; -fx-padding: 3px 6px;");
+
+        HBox tagsRow = new HBox(lotBadge, tagSpacer, typeBadge);
+        tagsRow.setAlignment(Pos.CENTER_LEFT);
+        VBox.setMargin(tagsRow, new Insets(0, 0, 5, 0));
 
         Label title = new Label(item.getName());
         title.getStyleClass().add("card-title");
@@ -309,6 +319,7 @@ public class DashboardController {
 
         Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");
+        priceValue.setStyle("-fx-text-fill: white;");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
         
@@ -337,8 +348,9 @@ public class DashboardController {
         separatorLine.setMinHeight(1);
         separatorLine.setPrefHeight(1);
         separatorLine.setMaxHeight(1);
-        separatorLine.setMaxWidth(280 * 0.75);
-        separatorLine.setStyle("-fx-background-color: #4B5563;");
+        separatorLine.setMaxWidth(280 * 0.90);
+        separatorLine.setPrefWidth(280 * 0.90);
+        separatorLine.setStyle("-fx-background-color: rgba(107, 114, 128, 0.4);");
         HBox separatorContainer = new HBox(separatorLine);
         separatorContainer.setAlignment(Pos.CENTER);
 
@@ -346,7 +358,7 @@ public class DashboardController {
         VBox contentBox = new VBox(10);
         contentBox.setPadding(new Insets(15));
         contentBox.getChildren().addAll(
-                subtitle,
+                tagsRow,
                 title,
                 separatorContainer,
                 bottomRow,
