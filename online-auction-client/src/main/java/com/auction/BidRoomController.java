@@ -13,6 +13,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -195,6 +196,14 @@ public class BidRoomController {
         String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
         XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
 
+        // Cấu hình Y-Axis thủ công với 15% buffer
+        NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(0);
+        double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
+        yAxis.setUpperBound(initialUpperBound);
+        yAxis.setTickUnit(initialUpperBound / 5);
+
         StackPane customNode = new StackPane();
         customNode.setStyle("-fx-background-color: transparent;");
         Circle dot = new Circle(6);
@@ -331,6 +340,12 @@ public class BidRoomController {
             // Cập nhật nhãn giá và người dẫn đầu
             currentPriceLabel.setText("$" + newPrice);
             highestBidderLabel.setText("Dẫn đầu: " + username);
+
+            // Cập nhật lại Y-Axis khi có giá mới
+            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+            double newUpperBound = newPrice * 1.15;
+            yAxis.setUpperBound(newUpperBound);
+            yAxis.setTickUnit(newUpperBound / 5);
 
             // 2. Thêm điểm dữ liệu mới vào biểu đồ (giữ tối đa 10 điểm để tránh rối mắt)
             String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));

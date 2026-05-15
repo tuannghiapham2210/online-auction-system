@@ -505,6 +505,7 @@
 /* ================= BID ROOM CHART ================= */
 .bid-chart {
     -fx-background-color: transparent;
+    -fx-padding: 20px 10px 10px 10px;
 }
 
 .bid-chart .chart-plot-background {
