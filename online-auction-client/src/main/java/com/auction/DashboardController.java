@@ -15,16 +15,23 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -59,9 +66,6 @@ public class DashboardController {
     @FXML private javafx.scene.layout.FlowPane itemGrid;
 
     @FXML private Button btnAddItem;
-    @FXML private Label lblUsername;
-    @FXML private Label lblRole;
-    @FXML private Label lblAvatar;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -76,26 +80,13 @@ public class DashboardController {
         loadDataFromServer();
 
         // 2. Ẩn nút đăng bán nếu người dùng không có quyền Seller
-        if (btnAddItem != null) {
-            if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
-                btnAddItem.setVisible(false);
-            }
+        if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
+            btnAddItem.setVisible(false);
         }
-        
         // HIỂN THỊ SỐ DƯ
-        if (lblBalance != null) {
-            lblBalance.setText("$" + Session.balance);
-        }
-
-        if (lblUsername != null && Session.username != null) {
-            lblUsername.setText(Session.username);
-        }
-        if (lblRole != null && Session.role != null) {
-            lblRole.setText(Session.role.toUpperCase());
-        }
-        if (lblAvatar != null && Session.username != null && !Session.username.isEmpty()) {
-            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
-        }
+        lblBalance.setText(
+            "Số dư: $" + Session.balance
+        );
     }
 
     /**
@@ -200,20 +191,48 @@ public class DashboardController {
     private VBox createItemCard(Item item) {
         // 1. Khởi tạo thẻ chính (Card)
         VBox card = new VBox();
-        card.setSpacing(10);
+        card.setSpacing(0);
         card.getStyleClass().add("item-card");
-        card.setPadding(new Insets(15));
         card.setPrefWidth(280);
 
         // 2. Tạo nhãn Badge LIVE và thời gian
         HBox badgeBox = new HBox();
         badgeBox.setAlignment(Pos.CENTER_LEFT);
+        badgeBox.setMaxHeight(Region.USE_PREF_SIZE);
         Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
 
+        FadeTransition fadeLive = new FadeTransition(Duration.seconds(1.2), badge);
+        fadeLive.setFromValue(1.0);
+        fadeLive.setToValue(0.3);
+        fadeLive.setCycleCount(Animation.INDEFINITE);
+        fadeLive.setAutoReverse(true);
+        fadeLive.play();
+
         Label timerLabel = new Label("⏳ Đang tải...");
-        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
-        badgeBox.getChildren().addAll(badge, timerLabel);
+        timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold;");
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        // Viewer Count Badge
+        HBox viewerBadge = new HBox();
+        viewerBadge.setAlignment(Pos.CENTER);
+        viewerBadge.setSpacing(5);
+        viewerBadge.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6); -fx-background-radius: 12px; -fx-padding: 4px 10px;");
+        viewerBadge.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
+        SVGPath eyeIcon = new SVGPath();
+        eyeIcon.setContent("M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z");
+        eyeIcon.setFill(Color.web("#8B949E"));
+        eyeIcon.setScaleX(0.7);
+        eyeIcon.setScaleY(0.7);
+
+        Label viewerCount = new Label("124");
+        viewerCount.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;");
+        viewerBadge.getChildren().addAll(eyeIcon, viewerCount);
+
+        badgeBox.getChildren().addAll(badge, spacer, viewerBadge);
 
         // 3. Lưu trữ thời gian kết thúc vào Map để Timeline xử lý đếm ngược
         if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
@@ -228,43 +247,92 @@ public class DashboardController {
 
         // 4. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefHeight(150);
-        imageContainer.setStyle("-fx-background-color: #071226; -fx-background-radius: 16; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 16;");
+        imageContainer.setPrefHeight(180);
+        imageContainer.setMinHeight(180);
+        imageContainer.setMaxHeight(180);
+        imageContainer.setMaxWidth(Double.MAX_VALUE);
+        imageContainer.setStyle("-fx-padding: 0; -fx-background-color: white; -fx-background-radius: 10 10 0 0;");
 
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
             try {
-                ImageView imageView = new ImageView(new Image(item.getImageUrl(), true));
-                imageView.setFitHeight(140);
-                imageView.setFitWidth(240);
-                imageView.setPreserveRatio(true);
-                imageContainer.getChildren().add(imageView);
+                Image productImage = new Image(item.getImageUrl(), true);
+                
+                Rectangle imageRect = new Rectangle();
+                imageRect.widthProperty().bind(imageContainer.widthProperty());
+                imageRect.heightProperty().bind(imageContainer.heightProperty());
+                
+                // Khắc phục lỗi hiển thị do ImagePattern không tự cập nhật khi tải ảnh ngầm
+                imageRect.setFill(Color.WHITE); // Background chờ (Placeholder)
+                if (productImage.getProgress() == 1.0) {
+                    if (!productImage.isError()) imageRect.setFill(new ImagePattern(productImage));
+                } else {
+                    productImage.progressProperty().addListener((obs, oldVal, newVal) -> {
+                        if (newVal.doubleValue() == 1.0 && !productImage.isError()) {
+                            imageRect.setFill(new ImagePattern(productImage));
+                        }
+                    });
+                }
+                
+                Rectangle clipRect = new Rectangle();
+                clipRect.widthProperty().bind(imageContainer.widthProperty());
+                clipRect.heightProperty().bind(imageContainer.heightProperty().add(24));
+                clipRect.setArcWidth(24);
+                clipRect.setArcHeight(24);
+                imageRect.setClip(clipRect);
+                
+                imageContainer.getChildren().add(imageRect);
             } catch (Exception e) {
                 logger.warn("Could not load image: {}", item.getImageUrl());
             }
         }
 
+        StackPane.setAlignment(badgeBox, Pos.TOP_LEFT);
+        StackPane.setMargin(badgeBox, new Insets(10, 10, 0, 10));
+        imageContainer.getChildren().add(badgeBox);
+
         // 5. Thêm văn bản (ID, Loại, Tên)
-        Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
-        subtitle.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: bold;");
+        Label lotBadge = new Label("LÔ-" + item.getId());
+        lotBadge.setStyle("-fx-text-fill: #FFA500; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #151821; -fx-background-radius: 4px; -fx-padding: 3px 6px;");
+        
+        Region tagSpacer = new Region();
+        HBox.setHgrow(tagSpacer, Priority.ALWAYS);
+        
+        Label typeBadge = new Label(item.getItemType());
+        typeBadge.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 10px; -fx-font-weight: bold; -fx-background-color: #151821; -fx-background-radius: 4px; -fx-padding: 3px 6px;");
+
+        HBox tagsRow = new HBox(lotBadge, tagSpacer, typeBadge);
+        tagsRow.setAlignment(Pos.CENTER_LEFT);
+        VBox.setMargin(tagsRow, new Insets(0, 0, 5, 0));
 
         Label title = new Label(item.getName());
         title.getStyleClass().add("card-title");
         title.setPrefHeight(50);
         title.setWrapText(true);
 
-        // 6. Hiển thị giá hiện tại
-        HBox priceHBox = new HBox();
-        priceHBox.setAlignment(Pos.BOTTOM_LEFT);
+        // 6. Hiển thị giá hiện tại và thời gian đếm ngược
+        HBox bottomRow = new HBox();
+        bottomRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox priceVBox = new VBox();
         Label priceLabel = new Label("GIÁ HIỆN TẠI");
-        priceLabel.setStyle("-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: bold;");
+        priceLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
 
         Label priceValue = new Label("$" + item.getCurrentPrice());
         priceValue.getStyleClass().add("card-price");
+        priceValue.setStyle("-fx-text-fill: white;");
 
         priceVBox.getChildren().addAll(priceLabel, priceValue);
-        priceHBox.getChildren().add(priceVBox);
+        
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+        
+        VBox timerVBox = new VBox();
+        timerVBox.setAlignment(Pos.CENTER_RIGHT);
+        Label timerTitle = new Label("CÒN LẠI");
+        timerTitle.setStyle("-fx-text-fill: gray; -fx-font-size: 10px;");
+        
+        timerVBox.getChildren().addAll(timerTitle, timerLabel);
+        bottomRow.getChildren().addAll(priceVBox, bottomSpacer, timerVBox);
 
         // 7. Tạo nút "Vào Phòng" và gắn sự kiện
         Button btnEnter = new Button("Vào Phòng");
@@ -275,14 +343,31 @@ public class DashboardController {
         VBox.setMargin(btnEnter, new Insets(10, 0, 0, 0));
         btnEnter.setOnAction(e -> openBidRoom(item));
 
+        // Thêm đường kẻ phân cách (Separator Line)
+        Region separatorLine = new Region();
+        separatorLine.setMinHeight(1);
+        separatorLine.setPrefHeight(1);
+        separatorLine.setMaxHeight(1);
+        separatorLine.setMaxWidth(280 * 0.90);
+        separatorLine.setPrefWidth(280 * 0.90);
+        separatorLine.setStyle("-fx-background-color: rgba(107, 114, 128, 0.4);");
+        HBox separatorContainer = new HBox(separatorLine);
+        separatorContainer.setAlignment(Pos.CENTER);
+
         // 8. Đóng gói tất cả vào thẻ chính
-        card.getChildren().addAll(
-                badgeBox,
-                imageContainer,
-                subtitle,
+        VBox contentBox = new VBox(10);
+        contentBox.setPadding(new Insets(15));
+        contentBox.getChildren().addAll(
+                tagsRow,
                 title,
-                priceHBox,
+                separatorContainer,
+                bottomRow,
                 btnEnter
+        );
+
+        card.getChildren().addAll(
+                imageContainer,
+                contentBox
         );
 
         return card;
@@ -383,7 +468,7 @@ public class DashboardController {
                                     LocalDateTime end = entry.getValue();
                                     if (now.isAfter(end)) {
                                         lbl.setText("ĐÃ KẾT THÚC");
-                                        lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold; -fx-padding: 0 0 0 10;");
+                                        lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
                                     } else {
                                         java.time.Duration duration = java.time.Duration.between(now, end);
                                         lbl.setText(String.format("⏳ %02d:%02d:%02d",
@@ -481,7 +566,7 @@ private void handleDeposit() {
 
             // update balance label
             lblBalance.setText(
-                    "$" + Session.balance
+                    "Số dư: $" + Session.balance
             );
         });
 
