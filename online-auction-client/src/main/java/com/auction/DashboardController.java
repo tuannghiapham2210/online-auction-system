@@ -27,6 +27,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -195,6 +197,7 @@ public class DashboardController {
         // 2. Tạo nhãn Badge LIVE và thời gian
         HBox badgeBox = new HBox();
         badgeBox.setAlignment(Pos.CENTER_LEFT);
+        badgeBox.setMaxHeight(Region.USE_PREF_SIZE);
         Label badge = new Label("LIVE");
         badge.getStyleClass().add("badge-live");
 
@@ -236,20 +239,48 @@ public class DashboardController {
 
         // 4. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
-        imageContainer.setPrefHeight(150);
-        imageContainer.setStyle("-fx-background-color: #2D3748; -fx-background-radius: 10;");
+        imageContainer.setPrefHeight(180);
+        imageContainer.setMinHeight(180);
+        imageContainer.setMaxHeight(180);
+        imageContainer.setMaxWidth(Double.MAX_VALUE);
+        imageContainer.setStyle("-fx-padding: 0; -fx-background-color: #2D3748; -fx-background-radius: 10;");
 
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
             try {
-                ImageView imageView = new ImageView(new Image(item.getImageUrl(), true));
-                imageView.setFitHeight(140);
-                imageView.setFitWidth(240);
-                imageView.setPreserveRatio(true);
-                imageContainer.getChildren().add(imageView);
+                Image productImage = new Image(item.getImageUrl(), true);
+                
+                Rectangle imageRect = new Rectangle();
+                imageRect.widthProperty().bind(imageContainer.widthProperty());
+                imageRect.heightProperty().bind(imageContainer.heightProperty());
+                
+                // Khắc phục lỗi hiển thị do ImagePattern không tự cập nhật khi tải ảnh ngầm
+                imageRect.setFill(Color.web("#374151")); // Background chờ (Placeholder)
+                if (productImage.getProgress() == 1.0) {
+                    if (!productImage.isError()) imageRect.setFill(new ImagePattern(productImage));
+                } else {
+                    productImage.progressProperty().addListener((obs, oldVal, newVal) -> {
+                        if (newVal.doubleValue() == 1.0 && !productImage.isError()) {
+                            imageRect.setFill(new ImagePattern(productImage));
+                        }
+                    });
+                }
+                
+                Rectangle clipRect = new Rectangle();
+                clipRect.widthProperty().bind(imageContainer.widthProperty());
+                clipRect.heightProperty().bind(imageContainer.heightProperty());
+                clipRect.setArcWidth(24);
+                clipRect.setArcHeight(24);
+                imageRect.setClip(clipRect);
+                
+                imageContainer.getChildren().add(imageRect);
             } catch (Exception e) {
                 logger.warn("Could not load image: {}", item.getImageUrl());
             }
         }
+
+        StackPane.setAlignment(badgeBox, Pos.TOP_LEFT);
+        StackPane.setMargin(badgeBox, new Insets(10, 10, 0, 10));
+        imageContainer.getChildren().add(badgeBox);
 
         // 5. Thêm văn bản (ID, Loại, Tên)
         Label subtitle = new Label("LÔ-" + item.getId() + " • " + item.getItemType());
@@ -285,7 +316,6 @@ public class DashboardController {
 
         // 8. Đóng gói tất cả vào thẻ chính
         card.getChildren().addAll(
-                badgeBox,
                 imageContainer,
                 subtitle,
                 title,
