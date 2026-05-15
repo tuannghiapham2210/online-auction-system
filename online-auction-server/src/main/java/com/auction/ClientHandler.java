@@ -268,6 +268,7 @@ public class ClientHandler implements Runnable {
             int itemId = request.get("itemId").getAsInt();
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
+            String username = request.has("username") ? request.get("username").getAsString() : "Khách";
 
             // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
@@ -282,6 +283,7 @@ public class ClientHandler implements Runnable {
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
                 broadcastMsg.addProperty("newPrice", bidAmount);
                 broadcastMsg.addProperty("bidderId", bidderId);
+                broadcastMsg.addProperty("username", username);
 
 
                 logger.info("New bid accepted. Broadcasting price update...");

@@ -48,8 +48,9 @@ public class ServerListener implements Runnable {
                 if ("UPDATE_PRICE".equals(action)) {
                     double newPrice = json.get("newPrice").getAsDouble();
                     int bidderId = json.get("bidderId").getAsInt();
+                    String username = json.has("username") ? json.get("username").getAsString() : "Khách";
 
-                    controller.updatePriceRealtime(newPrice, bidderId);
+                    controller.updatePriceRealtime(newPrice, bidderId, username);
                 }
             }
         } catch (Exception e) {
