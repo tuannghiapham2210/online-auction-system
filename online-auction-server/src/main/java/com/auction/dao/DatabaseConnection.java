@@ -185,9 +185,9 @@ public class DatabaseConnection {
                 try (java.sql.ResultSet rsItems = stmt.executeQuery(countItemsSql)) {
                     if (rsItems.getInt(1) == 0) {
                         String insertItemSql = "INSERT INTO items (id, name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
-                                "VALUES (1, 'Laptop Gaming ASUS ROG', 'ELECTRONICS', 15000.0, 15000.0, 500.0, '2026-12-31 23:59:59', 24, 'https://cdn.tgdd.vn/Products/Images/44/304634/asus-rog-strix-scar-18-g834jx-i9-n6039w-thumb-600x600.jpg', 'Máy mới 100% fullbox', '24', 3)";
+                                "VALUES (1, 'Koenigsegg Jesko', 'VEHICLE', 3000000.0, 3000000.0, 50000.0, '2026-12-31 23:59:59', 24, 'https://octane.rent/wp-content/uploads/2025/09/Koenigsegg_Jesko_1.jpg', 'Siêu xe hypercar mạnh mẽ nhất', 'V8 5.0L Twin-Turbo', 3)";
                         stmt.executeUpdate(insertItemSql);
-                        logger.info("Seeded 1 sample item (Laptop).");
+                        logger.info("Seeded 1 sample item (Jesko Car).");
                     }
                 }
             }
