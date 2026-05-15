@@ -14,102 +14,109 @@
 
 <StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
 
-   <BorderPane styleClass="dashboard-root" stylesheets="@style.css">
-      
-      <top>
-         <HBox alignment="CENTER_LEFT" spacing="20" styleClass="sidebar-premium">
-            <padding>
-               <Insets left="25" right="25" top="20" bottom="10"/>
-            </padding>
-            <children>
-               <HBox alignment="CENTER_LEFT" spacing="16">
-                  <Label styleClass="logo-icon-premium" text="&#x269C;" />
-                  <VBox spacing="2">
-                     <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: 900;" text="THE AUCTION" />
-                        <Label style="-fx-text-fill: #F59E0B; -fx-font-size: 32px; -fx-font-weight: 900;" text="SYSTEM" />
-                     </HBox>
-                     <Label style="-fx-text-fill: #94A3B8; -fx-font-size: 14px;" text="Sàn đấu giá trực tuyến. Khám phá các lô hàng cao cấp." wrapText="true" />
-                  </VBox>
-               </HBox>
-               
-               <Region HBox.hgrow="ALWAYS" />
+    <BorderPane styleClass="dashboard-root" stylesheets="@style.css">
 
-               <HBox alignment="CENTER_RIGHT" spacing="20">
-                   <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-card">
-                       <HBox alignment="CENTER_LEFT" spacing="10">
-                           <Label styleClass="wallet-icon" text="&#x1F4B3;" />
-                           <VBox alignment="CENTER_LEFT">
-                               <Label styleClass="wallet-label" text="Số dư ví:" />
-                               <Label fx:id="lblBalance" styleClass="wallet-balance" text="\$0" />
-                           </VBox>
-                       </HBox>
-                       <Button fx:id="btnDeposit" onAction="#handleDeposit" styleClass="btn-deposit-neon" text="NẠP" />
-                   </HBox>
+        <top>
+            <HBox alignment="CENTER_LEFT" spacing="20" styleClass="sidebar-premium">
+                <padding>
+                    <Insets left="25" right="25" top="20" bottom="10"/>
+                </padding>
+                <children>
+                    <HBox alignment="CENTER_LEFT" spacing="16">
+                        <Label styleClass="logo-icon-premium" text="&#x269C;" />
+                        <VBox spacing="2">
+                            <HBox alignment="CENTER_LEFT" spacing="8">
+                                <Label style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: 900;" text="THE AUCTION" />
+                                <Label style="-fx-text-fill: #F59E0B; -fx-font-size: 32px; -fx-font-weight: 900;" text="SYSTEM" />
+                            </HBox>
+                            <Label style="-fx-text-fill: #94A3B8; -fx-font-size: 14px;" text="Sàn đấu giá trực tuyến. Khám phá các lô hàng cao cấp." wrapText="true" />
+                        </VBox>
+                    </HBox>
 
-                   <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-card">
-                       <VBox alignment="CENTER_RIGHT">
-                           <Label fx:id="lblUsername" styleClass="profile-username" text="seller" />
-                           <Label fx:id="lblRole" styleClass="profile-role-badge" text="SELLER" />
-                       </VBox>
-                       <Label fx:id="lblAvatar" styleClass="profile-avatar" text="S" />
-                       <Button fx:id="btnLogout" onAction="#handleLogout" styleClass="btn-logout-square">
-                           <graphic>
-                               <Label styleClass="logout-icon" text="&#x238B;" />
-                           </graphic>
-                       </Button>
-                   </HBox>
-               </HBox>
-            </children>
-         </HBox>
-      </top>
+                    <Region HBox.hgrow="ALWAYS" />
 
-      <left>
-         <VBox prefWidth="320" spacing="28" styleClass="sidebar-premium">
-            <padding>
-               <Insets bottom="30" left="25" right="25" top="10" />
-            </padding>
-            <children>
-               <Region maxWidth="Infinity" prefHeight="1" style="-fx-background-color: linear-gradient(to right, #F59E0B 0%, rgba(245,158,11,0.22) 45%, transparent 100%);" />
+                    <HBox alignment="CENTER_RIGHT" spacing="20">
+                        <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-card">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <Label styleClass="wallet-icon" text="&#x1F4B3;" />
+                                <VBox alignment="CENTER_LEFT">
+                                    <Label styleClass="wallet-label" text="Số dư ví:" />
+                                    <Label fx:id="lblBalance" styleClass="wallet-balance" text="\$0" />
+                                </VBox>
+                            </HBox>
+                            <Button fx:id="btnDeposit" onAction="#handleDeposit" styleClass="btn-deposit-neon" text="NẠP" />
+                        </HBox>
 
-               <VBox spacing="24">
-                  <HBox alignment="CENTER_LEFT" styleClass="search-box-premium">
-                     <Label styleClass="search-icon-premium" text="&#x1F50D;" />
-                     <TextField fx:id="searchField" promptText="Tìm kiếm lô hàng..." styleClass="search-field-premium" HBox.hgrow="ALWAYS" />
-                  </HBox>
+                        <HBox alignment="CENTER_LEFT" spacing="15" styleClass="header-card">
+                            <VBox alignment="CENTER_RIGHT">
+                                <Label fx:id="lblUsername" styleClass="profile-username" text="seller" />
+                                <Label fx:id="lblRole" styleClass="profile-role-badge" text="SELLER" />
+                            </VBox>
+                            <Label fx:id="lblAvatar" styleClass="profile-avatar" text="S" />
+                            <Button fx:id="btnLogout" onAction="#handleLogout" styleClass="btn-logout-square">
+                                <graphic>
+                                    <Label styleClass="logout-icon" text="&#x238B;" />
+                                </graphic>
+                            </Button>
+                        </HBox>
+                    </HBox>
+                </children>
+            </HBox>
+        </top>
 
-                  <Button fx:id="btnAddItem" maxWidth="Infinity" onAction="#handleAddItem" styleClass="btn-premium-add" text="Đăng sản phẩm" />
+        <left>
+            <VBox prefWidth="260" spacing="20" styleClass="sidebar-premium">
+                <padding>
+                    <Insets bottom="30" left="15" right="15" top="10" />
+                </padding>
+                <children>
+                    <Region maxWidth="Infinity" prefHeight="1" style="-fx-background-color: linear-gradient(to right, #F59E0B 0%, rgba(245,158,11,0.22) 45%, transparent 100%);" />
 
-                  <VBox spacing="8" styleClass="category-menu-premium">
-                     <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-active" text="Tất cả" />
-                     <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="Đồng hồ" />
-                     <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="Ô tô" />
-                  </VBox>
-               </VBox>
-            </children>
-         </VBox>
-      </left>
+                    <VBox spacing="20" VBox.vgrow="ALWAYS">
 
-      <center>
-         <VBox spacing="25.0">
-            <padding>
-               <Insets bottom="40.0" left="40.0" right="40.0" top="20.0" />
-            </padding>
-            <children>
-               <HBox alignment="CENTER_LEFT" spacing="10">
-                  <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: 900; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" text="Tất cả lô hàng" />
-                  <Region HBox.hgrow="ALWAYS" />
-               </HBox>
+                        <HBox alignment="CENTER_LEFT" styleClass="search-box-premium">
+                            <Label styleClass="search-icon-premium" text="&#x1F50D;" />
+                            <TextField fx:id="searchField" promptText="Tìm kiếm..." styleClass="search-field-premium" HBox.hgrow="ALWAYS" />
+                        </HBox>
 
-               <ScrollPane fitToWidth="true" styleClass="premium-scroll-pane" VBox.vgrow="ALWAYS">
-                  <content>
-                     <FlowPane fx:id="itemGrid" hgap="30.0" vgap="30.0" />
-                  </content>
-               </ScrollPane>
-            </children>
-         </VBox>
-      </center>
+                        <VBox spacing="4" styleClass="category-container-premium">
+                            <Label text="DANH MỤC" style="-fx-text-fill: #64748B; -fx-font-size: 11px; -fx-font-weight: 800; -fx-padding: 0 0 8 10; -fx-letter-spacing: 1px;" />
 
-   </BorderPane>
+                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-active" text="&#x2756;   Tất cả" />
+                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F3A8;   Art" />
+                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F697;   Vehicle" />
+                            <Button alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F4BB;   Electronics" />
+                        </VBox>
+
+                        <Button fx:id="btnAddItem" maxWidth="Infinity" onAction="#handleAddItem" styleClass="btn-outline-add" text="&#x2795; ĐĂNG BÁN SẢN PHẨM" />
+
+                        <Region VBox.vgrow="ALWAYS" />
+
+                    </VBox>
+                </children>
+            </VBox>
+        </left>
+
+        <center>
+            <VBox spacing="25.0">
+                <padding>
+                    <Insets bottom="40.0" left="40.0" right="40.0" top="20.0" />
+                </padding>
+                <children>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: 900; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" text="Tất cả lô hàng" />
+                        <Region HBox.hgrow="ALWAYS" />
+                    </HBox>
+
+                    <ScrollPane fitToWidth="true" styleClass="premium-scroll-pane" VBox.vgrow="ALWAYS">
+                        <content>
+                            <FlowPane fx:id="itemGrid" hgap="30.0" vgap="30.0" style="-fx-padding: 10 0 10 0;" />
+                        </content>
+                    </ScrollPane>
+                </children>
+            </VBox>
+        </center>
+
+    </BorderPane>
 
 </StackPane>
