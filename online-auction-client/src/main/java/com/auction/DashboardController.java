@@ -160,6 +160,9 @@ public class DashboardController {
                             if (obj.has("description") && !obj.get("description").isJsonNull()) {
                                 item.setDescription(obj.get("description").getAsString());
                             }
+                            if (obj.has("durationHours") && !obj.get("durationHours").isJsonNull()) {
+                                item.setDurationHours(obj.get("durationHours").getAsInt());
+                            }
                             if (obj.has("status") && !obj.get("status").isJsonNull()) {
                                 item.setStatus(obj.get("status").getAsString());
                             }
@@ -401,10 +404,17 @@ public class DashboardController {
         // Đếm ngược thời gian (để lưu dữ liệu, không hiển thị trên thẻ ảnh)
         Label timerLabel = new Label("⏳ Đang tải...");
         timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold;");
-        if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-            try {
-                timerMap.put(timerLabel, LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            } catch (Exception e) { logger.warn("Lỗi parse thời gian: {}", item.getId()); }
+        
+        if ("PENDING".equalsIgnoreCase(item.getStatus())) {
+            // Nếu chưa mở phiên, hiển thị tĩnh thời gian gốc và không đưa vào luồng đếm ngược
+            timerLabel.setText(String.format("⏳ %02d:00:00", item.getDurationHours()));
+        } else {
+            // Nếu ACTIVE, đưa vào timerMap để Timeline chạy mỗi giây
+            if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+                try {
+                    timerMap.put(timerLabel, LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                } catch (Exception e) { logger.warn("Lỗi parse thời gian: {}", item.getId()); }
+            }
         }
 
         // FIX Ô VIEWER COUNT (124): Sắp xếp icon và chữ cân đối
