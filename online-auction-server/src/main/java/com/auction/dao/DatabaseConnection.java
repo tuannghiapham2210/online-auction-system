@@ -108,6 +108,7 @@ public class DatabaseConnection {
                 + "description TEXT,"
                 + "extra_info TEXT,"
                 + "seller_id INTEGER NOT NULL,"
+                + "status VARCHAR(20) DEFAULT 'PENDING',"
                 + "FOREIGN KEY (seller_id) REFERENCES users(id)"
                 + ");";
 
@@ -184,8 +185,8 @@ public class DatabaseConnection {
                 String countItemsSql = "SELECT COUNT(*) FROM items";
                 try (java.sql.ResultSet rsItems = stmt.executeQuery(countItemsSql)) {
                     if (rsItems.getInt(1) == 0) {
-                        String insertItemSql = "INSERT INTO items (id, name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
-                                "VALUES (1, 'Koenigsegg Jesko', 'VEHICLE', 3000000.0, 3000000.0, 50000.0, '2026-12-31 23:59:59', 24, 'https://octane.rent/wp-content/uploads/2025/09/Koenigsegg_Jesko_1.jpg', 'Siêu xe hypercar mạnh mẽ nhất', 'V8 5.0L Twin-Turbo', 3)";
+                        String insertItemSql = "INSERT INTO items (id, name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status) " +
+                                "VALUES (1, 'Koenigsegg Jesko', 'VEHICLE', 3000000.0, 3000000.0, 50000.0, '2026-12-31 23:59:59', 24, 'https://octane.rent/wp-content/uploads/2025/09/Koenigsegg_Jesko_1.jpg', 'Siêu xe hypercar mạnh mẽ nhất', 'V8 5.0L Twin-Turbo', 3, 'PENDING')";
                         stmt.executeUpdate(insertItemSql);
                         logger.info("Seeded 1 sample item (Jesko Car).");
                     }

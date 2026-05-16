@@ -14,6 +14,7 @@ public abstract class Item extends Entity implements Serializable {
     protected int durationHours;
     protected String imageUrl;
     protected String description;
+    protected String status = "PENDING";
 
     public Item(String name, double startingPrice, String endTime, int sellerId) {
         this.name = name;
@@ -45,4 +46,7 @@ public abstract class Item extends Entity implements Serializable {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

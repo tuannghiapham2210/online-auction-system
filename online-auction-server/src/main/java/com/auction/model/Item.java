@@ -20,6 +20,7 @@ public abstract class Item extends Entity implements Serializable {
     protected int durationHours;
     protected String imageUrl;
     protected String description;
+    protected String status = "PENDING";
 
     /**
      * Khởi tạo các thông tin cơ bản của một sản phẩm.
@@ -83,4 +84,7 @@ public abstract class Item extends Entity implements Serializable {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
