@@ -79,6 +79,9 @@ public class BidRoomController {
     @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
     @FXML private AreaChart<String, Number> priceChart;
+    @FXML private Button btnPlaceBid;
+    @FXML private Label timerLabelTitle;
+    @FXML private Button btnOpenAuction;
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
@@ -91,6 +94,8 @@ public class BidRoomController {
 
     private int currentItemId;
     private int currentUserId;
+    private String currentEndTime;
+    private String currentStatus;
     private boolean isNotificationShowing = false;
 
     public static class BidEvent {
@@ -123,6 +128,11 @@ public class BidRoomController {
 
         if (lblBalance != null) {
             lblBalance.setText("$" + Session.balance);
+        }
+
+        // Tự động ẩn/hiện Layout của nút Admin (Tránh lỗi HBox không giãn ra)
+        if (btnOpenAuction != null) {
+            btnOpenAuction.managedProperty().bind(btnOpenAuction.visibleProperty());
         }
 
         // 2. Kết nối danh sách lịch sử với ListView
@@ -208,11 +218,15 @@ public class BidRoomController {
      * @param imageUrl Đường dẫn ảnh sản phẩm.
      * @param itemType Loại danh mục của sản phẩm.
      * @param description Mô tả chi tiết của sản phẩm.
+     * @param sellerId ID của người bán.
+     * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
+        this.currentEndTime = endTime;
+        this.currentStatus = status;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -273,9 +287,34 @@ public class BidRoomController {
         
         priceSeries.getData().add(initialData);
 
-        // 5. Mở kết nối mạng và chạy bộ đếm ngược
+        // 5. Mở kết nối mạng
         connectToServer();
-        startCountdown(endTime);
+        
+        // 6. Kiểm tra trạng thái Lockout PENDING
+        if ("PENDING".equalsIgnoreCase(status)) {
+            bidAmountField.setDisable(true);
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (timerLabel != null) timerLabel.setText("CHỜ MỞ PHIÊN");
+            if (timerLabelTitle != null) timerLabelTitle.setText("TRẠNG THÁI");
+
+            // Thanh progress bar tĩnh 100%
+            if (timeProgressBar != null) {
+                timeProgressBar.setMinHeight(3.0);
+                timeProgressBar.getTransforms().clear();
+                Scale scaleTransform = new Scale(1.0, 1.0, 0, 0);
+                timeProgressBar.getTransforms().add(scaleTransform);
+            }
+
+            // Hiện Nút Admin unlock cho seller/admin
+            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == sellerId) {
+                if (btnOpenAuction != null) {
+                    btnOpenAuction.setVisible(true);
+                }
+            }
+        } else {
+            // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
+            startCountdown(endTime);
+        }
     }
 
     /**
@@ -651,6 +690,49 @@ private void hideNotification(HBox notification) {
             rootPane.getChildren().addAll(darkOverlay, depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Xử lý sự kiện nhấn nút "Mở phiên (Admin)".
+     */
+    @FXML
+    private void handleOpenAuction() {
+        try {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "OPEN_AUCTION_REQUEST");
+            request.addProperty("itemId", currentItemId);
+            request.addProperty("userId", Session.userId);
+            request.addProperty("role", Session.role);
+
+            if (out != null) {
+                out.println(request.toString());
+                logger.info("Sent OPEN_AUCTION_REQUEST for item: {}", currentItemId);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
+        }
+    }
+
+    /**
+     * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
+     */
+    public void startAuctionRealtime(int itemId, String message) {
+        if (this.currentItemId == itemId) {
+            Platform.runLater(() -> {
+                this.currentStatus = "ACTIVE";
+
+                bidAmountField.setDisable(false);
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+
+                if (btnOpenAuction != null) {
+                    btnOpenAuction.setVisible(false);
+                }
+
+                startCountdown(this.currentEndTime);
+                showNotification("MỞ PHIÊN ĐẤU GIÁ!", message != null ? message : "Sản phẩm đã sẵn sàng!");
+            });
         }
     }
 }

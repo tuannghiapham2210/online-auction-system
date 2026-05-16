@@ -83,7 +83,7 @@
                                        <children>
                                           <SVGPath content="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="WHITE" />
                                           <Label fx:id="timerLabel" style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" text="0:00" />
-                                          <Label style="-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;" text="THỜI GIAN" />
+                                          <Label fx:id="timerLabelTitle" style="-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;" text="THỜI GIAN" />
                                        </children>
                                     </VBox>
                                  </right>
@@ -93,7 +93,7 @@
                               <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 15 0 0 0;">
                                  <children>
                                     <TextField fx:id="bidAmountField" promptText="\$ Nhập giá thầu..." style="-fx-background-color: #0B101A; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-padding: 12 15; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
-                                    <Button defaultButton="true" onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="180.0" style="-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 8; -fx-cursor: hand;" text="⚡ PHÁT GIÁ" />
+                                    <Button fx:id="btnPlaceBid" defaultButton="true" onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="180.0" style="-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 8; -fx-cursor: hand;" text="⚡ PHÁT GIÁ" />
                                  </children>
                               </HBox>
                            </children>
@@ -135,8 +135,9 @@
          <children>
             <Button cancelButton="true" onAction="#handleLeaveRoom" prefHeight="40.0" prefWidth="120.0" style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.08); -fx-border-width: 1; -fx-cursor: hand;" text="↩ Về sảnh" AnchorPane.leftAnchor="25.0" AnchorPane.topAnchor="20.0" />
 
-            <HBox spacing="15.0" AnchorPane.rightAnchor="25.0" AnchorPane.topAnchor="20.0">
+            <HBox alignment="CENTER_LEFT" spacing="15.0" AnchorPane.rightAnchor="25.0" AnchorPane.topAnchor="20.0">
                <children>
+                  <Button fx:id="btnOpenAuction" onAction="#handleOpenAuction" prefHeight="40.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12; -fx-cursor: hand;" text="⏻ Mở phiên (Admin)" visible="false" />
                   <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #1E293B; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12;">
                      <children>
                         <Label style="-fx-text-fill: #34D399; -fx-font-size: 20px;" text="💳" />

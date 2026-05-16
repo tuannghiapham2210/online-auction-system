@@ -316,7 +316,7 @@ public class DashboardController {
             ((BidRoomController) loader.getController()).setAuctionData(
                     item.getId(), item.getName(), item.getCurrentPrice(),
                     Session.userId, item.getEndTime(), item.getImageUrl(),
-                    item.getItemType(), desc
+                    item.getItemType(), desc, item.getSellerId(), item.getStatus()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
