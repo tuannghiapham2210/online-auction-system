@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Controller quản lý màn hình chính (Dashboard) của ứng dụng.
@@ -156,6 +157,9 @@ public class DashboardController {
                             item.setId(obj.get("id").getAsInt());
                             if (obj.has("currentPrice")) item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
                             if (obj.has("imageUrl")) item.setImageUrl(obj.get("imageUrl").getAsString());
+                            if (obj.has("description") && !obj.get("description").isJsonNull()) {
+                                item.setDescription(obj.get("description").getAsString());
+                            }
 
                             items.add(item);
                         }
@@ -213,15 +217,15 @@ public class DashboardController {
     @FXML private void filterAll() { displayItems(allItems); }
 
     @FXML private void filterArt() {
-        displayItems(allItems.stream().filter(i -> "ART".equalsIgnoreCase(i.getItemType())).toList());
+        displayItems(allItems.stream().filter(i -> "ART".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
     @FXML private void filterVehicle() {
-        displayItems(allItems.stream().filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType())).toList());
+        displayItems(allItems.stream().filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
     @FXML private void filterElectronics() {
-        displayItems(allItems.stream().filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType())).toList());
+        displayItems(allItems.stream().filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
     /**
@@ -300,9 +304,16 @@ public class DashboardController {
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
+
+            String desc = item.getDescription();
+            if (desc == null || desc.trim().isEmpty()) {
+                desc = "Đang mở đấu giá trực tiếp cho " + item.getName();
+            }
+
             ((BidRoomController) loader.getController()).setAuctionData(
                     item.getId(), item.getName(), item.getCurrentPrice(),
-                    Session.userId, item.getEndTime(), item.getImageUrl()
+                    Session.userId, item.getEndTime(), item.getImageUrl(),
+                    item.getItemType(), desc
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();

@@ -56,8 +56,8 @@
                            </children>
                         </StackPane>
 
-                        <!-- Section B: The Divider -->
-                        <Region fx:id="timeProgressBar" prefHeight="3.0" style="-fx-background-color: #FFA500;" />
+                        <!-- Section B: The Divider (Dynamic Time Progress Bar) -->
+                        <Region fx:id="timeProgressBar" maxWidth="Infinity" minHeight="3.0" prefHeight="3.0" style="-fx-background-color: #FFA500;" />
 
                         <!-- Section C: The Control Panel -->
                         <VBox spacing="15.0" style="-fx-padding: 20;">

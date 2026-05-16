@@ -206,8 +206,10 @@ public class BidRoomController {
      * @param userId ID của người dùng đang tham gia.
      * @param endTime Thời gian kết thúc phiên đấu.
      * @param imageUrl Đường dẫn ảnh sản phẩm.
+     * @param itemType Loại danh mục của sản phẩm.
+     * @param description Mô tả chi tiết của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
@@ -217,8 +219,8 @@ public class BidRoomController {
         currentPriceLabel.setText("$" + currentPrice);
         
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
-        if (typeBadgeLabel != null) typeBadgeLabel.setText("Sản phẩm");
-        if (itemDescLabel != null) itemDescLabel.setText("Đang tải thông tin chi tiết...");
+        if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
+        if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
 
         // 3. Tải và hiển thị ảnh sản phẩm
         if (imageUrl != null && !imageUrl.isEmpty()) {
@@ -318,6 +320,9 @@ public class BidRoomController {
             // 5. Khởi chạy thanh tiến trình (Dynamic Time Progress Bar)
             long totalMillis = java.time.Duration.between(LocalDateTime.now(), endTime).toMillis();
             if (totalMillis > 0 && timeProgressBar != null) {
+                // Đảm bảo thanh bar có chiều cao và rộng cố định trước khi apply Transform
+                timeProgressBar.setMinHeight(3.0);
+
                 Scale scaleTransform = new Scale(1.0, 1.0, 0, 0); // PivotX = 0 (trái)
                 timeProgressBar.getTransforms().clear();
                 timeProgressBar.getTransforms().add(scaleTransform);
