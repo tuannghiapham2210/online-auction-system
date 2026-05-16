@@ -102,6 +102,47 @@ public class ItemDAO {
     }
 
     /**
+     * Lấy thông tin một sản phẩm theo ID.
+     * @param itemId ID của sản phẩm cần lấy.
+     * @return Đối tượng Item nếu tìm thấy, ngược lại là null.
+     */
+    public Item getItemById(int itemId) {
+        String sql = "SELECT * FROM items WHERE id = ?";
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, itemId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String name = rs.getString("name");
+                    double startingPrice = rs.getDouble("starting_price");
+                    double currentPrice = rs.getDouble("current_price");
+                    String endTime = rs.getString("end_time");
+                    int sellerId = rs.getInt("seller_id");
+                    String itemType = rs.getString("item_type");
+                    String extraInfo = rs.getString("extra_info");
+                    double stepPrice = rs.getDouble("step_price");
+                    int durationHours = rs.getInt("duration_hours");
+                    String imageUrl = rs.getString("image_url");
+                    String description = rs.getString("description");
+                    String status = rs.getString("status");
+
+                    Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
+                    item.setId(itemId);
+                    item.setCurrentPrice(currentPrice);
+                    item.setStepPrice(stepPrice);
+                    item.setDurationHours(durationHours);
+                    item.setImageUrl(imageUrl);
+                    item.setDescription(description);
+                    item.setStatus(status != null ? status : "PENDING");
+                    return item;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error retrieving item by ID: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    /**
      * Cập nhật giá hiện tại cho một sản phẩm khi có lượt đặt giá mới.
      * Lưu ý: Chỉ cập nhật nếu giá mới cao hơn giá hiện tại trong Database.
      * @param itemId ID của sản phẩm cần cập nhật.
