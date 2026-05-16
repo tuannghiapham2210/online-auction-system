@@ -323,6 +323,10 @@ public class BidRoomController {
      */
     private void startCountdown(String endTimeStr) {
         try {
+            // Dừng các luồng đếm ngược cũ nếu đã chạy để tránh lỗi chạy đè (chạy nhanh gấp đôi)
+            if (countdownTimeline != null) countdownTimeline.stop();
+            if (progressTimeline != null) progressTimeline.stop();
+
             // 1. Chuyển đổi chuỗi thời gian sang định dạng LocalDateTime
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
@@ -708,6 +712,15 @@ private void hideNotification(HBox notification) {
             if (out != null) {
                 out.println(request.toString());
                 logger.info("Sent OPEN_AUCTION_REQUEST for item: {}", currentItemId);
+
+                // --- OPTIMISTIC UI UPDATE ---
+                // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
+                this.currentStatus = "ACTIVE";
+                if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
+                if (bidAmountField != null) bidAmountField.setDisable(false);
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                startCountdown(this.currentEndTime);
             }
         } catch (Exception e) {
             logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
