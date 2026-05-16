@@ -137,7 +137,7 @@
 
             <HBox alignment="CENTER_LEFT" spacing="15.0" AnchorPane.rightAnchor="25.0" AnchorPane.topAnchor="20.0">
                <children>
-                  <Button fx:id="btnOpenAuction" onAction="#handleOpenAuction" prefHeight="40.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12; -fx-cursor: hand;" text="⏻ Mở phiên (Admin)" visible="false" />
+                  <Button fx:id="btnOpenAuction" onAction="#handleOpenAuction" prefHeight="40.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12; -fx-cursor: hand;" text="⏻ Mở phiên" visible="false" />
                   <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #1E293B; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12;">
                      <children>
                         <Label style="-fx-text-fill: #34D399; -fx-font-size: 20px;" text="💳" />

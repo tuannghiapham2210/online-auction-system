@@ -10,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.scene.Node;
 import javafx.scene.text.Text;
 import javafx.animation.FadeTransition;
+import javafx.animation.Animation;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.scene.chart.AreaChart;
@@ -87,6 +88,7 @@ public class BidRoomController {
     private ObservableList<BidEvent> historyLogs;
     private Timeline countdownTimeline;
     private Timeline progressTimeline;
+    private FadeTransition pulseAnimation;
 
     private Socket socket;
     private PrintWriter out;
@@ -309,6 +311,16 @@ public class BidRoomController {
             if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == sellerId) {
                 if (btnOpenAuction != null) {
                     btnOpenAuction.setVisible(true);
+                    btnOpenAuction.setText("⏻ Mở phiên");
+                    
+                    if (pulseAnimation == null) {
+                        pulseAnimation = new FadeTransition(Duration.seconds(1.0), btnOpenAuction);
+                        pulseAnimation.setFromValue(1.0);
+                        pulseAnimation.setToValue(0.6); // Don't fade too much, keep it readable
+                        pulseAnimation.setCycleCount(Animation.INDEFINITE);
+                        pulseAnimation.setAutoReverse(true);
+                    }
+                    pulseAnimation.play();
                 }
             }
         } else {
@@ -528,6 +540,9 @@ public class BidRoomController {
             if (progressTimeline != null) {
                 progressTimeline.stop();
             }
+            if (pulseAnimation != null) {
+                pulseAnimation.stop();
+            }
 
             // 2. Tải lại giao diện Dashboard
             FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
@@ -716,6 +731,7 @@ private void hideNotification(HBox notification) {
                 // --- OPTIMISTIC UI UPDATE ---
                 // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
                 this.currentStatus = "ACTIVE";
+                if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (bidAmountField != null) bidAmountField.setDisable(false);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
@@ -740,6 +756,7 @@ private void hideNotification(HBox notification) {
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
 
                 if (btnOpenAuction != null) {
+                    if (pulseAnimation != null) pulseAnimation.stop();
                     btnOpenAuction.setVisible(false);
                 }
 
