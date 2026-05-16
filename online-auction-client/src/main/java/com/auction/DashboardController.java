@@ -115,9 +115,9 @@ public class DashboardController {
 
                         // Ánh xạ các trường đặc trưng để xác định loại sản phẩm
                         Map<String, String> typeMap = new LinkedHashMap<>();
-                        typeMap.put("warranty", "ELECTRONICS");
+                        typeMap.put("warrantyMonths", "ELECTRONICS");
                         typeMap.put("engineType", "VEHICLE");
-                        typeMap.put("author", "ART");
+                        typeMap.put("artistName", "ART");
 
                         for (int i = 0; i < dataArray.size(); i++) {
                             JsonObject obj = dataArray.get(i).getAsJsonObject();
