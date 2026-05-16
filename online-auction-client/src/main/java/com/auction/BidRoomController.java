@@ -21,6 +21,9 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.SequentialTransition;
+import javafx.animation.PauseTransition;
+import javafx.geometry.Insets;
 import javafx.util.Duration;
 import javafx.animation.TranslateTransition;
 import javafx.scene.layout.StackPane;
@@ -35,6 +38,7 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.transform.Scale;
@@ -89,6 +93,7 @@ public class BidRoomController {
     private Timeline countdownTimeline;
     private Timeline progressTimeline;
     private FadeTransition pulseAnimation;
+    private HBox toastNotification;
 
     private Socket socket;
     private PrintWriter out;
@@ -136,6 +141,32 @@ public class BidRoomController {
         if (btnOpenAuction != null) {
             btnOpenAuction.managedProperty().bind(btnOpenAuction.visibleProperty());
         }
+
+        // --- KHỞI TẠO TOAST NOTIFICATION ---
+        toastNotification = new HBox();
+        toastNotification.setStyle("-fx-background-color: #00BFA5; -fx-background-radius: 8px; -fx-padding: 10 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);");
+        toastNotification.setSpacing(10);
+        toastNotification.setAlignment(Pos.CENTER_LEFT);
+        toastNotification.setOpacity(0);
+        toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
+        toastNotification.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
+        // Icon Checkmark (Thành công)
+        SVGPath toastIcon = new SVGPath();
+        toastIcon.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z");
+        toastIcon.setFill(Color.WHITE);
+
+        Label toastLabel = new Label("Phiên đấu giá chính thức mở cửa!");
+        toastLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+        toastNotification.getChildren().addAll(toastIcon, toastLabel);
+
+        StackPane.setAlignment(toastNotification, Pos.TOP_RIGHT);
+        StackPane.setMargin(toastNotification, new Insets(20, 20, 0, 0));
+        
+        Platform.runLater(() -> {
+            if (rootPane != null) rootPane.getChildren().add(toastNotification);
+        });
 
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
@@ -713,6 +744,28 @@ private void hideNotification(HBox notification) {
     }
 
     /**
+     * Hiển thị Toast thông báo thành công (Snackbar Style).
+     */
+    private void showSuccessToast() {
+        if (toastNotification != null) {
+            // Tạm thời bật managed để StackPane tính toán đúng vị trí TOP_RIGHT
+            toastNotification.setManaged(true);
+            
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), toastNotification);
+            fadeIn.setToValue(1.0);
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(3));
+
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastNotification);
+            fadeOut.setToValue(0.0);
+            fadeOut.setOnFinished(e -> toastNotification.setManaged(false)); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
+
+            SequentialTransition toastSequence = new SequentialTransition(fadeIn, delay, fadeOut);
+            toastSequence.play();
+        }
+    }
+
+    /**
      * Xử lý sự kiện nhấn nút "Mở phiên (Admin)".
      */
     @FXML
@@ -737,6 +790,8 @@ private void hideNotification(HBox notification) {
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 startCountdown(this.currentEndTime);
+                
+                showSuccessToast();
             }
         } catch (Exception e) {
             logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
