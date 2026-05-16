@@ -16,9 +16,7 @@ import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -35,6 +33,10 @@ import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.transform.Scale;
 import javafx.animation.KeyValue;
 
 import java.io.BufferedReader;
@@ -62,21 +64,26 @@ public class BidRoomController {
     @FXML private Label itemNameLabel;
     @FXML private Label currentPriceLabel;
     @FXML private Label highestBidderLabel;
-    @FXML private Label statusLabel;
     @FXML private Label timerLabel;
-    @FXML private ImageView itemImageView;
+    @FXML private StackPane heroImageContainer;
+    @FXML private Rectangle heroImageRect;
+    @FXML private Label lotBadgeLabel;
+    @FXML private Label typeBadgeLabel;
+    @FXML private Label itemDescLabel;
+    @FXML private Label liveBadge;
+    @FXML private Label hotBadge;
+    @FXML private Region timeProgressBar;
+    @FXML private Label lblBalance;
+    @FXML private Label viewerCountLabel;
     @FXML private TextField bidAmountField;
     @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
     @FXML private AreaChart<String, Number> priceChart;
 
-    // THÊM: Liên kết 2 nhãn hiển thị số dư và người xem từ FXML
-    @FXML private Label lblBalance;
-    @FXML private Label viewerCountLabel;
-
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
     private Timeline countdownTimeline;
+    private Timeline progressTimeline;
 
     private Socket socket;
     private PrintWriter out;
@@ -110,6 +117,13 @@ public class BidRoomController {
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
         priceChart.getData().add(priceSeries);
+
+        startBlinkingAnimation(liveBadge);
+        startBlinkingAnimation(hotBadge);
+
+        if (lblBalance != null) {
+            lblBalance.setText("$" + Session.balance);
+        }
 
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
@@ -171,6 +185,20 @@ public class BidRoomController {
     }
 
     /**
+     * Tạo hiệu ứng nhấp nháy cho các Badge trạng thái (Fade 1.0 -> 0.3)
+     * @param node Đối tượng UI cần áp dụng hiệu ứng
+     */
+    private void startBlinkingAnimation(Node node) {
+        if (node == null) return;
+        FadeTransition ft = new FadeTransition(Duration.seconds(1.2), node);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.3);
+        ft.setCycleCount(Timeline.INDEFINITE);
+        ft.setAutoReverse(true);
+        ft.play();
+    }
+
+    /**
      * Nhận dữ liệu sản phẩm từ màn hình Dashboard truyền sang để thiết lập phòng.
      * @param itemId ID của sản phẩm.
      * @param itemName Tên sản phẩm.
@@ -187,15 +215,31 @@ public class BidRoomController {
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + currentPrice);
+        
+        if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
+        if (typeBadgeLabel != null) typeBadgeLabel.setText("Sản phẩm");
+        if (itemDescLabel != null) itemDescLabel.setText("Đang tải thông tin chi tiết...");
 
         // 3. Tải và hiển thị ảnh sản phẩm
-        if (lblBalance != null) {
-            lblBalance.setText("$" + Session.balance);
-        }
-
         if (imageUrl != null && !imageUrl.isEmpty()) {
             try {
-                itemImageView.setImage(new Image(imageUrl, true));
+                Image img = new Image(imageUrl, true);
+                if (heroImageRect != null && heroImageContainer != null) {
+                    heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
+                    heroImageRect.setFill(Color.web("#1A1D27"));
+                    img.progressProperty().addListener((obs, oldVal, newVal) -> {
+                        if (newVal.doubleValue() == 1.0 && !img.isError()) {
+                            heroImageRect.setFill(new ImagePattern(img));
+                        }
+                    });
+                    
+                    Rectangle clipRect = new Rectangle();
+                    clipRect.widthProperty().bind(heroImageContainer.widthProperty());
+                    clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
+                    clipRect.setArcWidth(24);
+                    clipRect.setArcHeight(24);
+                    heroImageRect.setClip(clipRect);
+                }
             } catch (Exception e) {
                 logger.warn("Could not load image: {}", imageUrl);
             }
@@ -224,7 +268,7 @@ public class BidRoomController {
         priceLbl.setTranslateY(-25);
         customNode.getChildren().addAll(dot, priceLbl);
         initialData.setNode(customNode);
-
+        
         priceSeries.getData().add(initialData);
 
         // 5. Mở kết nối mạng và chạy bộ đếm ngược
@@ -250,6 +294,7 @@ public class BidRoomController {
                 if (now.isAfter(endTime)) {
                     if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
                     countdownTimeline.stop();
+                    if (progressTimeline != null) progressTimeline.stop();
                     bidAmountField.setDisable(true);
                 } else {
                     // 4. Tính toán và cập nhật thời gian còn lại lên UI
@@ -258,13 +303,31 @@ public class BidRoomController {
                     long minutes = duration.toMinutesPart();
                     long seconds = duration.toSecondsPart();
                     if (timerLabel != null) {
-                        timerLabel.setText(String.format("Còn lại: %02d:%02d:%02d", hours, minutes, seconds));
+                        if (hours > 0) {
+                            timerLabel.setText(String.format("%d:%02d:%02d", hours, minutes, seconds));
+                        } else {
+                            timerLabel.setText(String.format("%d:%02d", minutes, seconds));
+                        }
                     }
                 }
             }));
 
             countdownTimeline.setCycleCount(Timeline.INDEFINITE);
             countdownTimeline.play();
+            
+            // 5. Khởi chạy thanh tiến trình (Dynamic Time Progress Bar)
+            long totalMillis = java.time.Duration.between(LocalDateTime.now(), endTime).toMillis();
+            if (totalMillis > 0 && timeProgressBar != null) {
+                Scale scaleTransform = new Scale(1.0, 1.0, 0, 0); // PivotX = 0 (trái)
+                timeProgressBar.getTransforms().clear();
+                timeProgressBar.getTransforms().add(scaleTransform);
+
+                progressTimeline = new Timeline(
+                    new KeyFrame(Duration.ZERO, new KeyValue(scaleTransform.xProperty(), 1.0)),
+                    new KeyFrame(Duration.millis(totalMillis), new KeyValue(scaleTransform.xProperty(), 0.0))
+                );
+                progressTimeline.play();
+            }
 
         } catch (Exception e) {
             logger.error("Failed to parse end time or start countdown: {}", e.getMessage(), e);
@@ -283,15 +346,12 @@ public class BidRoomController {
                 out = new PrintWriter(socket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                // 3. Cập nhật UI trạng thái kết nối
-                Platform.runLater(() -> statusLabel.setText("🟢 LIVE - Đã kết nối"));
-
                 // 4. Chạy luồng lắng nghe liên tục các cập nhật từ Server
                 ServerListener listener = new ServerListener(in, this);
                 new Thread(listener).start();
 
             } catch (Exception e) {
-                Platform.runLater(() -> statusLabel.setText("🔴 Lỗi mạng: Không thể kết nối"));
+                logger.error("🔴 Lỗi mạng: Không thể kết nối", e);
             }
         }).start();
     }
@@ -307,13 +367,15 @@ public class BidRoomController {
         try {
             // 1. Đóng gói request dạng JSON
             double bidAmount = Double.parseDouble(bidText);
+
             // CHECK KHÔNG ĐƯỢC VƯỢT QUÁ SỐ DƯ
             if (bidAmount > Session.balance) {
 
                 showNotification(
-                        "Không đủ số dư!",
-                        "Bạn chỉ còn $" + Session.balance
+                    "Không đủ số dư!",
+                    "Bạn chỉ còn $" + Session.balance
                 );
+
                 return;
             }
             JsonObject request = new JsonObject();
@@ -346,7 +408,7 @@ public class BidRoomController {
         Platform.runLater(() -> {
             // Cập nhật nhãn giá và người dẫn đầu
             currentPriceLabel.setText("$" + newPrice);
-            highestBidderLabel.setText("Dẫn đầu: " + username);
+            highestBidderLabel.setText("Dẫn đầu bởi: " + username);
 
             // Cập nhật lại Y-Axis khi có giá mới
             NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
@@ -369,7 +431,7 @@ public class BidRoomController {
             priceLbl.setTranslateY(-25);
             customNode.getChildren().addAll(dot, priceLbl);
             newData.setNode(customNode);
-
+            
             priceSeries.getData().add(newData);
             if (priceSeries.getData().size() > 10) priceSeries.getData().remove(0);
 
@@ -411,6 +473,9 @@ public class BidRoomController {
             if (countdownTimeline != null) {
                 countdownTimeline.stop();
             }
+            if (progressTimeline != null) {
+                progressTimeline.stop();
+            }
 
             // 2. Tải lại giao diện Dashboard
             FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
@@ -425,57 +490,9 @@ public class BidRoomController {
             logger.error("Failed to leave room: {}", e.getMessage(), e);
         }
     }
-
-    // ==============================================================================
-    // CHỨC NĂNG MỞ POPUP NẠP TIỀN ĐƯỢC BỔ SUNG Ở ĐÂY
-    // ==============================================================================
-    @FXML
-    private void handleDeposit() {
-        try {
-            // Tránh mở đúp nhiều popup
-            if (rootPane.lookup("#dark-overlay") != null) {
-                return;
-            }
-
-            // Gọi FXML Nạp tiền từ Dashboard
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("deposit.fxml"));
-            Parent depositGroup = loader.load();
-            DepositController depositController = loader.getController();
-
-            // Làm mờ nền phía sau
-            GaussianBlur blur = new GaussianBlur(15);
-            for (Node child : rootPane.getChildren()) {
-                child.setEffect(blur);
-            }
-
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
-
-            // Lắng nghe khi popup nạp tiền đóng lại -> Cập nhật UI ví tiền
-            depositController.setOnCloseCallback(() -> {
-                for (Node child : rootPane.getChildren()) {
-                    child.setEffect(null);
-                }
-                rootPane.getChildren().removeAll(darkOverlay, depositGroup);
-
-                if (lblBalance != null) {
-                    lblBalance.setText("$" + Session.balance);
-                }
-            });
-
-            rootPane.getChildren().addAll(darkOverlay, depositGroup);
-
-        } catch (Exception e) {
-            logger.error("Lỗi khi mở popup Nạp tiền: {}", e.getMessage(), e);
-        }
-    }
-
-    // ==============================================================================
-    // CODE THÔNG BÁO CỦA NHÓM BẠN (GIỮ NGUYÊN HOÀN TOÀN)
-    // ==============================================================================
+    /**
+     * Hiển thị thông báo đẹp mắt với vòng tròn đếm ngược.
+     */
     private void showNotification(String title, String message) {
     // KIỂM TRA: Nếu đang có thông báo rồi thì thoát ngay, không làm gì thêm
     if (isNotificationShowing) {
@@ -485,98 +502,101 @@ public class BidRoomController {
     // ĐÁNH DẤU: Đã bắt đầu hiển thị thông báo
     isNotificationShowing = true;
 
-        HBox notification = new HBox();
-        notification.setAlignment(Pos.CENTER_LEFT);
-        notification.setSpacing(20);
-        notification.setMaxWidth(Region.USE_PREF_SIZE);
-        notification.setPrefWidth(520);
-        notification.setPrefHeight(85);
-        notification.setMaxHeight(85);
+    HBox notification = new HBox();
+    notification.setAlignment(Pos.CENTER_LEFT);
+    notification.setSpacing(20);
+    notification.setMaxWidth(Region.USE_PREF_SIZE);
+    notification.setPrefWidth(520);
+    notification.setPrefHeight(85);
+    notification.setMaxHeight(85);
 
-        notification.setStyle(
-                "-fx-background-color: rgba(15, 15, 15, 0.98);" +
-                        "-fx-background-radius: 18;" +
-                        "-fx-border-color: #F59E0B;" +
-                        "-fx-border-radius: 18;" +
-                        "-fx-border-width: 1.5;" +
-                        "-fx-padding: 0 25 0 25;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 15, 0, 0, 0);"
-        );
+    notification.setStyle(
+        "-fx-background-color: rgba(15, 15, 15, 0.98);" +
+        "-fx-background-radius: 18;" +
+        "-fx-border-color: #F59E0B;" +
+        "-fx-border-radius: 18;" +
+        "-fx-border-width: 1.5;" +
+        "-fx-padding: 0 25 0 25;" +
+        "-fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 15, 0, 0, 0);"
+    );
 
-        StackPane iconPane = new StackPane();
-        iconPane.setPrefSize(50, 50);
-        iconPane.setMaxSize(50, 50);
+    // --- PHẦN ICON XOAY (CẢNH BÁO TAM GIÁC) ---
+    StackPane iconPane = new StackPane();
+    iconPane.setPrefSize(50, 50);
+    iconPane.setMaxSize(50, 50);
 
-        Circle bgCircle = new Circle(22);
-        bgCircle.setFill(Color.TRANSPARENT);
-        bgCircle.setStroke(Color.web("#F59E0B", 0.15));
-        bgCircle.setStrokeWidth(3);
+    Circle bgCircle = new Circle(22);
+    bgCircle.setFill(Color.TRANSPARENT);
+    bgCircle.setStroke(Color.web("#F59E0B", 0.15));
+    bgCircle.setStrokeWidth(3);
 
-        Arc timerArc = new Arc();
-        timerArc.setCenterX(0);
-        timerArc.setCenterY(0);
-        timerArc.setRadiusX(22);
-        timerArc.setRadiusY(22);
-        timerArc.setStartAngle(90);
-        timerArc.setLength(360);
-        timerArc.setType(ArcType.OPEN);
-        timerArc.setFill(Color.TRANSPARENT);
-        timerArc.setStroke(Color.web("#F59E0B"));
-        timerArc.setStrokeWidth(3);
-        timerArc.setStrokeLineCap(StrokeLineCap.ROUND);
+    Arc timerArc = new Arc();
+    timerArc.setCenterX(0);
+    timerArc.setCenterY(0);
+    timerArc.setRadiusX(22);
+    timerArc.setRadiusY(22);
+    timerArc.setStartAngle(90);
+    timerArc.setLength(360);
+    timerArc.setType(ArcType.OPEN);
+    timerArc.setFill(Color.TRANSPARENT);
+    timerArc.setStroke(Color.web("#F59E0B"));
+    timerArc.setStrokeWidth(3);
+    timerArc.setStrokeLineCap(StrokeLineCap.ROUND);
+    
+    timerArc.setManaged(false);
+    timerArc.setLayoutX(25); 
+    timerArc.setLayoutY(25);
 
-        timerArc.setManaged(false);
-        timerArc.setLayoutX(25);
-        timerArc.setLayoutY(25);
+    Label warningIcon = new Label("\u26A0");
+    warningIcon.setStyle(
+        "-fx-text-fill: #F59E0B;" +
+        "-fx-font-size: 26px;" +
+        "-fx-font-weight: bold;" +
+        "-fx-padding: 0 0 4 0;"
+    );
 
-        Label warningIcon = new Label("\u26A0");
-        warningIcon.setStyle(
-                "-fx-text-fill: #F59E0B;" +
-                        "-fx-font-size: 26px;" +
-                        "-fx-font-weight: bold;" +
-                        "-fx-padding: 0 0 4 0;"
-        );
+    iconPane.getChildren().addAll(bgCircle, timerArc, warningIcon);
 
-        iconPane.getChildren().addAll(bgCircle, timerArc, warningIcon);
+    // --- PHẦN TEXT ---
+    VBox textVBox = new VBox();
+    textVBox.setAlignment(Pos.CENTER_LEFT);
+    Label lbTitle = new Label(title);
+    lbTitle.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
+    Label lbMsg = new Label(message);
+    lbMsg.setStyle("-fx-text-fill: #BBBBBB; -fx-font-size: 13px;");
+    textVBox.getChildren().addAll(lbTitle, lbMsg);
 
-        VBox textVBox = new VBox();
-        textVBox.setAlignment(Pos.CENTER_LEFT);
-        Label lbTitle = new Label(title);
-        lbTitle.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
-        Label lbMsg = new Label(message);
-        lbMsg.setStyle("-fx-text-fill: #BBBBBB; -fx-font-size: 13px;");
-        textVBox.getChildren().addAll(lbTitle, lbMsg);
+    Region spacer = new Region();
+    HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
+    Label closeBtn = new Label("✕");
+    closeBtn.setCursor(javafx.scene.Cursor.HAND);
+    closeBtn.setStyle("-fx-text-fill: #666666; -fx-font-size: 18px;");
 
-        Label closeBtn = new Label("✕");
-        closeBtn.setCursor(javafx.scene.Cursor.HAND);
-        closeBtn.setStyle("-fx-text-fill: #666666; -fx-font-size: 18px;");
+    notification.getChildren().addAll(iconPane, textVBox, spacer, closeBtn);
 
-        notification.getChildren().addAll(iconPane, textVBox, spacer, closeBtn);
+    // --- XỬ LÝ HIỂN THỊ ---
+    StackPane.setAlignment(notification, Pos.TOP_CENTER);
+    notification.setTranslateY(-120);
+    rootPane.getChildren().add(notification);
 
-        StackPane.setAlignment(notification, Pos.TOP_CENTER);
-        notification.setTranslateY(-120);
-        rootPane.getChildren().add(notification);
+    TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
+    slideDown.setToY(30);
+    slideDown.play();
 
-        TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
-        slideDown.setToY(30);
-        slideDown.play();
+    Timeline arcAnim = new Timeline(
+        new KeyFrame(Duration.ZERO, new KeyValue(timerArc.lengthProperty(), 360)),
+        new KeyFrame(Duration.seconds(4), new KeyValue(timerArc.lengthProperty(), 0))
+    );
+    
+    arcAnim.setOnFinished(e -> hideNotification(notification));
+    arcAnim.play();
 
-        Timeline arcAnim = new Timeline(
-                new KeyFrame(Duration.ZERO, new KeyValue(timerArc.lengthProperty(), 360)),
-                new KeyFrame(Duration.seconds(4), new KeyValue(timerArc.lengthProperty(), 0))
-        );
-
-        arcAnim.setOnFinished(e -> hideNotification(notification));
-        arcAnim.play();
-
-        closeBtn.setOnMouseClicked(e -> {
-            arcAnim.stop();
-            hideNotification(notification);
-        });
-    }
+    closeBtn.setOnMouseClicked(e -> {
+        arcAnim.stop();
+        hideNotification(notification);
+    });
+}
 
 /**
  * Hiệu ứng trượt lên và xóa thông báo khỏi giao diện.
@@ -591,4 +611,37 @@ private void hideNotification(HBox notification) {
     });
     slideUp.play();
 }
+
+    /**
+     * Xử lý sự kiện mở popup nạp tiền từ trong phòng đấu giá.
+     */
+    @FXML
+    private void handleDeposit() {
+        try {
+            Node mainContent = rootPane.getChildren().get(0);
+            if (rootPane.lookup("#dark-overlay") != null) return;
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("deposit.fxml"));
+            Parent depositGroup = loader.load();
+            DepositController depositController = loader.getController();
+
+            mainContent.setEffect(new GaussianBlur(15));
+
+            Region darkOverlay = new Region();
+            darkOverlay.setId("dark-overlay");
+            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+
+            depositController.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, depositGroup);
+                if (lblBalance != null) lblBalance.setText("$" + Session.balance);
+            });
+
+            rootPane.getChildren().addAll(darkOverlay, depositGroup);
+        } catch (Exception e) {
+            logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
+        }
+    }
 }

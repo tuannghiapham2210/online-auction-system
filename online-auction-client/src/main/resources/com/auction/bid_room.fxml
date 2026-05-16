@@ -7,12 +7,14 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.shape.Rectangle?>
 
 <!-- LỚP NGOÀI CÙNG: StackPane giúp hiển thị các Notification và các Layer đè lên nhau -->
 <StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
@@ -26,50 +28,78 @@
             <VBox maxWidth="920.0" spacing="20.0" VBox.vgrow="NEVER">
                <children>
 
-                  <!-- Middle: Thông tin Sản phẩm -->
-                  <HBox alignment="CENTER_LEFT" spacing="30.0" styleClass="card" VBox.vgrow="NEVER">
+                  <!-- Middle: Thông tin Sản phẩm (Hero Banner) -->
+                  <VBox style="-fx-background-color: #1A1D27; -fx-background-radius: 12; -fx-border-radius: 12;" VBox.vgrow="NEVER">
                      <children>
-                        <!-- Product Image -->
-                        <StackPane prefHeight="220.0" prefWidth="320.0" style="-fx-background-color: #151A22; -fx-background-radius: 10;">
+                        <!-- Section A: The Hero Image Header -->
+                        <StackPane fx:id="heroImageContainer" prefHeight="250.0">
                            <children>
-                              <ImageView fx:id="itemImageView" fitHeight="210.0" fitWidth="310.0" preserveRatio="true" />
-                           </children>
-                        </StackPane>
-
-                        <!-- Auction details -->
-                        <VBox spacing="15.0" HBox.hgrow="ALWAYS">
-                           <children>
-                              <Label fx:id="itemNameLabel" style="-fx-font-size: 28px;" styleClass="title" text="Đang tải dữ liệu sản phẩm..." />
-
-                              <HBox alignment="CENTER_LEFT" spacing="20.0">
+                              <Rectangle fx:id="heroImageRect" height="250.0" />
+                              <Region style="-fx-background-color: linear-gradient(to bottom, transparent, #1A1D27); -fx-background-radius: 12 12 0 0;" />
+                              <AnchorPane pickOnBounds="false">
                                  <children>
-                                    <VBox spacing="5.0">
+                                    <HBox alignment="CENTER_LEFT" spacing="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
                                        <children>
-                                          <Label styleClass="header-sub" text="GIÁ ĐẤU HIỆN TẠI" />
-                                          <Label fx:id="currentPriceLabel" style="-fx-font-size: 32px; -fx-text-fill: white; -fx-font-weight: bold;" text="\$0.0" />
-                                          <Label fx:id="highestBidderLabel" styleClass="header-sub" text="Chưa có người trả giá" />
+                                          <Label fx:id="lotBadgeLabel" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-padding: 4 12; -fx-background-radius: 15; -fx-font-size: 12px; -fx-font-weight: bold;" text="LOT-003" />
+                                          <Label fx:id="typeBadgeLabel" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-padding: 4 12; -fx-background-radius: 15; -fx-font-size: 12px; -fx-font-weight: bold;" text="Ô tô" />
                                        </children>
-                                    </VBox>
-                                    <Region HBox.hgrow="ALWAYS" />
-                                    <VBox alignment="CENTER_RIGHT" spacing="10.0">
+                                    </HBox>
+                                    <Label fx:id="liveBadge" styleClass="badge-live" text="LIVE" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0" />
+                                    <VBox spacing="5.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0">
                                        <children>
-                                          <Label fx:id="timerLabel" style="-fx-font-size: 20px; -fx-text-fill: #EF4444; -fx-font-weight: bold; -fx-background-color: rgba(239, 68, 68, 0.1); -fx-padding: 8 16; -fx-background-radius: 8; -fx-border-color: rgba(239, 68, 68, 0.3); -fx-border-radius: 8; -fx-border-width: 1;" text="⏳ Đang tải..." />
-                                          <Label fx:id="statusLabel" style="-fx-text-fill: #F39C12; -fx-font-weight: bold;" text="Đang chờ kết nối..." />
+                                          <Label fx:id="itemNameLabel" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" text="Đang tải dữ liệu sản phẩm..." />
+                                          <Label fx:id="itemDescLabel" style="-fx-text-fill: #E2E8F0; -fx-font-size: 14px;" text="Đang tải thông tin chi tiết..." />
                                        </children>
                                     </VBox>
                                  </children>
-                              </HBox>
+                              </AnchorPane>
+                           </children>
+                        </StackPane>
 
-                              <HBox alignment="CENTER" spacing="15.0">
+                        <!-- Section B: The Divider -->
+                        <Region fx:id="timeProgressBar" prefHeight="3.0" style="-fx-background-color: #FFA500;" />
+
+                        <!-- Section C: The Control Panel -->
+                        <VBox spacing="15.0" style="-fx-padding: 20;">
+                           <children>
+                              <!-- Row 1: Price and Timer -->
+                              <BorderPane>
+                                 <left>
+                                    <VBox spacing="5.0" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                             <children>
+                                                <Label style="-fx-text-fill: #94A3B8; -fx-font-size: 12px; -fx-font-weight: bold;" text="GIÁ ĐẤU HIỆN TẠI" />
+                                                <Label fx:id="hotBadge" style="-fx-background-color: rgba(239, 68, 68, 0.15); -fx-text-fill: #EF4444; -fx-padding: 2 6; -fx-background-radius: 4; -fx-font-size: 10px; -fx-font-weight: bold;" text="🔥 Đang nóng" />
+                                             </children>
+                                          </HBox>
+                                          <Label fx:id="currentPriceLabel" style="-fx-font-size: 32px; -fx-text-fill: white; -fx-font-weight: bold;" text="\$0.0" />
+                                          <Label fx:id="highestBidderLabel" style="-fx-text-fill: #94A3B8; -fx-font-size: 14px;" text="Dẫn đầu bởi: Chưa có" />
+                                       </children>
+                                    </VBox>
+                                 </left>
+                                 <right>
+                                    <VBox alignment="CENTER" spacing="8.0" style="-fx-background-color: rgba(26, 29, 39, 0.8); -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 15 25;" BorderPane.alignment="CENTER">
+                                       <children>
+                                          <SVGPath content="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="WHITE" />
+                                          <Label fx:id="timerLabel" style="-fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold;" text="0:00" />
+                                          <Label style="-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;" text="THỜI GIAN" />
+                                       </children>
+                                    </VBox>
+                                 </right>
+                              </BorderPane>
+
+                              <!-- Row 2: Input and Submit Button -->
+                              <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 15 0 0 0;">
                                  <children>
-                                    <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="\$ Nhập giá thầu..." styleClass="input" HBox.hgrow="ALWAYS" />
-                                    <Button defaultButton="true" onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #F39C12; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;" text="PHÁT GIÁ" />
+                                    <TextField fx:id="bidAmountField" promptText="\$ Nhập giá thầu..." style="-fx-background-color: #0B101A; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-padding: 12 15; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
+                                    <Button defaultButton="true" onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="180.0" style="-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 8; -fx-cursor: hand;" text="⚡ PHÁT GIÁ" />
                                  </children>
                               </HBox>
                            </children>
                         </VBox>
                      </children>
-                  </HBox>
+                  </VBox>
 
                   <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                      <children>
