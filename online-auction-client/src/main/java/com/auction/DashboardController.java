@@ -68,6 +68,9 @@ public class DashboardController {
     @FXML private Label lblBalance;
     @FXML private javafx.scene.layout.FlowPane itemGrid;
     @FXML private Button btnAddItem;
+    @FXML private Label lblUsername;
+    @FXML private Label lblRole;
+    @FXML private Label lblAvatar;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -89,6 +92,15 @@ public class DashboardController {
 
         // Cập nhật số dư từ Session toàn cục
         lblBalance.setText("Số dư: $" + Session.balance);
+
+        // Cập nhật thông tin người dùng từ Session
+        if (Session.username != null && !Session.username.isEmpty()) {
+            lblUsername.setText(Session.username);
+            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
+        }
+        if (Session.role != null) {
+            lblRole.setText(Session.role.toUpperCase());
+        }
     }
 
     /**
@@ -115,9 +127,9 @@ public class DashboardController {
 
                         // Ánh xạ các trường đặc trưng để xác định loại sản phẩm
                         Map<String, String> typeMap = new LinkedHashMap<>();
-                        typeMap.put("warranty", "ELECTRONICS");
+                        typeMap.put("warrantyMonths", "ELECTRONICS");
                         typeMap.put("engineType", "VEHICLE");
-                        typeMap.put("author", "ART");
+                        typeMap.put("artistName", "ART");
 
                         for (int i = 0; i < dataArray.size(); i++) {
                             JsonObject obj = dataArray.get(i).getAsJsonObject();
