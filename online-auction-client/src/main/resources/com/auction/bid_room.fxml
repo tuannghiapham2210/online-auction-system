@@ -29,13 +29,13 @@
                <children>
 
                   <!-- Middle: Thông tin Sản phẩm (Hero Banner) -->
-                  <VBox style="-fx-background-color: #1A1D27; -fx-background-radius: 12; -fx-border-radius: 12;" VBox.vgrow="NEVER">
+                  <VBox style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12;" VBox.vgrow="NEVER">
                      <children>
                         <!-- Section A: The Hero Image Header -->
                         <StackPane fx:id="heroImageContainer" prefHeight="250.0">
                            <children>
                               <Rectangle fx:id="heroImageRect" height="250.0" />
-                              <Region style="-fx-background-color: linear-gradient(to bottom, transparent, #1A1D27); -fx-background-radius: 12 12 0 0;" />
+                              <Region style="-fx-background-color: linear-gradient(to bottom, transparent, -fx-base-panel-color); -fx-background-radius: 12 12 0 0;" />
                               <AnchorPane pickOnBounds="false">
                                  <children>
                                     <HBox alignment="CENTER_LEFT" spacing="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
@@ -103,9 +103,9 @@
 
                   <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                      <children>
-                        <VBox prefWidth="380.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                        <VBox prefWidth="380.0" spacing="10.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 20;" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label style="-fx-text-fill: gray; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
+                              <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
                               <AreaChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart" VBox.vgrow="ALWAYS">
                                  <xAxis>
                                     <CategoryAxis side="BOTTOM" />
@@ -117,9 +117,9 @@
                            </children>
                         </VBox>
 
-                        <VBox prefWidth="540.0" spacing="10.0" styleClass="card" HBox.hgrow="ALWAYS">
+                        <VBox prefWidth="540.0" spacing="10.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 20;" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label style="-fx-text-fill: #2ECC71; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
+                              <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
                               <ListView fx:id="bidHistoryList" styleClass="log-list" VBox.vgrow="ALWAYS" />
                            </children>
                         </VBox>

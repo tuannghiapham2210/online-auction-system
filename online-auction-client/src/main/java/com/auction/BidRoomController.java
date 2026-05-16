@@ -318,18 +318,22 @@ public class BidRoomController {
             countdownTimeline.play();
             
             // 5. Khởi chạy thanh tiến trình (Dynamic Time Progress Bar)
-            long totalMillis = java.time.Duration.between(LocalDateTime.now(), endTime).toMillis();
-            if (totalMillis > 0 && timeProgressBar != null) {
+            long timeRemaining = java.time.Duration.between(LocalDateTime.now(), endTime).toMillis();
+            if (timeRemaining > 0 && timeProgressBar != null) {
                 // Đảm bảo thanh bar có chiều cao và rộng cố định trước khi apply Transform
                 timeProgressBar.setMinHeight(3.0);
 
-                Scale scaleTransform = new Scale(1.0, 1.0, 0, 0); // PivotX = 0 (trái)
+                // Tính toán chính xác tiến trình khởi điểm dựa trên tổng thời gian (mặc định 24h)
+                long totalDuration = 24L * 60 * 60 * 1000;
+                double percentageRemaining = Math.min(1.0, (double) timeRemaining / totalDuration);
+
+                Scale scaleTransform = new Scale(percentageRemaining, 1.0, 0, 0); // PivotX = 0 (trái)
                 timeProgressBar.getTransforms().clear();
                 timeProgressBar.getTransforms().add(scaleTransform);
 
                 progressTimeline = new Timeline(
-                    new KeyFrame(Duration.ZERO, new KeyValue(scaleTransform.xProperty(), 1.0)),
-                    new KeyFrame(Duration.millis(totalMillis), new KeyValue(scaleTransform.xProperty(), 0.0))
+                    new KeyFrame(Duration.ZERO, new KeyValue(scaleTransform.xProperty(), percentageRemaining)),
+                    new KeyFrame(Duration.millis(timeRemaining), new KeyValue(scaleTransform.xProperty(), 0.0))
                 );
                 progressTimeline.play();
             }
