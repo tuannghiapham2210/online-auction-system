@@ -160,6 +160,12 @@ public class DashboardController {
                             if (obj.has("description") && !obj.get("description").isJsonNull()) {
                                 item.setDescription(obj.get("description").getAsString());
                             }
+                            if (obj.has("durationHours") && !obj.get("durationHours").isJsonNull()) {
+                                item.setDurationHours(obj.get("durationHours").getAsInt());
+                            }
+                            if (obj.has("status") && !obj.get("status").isJsonNull()) {
+                                item.setStatus(obj.get("status").getAsString());
+                            }
 
                             items.add(item);
                         }
@@ -313,7 +319,7 @@ public class DashboardController {
             ((BidRoomController) loader.getController()).setAuctionData(
                     item.getId(), item.getName(), item.getCurrentPrice(),
                     Session.userId, item.getEndTime(), item.getImageUrl(),
-                    item.getItemType(), desc
+                    item.getItemType(), desc, item.getSellerId(), item.getStatus()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
@@ -341,14 +347,21 @@ public class DashboardController {
         badgeBox.setAlignment(Pos.CENTER_LEFT);
         badgeBox.setMaxHeight(Region.USE_PREF_SIZE);
 
-        Label badge = new Label("LIVE");
-        badge.getStyleClass().add("badge-live");
+        Label badge = new Label();
+        String priceLabelText = "GIÁ HIỆN TẠI";
 
-        // Hiệu ứng nhấp nháy cho LIVE
-        FadeTransition ft = new FadeTransition(Duration.seconds(1.2), badge);
-        ft.setFromValue(1.0); ft.setToValue(0.3);
-        ft.setCycleCount(Animation.INDEFINITE); ft.setAutoReverse(true);
-        ft.play();
+        if ("PENDING".equalsIgnoreCase(item.getStatus())) {
+            badge.setText("⏳ SẮP DIỄN RA");
+            badge.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
+            priceLabelText = "GIÁ CAO NHẤT";
+        } else {
+            badge.setText("LIVE");
+            badge.getStyleClass().add("badge-live");
+            FadeTransition ft = new FadeTransition(Duration.seconds(1.2), badge);
+            ft.setFromValue(1.0); ft.setToValue(0.3);
+            ft.setCycleCount(Animation.INDEFINITE); ft.setAutoReverse(true);
+            ft.play();
+        }
 
         // 3. Khung chứa ảnh sản phẩm
         StackPane imageContainer = new StackPane();
@@ -391,10 +404,17 @@ public class DashboardController {
         // Đếm ngược thời gian (để lưu dữ liệu, không hiển thị trên thẻ ảnh)
         Label timerLabel = new Label("⏳ Đang tải...");
         timerLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 12px; -fx-font-weight: bold;");
-        if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-            try {
-                timerMap.put(timerLabel, LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            } catch (Exception e) { logger.warn("Lỗi parse thời gian: {}", item.getId()); }
+        
+        if ("PENDING".equalsIgnoreCase(item.getStatus())) {
+            // Nếu chưa mở phiên, hiển thị tĩnh thời gian gốc và không đưa vào luồng đếm ngược
+            timerLabel.setText(String.format("⏳ %02d:00:00", item.getDurationHours()));
+        } else {
+            // Nếu ACTIVE, đưa vào timerMap để Timeline chạy mỗi giây
+            if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+                try {
+                    timerMap.put(timerLabel, LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                } catch (Exception e) { logger.warn("Lỗi parse thời gian: {}", item.getId()); }
+            }
         }
 
         // FIX Ô VIEWER COUNT (124): Sắp xếp icon và chữ cân đối
@@ -440,7 +460,7 @@ public class DashboardController {
         title.setWrapText(true); title.setPrefHeight(50);
 
         HBox priceRow = new HBox();
-        VBox priceV = new VBox(new Label("GIÁ HIỆN TẠI"), new Label("$" + item.getCurrentPrice()));
+        VBox priceV = new VBox(new Label(priceLabelText), new Label("$" + item.getCurrentPrice()));
         priceV.getChildren().get(0).setStyle("-fx-text-fill: gray; -fx-font-size: 10;");
         priceV.getChildren().get(1).getStyleClass().add("card-price");
         priceV.getChildren().get(1).setStyle("-fx-text-fill: white;"); // Fix màu giá

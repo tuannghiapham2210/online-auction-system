@@ -10,6 +10,7 @@ import javafx.scene.Parent;
 import javafx.scene.Node;
 import javafx.scene.text.Text;
 import javafx.animation.FadeTransition;
+import javafx.animation.Animation;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.scene.chart.AreaChart;
@@ -20,6 +21,9 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.SequentialTransition;
+import javafx.animation.PauseTransition;
+import javafx.geometry.Insets;
 import javafx.util.Duration;
 import javafx.animation.TranslateTransition;
 import javafx.scene.layout.StackPane;
@@ -34,6 +38,7 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.transform.Scale;
@@ -79,11 +84,16 @@ public class BidRoomController {
     @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
     @FXML private AreaChart<String, Number> priceChart;
+    @FXML private Button btnPlaceBid;
+    @FXML private Label timerLabelTitle;
+    @FXML private Button btnOpenAuction;
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
     private Timeline countdownTimeline;
     private Timeline progressTimeline;
+    private FadeTransition pulseAnimation;
+    private HBox toastNotification;
 
     private Socket socket;
     private PrintWriter out;
@@ -91,6 +101,8 @@ public class BidRoomController {
 
     private int currentItemId;
     private int currentUserId;
+    private String currentEndTime;
+    private String currentStatus;
     private boolean isNotificationShowing = false;
 
     public static class BidEvent {
@@ -124,6 +136,37 @@ public class BidRoomController {
         if (lblBalance != null) {
             lblBalance.setText("$" + Session.balance);
         }
+
+        // Tự động ẩn/hiện Layout của nút Admin (Tránh lỗi HBox không giãn ra)
+        if (btnOpenAuction != null) {
+            btnOpenAuction.managedProperty().bind(btnOpenAuction.visibleProperty());
+        }
+
+        // --- KHỞI TẠO TOAST NOTIFICATION ---
+        toastNotification = new HBox();
+        toastNotification.setStyle("-fx-background-color: #00BFA5; -fx-background-radius: 8px; -fx-padding: 10 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);");
+        toastNotification.setSpacing(10);
+        toastNotification.setAlignment(Pos.CENTER_LEFT);
+        toastNotification.setOpacity(0);
+        toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
+        toastNotification.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+
+        // Icon Checkmark (Thành công)
+        SVGPath toastIcon = new SVGPath();
+        toastIcon.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z");
+        toastIcon.setFill(Color.WHITE);
+
+        Label toastLabel = new Label("Phiên đấu giá chính thức mở cửa!");
+        toastLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+        toastNotification.getChildren().addAll(toastIcon, toastLabel);
+
+        StackPane.setAlignment(toastNotification, Pos.TOP_RIGHT);
+        StackPane.setMargin(toastNotification, new Insets(20, 20, 0, 0));
+        
+        Platform.runLater(() -> {
+            if (rootPane != null) rootPane.getChildren().add(toastNotification);
+        });
 
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
@@ -208,11 +251,15 @@ public class BidRoomController {
      * @param imageUrl Đường dẫn ảnh sản phẩm.
      * @param itemType Loại danh mục của sản phẩm.
      * @param description Mô tả chi tiết của sản phẩm.
+     * @param sellerId ID của người bán.
+     * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
+        this.currentEndTime = endTime;
+        this.currentStatus = status;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -273,9 +320,44 @@ public class BidRoomController {
         
         priceSeries.getData().add(initialData);
 
-        // 5. Mở kết nối mạng và chạy bộ đếm ngược
+        // 5. Mở kết nối mạng
         connectToServer();
-        startCountdown(endTime);
+        
+        // 6. Kiểm tra trạng thái Lockout PENDING
+        if ("PENDING".equalsIgnoreCase(status)) {
+            bidAmountField.setDisable(true);
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (timerLabel != null) timerLabel.setText("CHỜ MỞ PHIÊN");
+            if (timerLabelTitle != null) timerLabelTitle.setText("TRẠNG THÁI");
+
+            // Thanh progress bar tĩnh 100%
+            if (timeProgressBar != null) {
+                timeProgressBar.setMinHeight(3.0);
+                timeProgressBar.getTransforms().clear();
+                Scale scaleTransform = new Scale(1.0, 1.0, 0, 0);
+                timeProgressBar.getTransforms().add(scaleTransform);
+            }
+
+            // Hiện Nút Admin unlock cho seller/admin
+            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == sellerId) {
+                if (btnOpenAuction != null) {
+                    btnOpenAuction.setVisible(true);
+                    btnOpenAuction.setText("⏻ Mở phiên");
+                    
+                    if (pulseAnimation == null) {
+                        pulseAnimation = new FadeTransition(Duration.seconds(1.0), btnOpenAuction);
+                        pulseAnimation.setFromValue(1.0);
+                        pulseAnimation.setToValue(0.6); // Don't fade too much, keep it readable
+                        pulseAnimation.setCycleCount(Animation.INDEFINITE);
+                        pulseAnimation.setAutoReverse(true);
+                    }
+                    pulseAnimation.play();
+                }
+            }
+        } else {
+            // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
+            startCountdown(endTime);
+        }
     }
 
     /**
@@ -284,6 +366,10 @@ public class BidRoomController {
      */
     private void startCountdown(String endTimeStr) {
         try {
+            // Dừng các luồng đếm ngược cũ nếu đã chạy để tránh lỗi chạy đè (chạy nhanh gấp đôi)
+            if (countdownTimeline != null) countdownTimeline.stop();
+            if (progressTimeline != null) progressTimeline.stop();
+
             // 1. Chuyển đổi chuỗi thời gian sang định dạng LocalDateTime
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
@@ -485,6 +571,9 @@ public class BidRoomController {
             if (progressTimeline != null) {
                 progressTimeline.stop();
             }
+            if (pulseAnimation != null) {
+                pulseAnimation.stop();
+            }
 
             // 2. Tải lại giao diện Dashboard
             FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
@@ -651,6 +740,84 @@ private void hideNotification(HBox notification) {
             rootPane.getChildren().addAll(darkOverlay, depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Hiển thị Toast thông báo thành công (Snackbar Style).
+     */
+    private void showSuccessToast() {
+        if (toastNotification != null) {
+            // Tạm thời bật managed để StackPane tính toán đúng vị trí TOP_RIGHT
+            toastNotification.setManaged(true);
+            
+            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), toastNotification);
+            fadeIn.setToValue(1.0);
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(3));
+
+            FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastNotification);
+            fadeOut.setToValue(0.0);
+            fadeOut.setOnFinished(e -> toastNotification.setManaged(false)); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
+
+            SequentialTransition toastSequence = new SequentialTransition(fadeIn, delay, fadeOut);
+            toastSequence.play();
+        }
+    }
+
+    /**
+     * Xử lý sự kiện nhấn nút "Mở phiên (Admin)".
+     */
+    @FXML
+    private void handleOpenAuction() {
+        try {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "OPEN_AUCTION_REQUEST");
+            request.addProperty("itemId", currentItemId);
+            request.addProperty("userId", Session.userId);
+            request.addProperty("role", Session.role);
+
+            if (out != null) {
+                out.println(request.toString());
+                logger.info("Sent OPEN_AUCTION_REQUEST for item: {}", currentItemId);
+
+                // --- OPTIMISTIC UI UPDATE ---
+                // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
+                this.currentStatus = "ACTIVE";
+                if (pulseAnimation != null) pulseAnimation.stop();
+                if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
+                if (bidAmountField != null) bidAmountField.setDisable(false);
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                startCountdown(this.currentEndTime);
+                
+                showSuccessToast();
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
+        }
+    }
+
+    /**
+     * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
+     */
+    public void startAuctionRealtime(int itemId, String message) {
+        if (this.currentItemId == itemId) {
+            Platform.runLater(() -> {
+                this.currentStatus = "ACTIVE";
+
+                bidAmountField.setDisable(false);
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+
+                if (btnOpenAuction != null) {
+                    if (pulseAnimation != null) pulseAnimation.stop();
+                    btnOpenAuction.setVisible(false);
+                }
+
+                startCountdown(this.currentEndTime);
+                showNotification("MỞ PHIÊN ĐẤU GIÁ!", message != null ? message : "Sản phẩm đã sẵn sàng!");
+            });
         }
     }
 }

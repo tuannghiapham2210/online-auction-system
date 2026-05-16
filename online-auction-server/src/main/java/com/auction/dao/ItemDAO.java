@@ -26,8 +26,8 @@ public class ItemDAO {
      */
     public boolean insertItem(Item item) {
         boolean isSuccess = false;
-        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
@@ -43,6 +43,7 @@ public class ItemDAO {
             pstmt.setString(9, item.getDescription());
             pstmt.setString(10, item.getExtraInfo());
             pstmt.setInt(11, item.getSellerId());
+            pstmt.setString(12, item.getStatus() != null ? item.getStatus() : "PENDING");
 
             // 2. Thực thi lệnh INSERT
             int rowsAffected = pstmt.executeUpdate();
@@ -80,6 +81,7 @@ public class ItemDAO {
                 int durationHours = rs.getInt("duration_hours");
                 String imageUrl = rs.getString("image_url");
                 String description = rs.getString("description");
+                String status = rs.getString("status");
 
                 // 2. Sử dụng ItemFactory để tạo đúng loại đối tượng Item
                 Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
@@ -89,6 +91,7 @@ public class ItemDAO {
                 item.setDurationHours(durationHours);
                 item.setImageUrl(imageUrl);
                 item.setDescription(description);
+                item.setStatus(status != null ? status : "PENDING");
 
                 itemList.add(item);
             }
@@ -96,6 +99,47 @@ public class ItemDAO {
             logger.error("Error retrieving item list: {}", e.getMessage(), e);
         }
         return itemList;
+    }
+
+    /**
+     * Lấy thông tin một sản phẩm theo ID.
+     * @param itemId ID của sản phẩm cần lấy.
+     * @return Đối tượng Item nếu tìm thấy, ngược lại là null.
+     */
+    public Item getItemById(int itemId) {
+        String sql = "SELECT * FROM items WHERE id = ?";
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, itemId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String name = rs.getString("name");
+                    double startingPrice = rs.getDouble("starting_price");
+                    double currentPrice = rs.getDouble("current_price");
+                    String endTime = rs.getString("end_time");
+                    int sellerId = rs.getInt("seller_id");
+                    String itemType = rs.getString("item_type");
+                    String extraInfo = rs.getString("extra_info");
+                    double stepPrice = rs.getDouble("step_price");
+                    int durationHours = rs.getInt("duration_hours");
+                    String imageUrl = rs.getString("image_url");
+                    String description = rs.getString("description");
+                    String status = rs.getString("status");
+
+                    Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
+                    item.setId(itemId);
+                    item.setCurrentPrice(currentPrice);
+                    item.setStepPrice(stepPrice);
+                    item.setDurationHours(durationHours);
+                    item.setImageUrl(imageUrl);
+                    item.setDescription(description);
+                    item.setStatus(status != null ? status : "PENDING");
+                    return item;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error retrieving item by ID: {}", e.getMessage(), e);
+        }
+        return null;
     }
 
     /**
@@ -122,6 +166,27 @@ public class ItemDAO {
             }
         } catch (Exception e) {
             logger.error("Error updating Item price: {}", e.getMessage(), e);
+        }
+        return isSuccess;
+    }
+
+    /**
+     * Cập nhật trạng thái (status) cho một sản phẩm.
+     * @param itemId ID của sản phẩm cần cập nhật.
+     * @param newStatus Trạng thái mới (ví dụ: PENDING, ACTIVE, CLOSED).
+     * @return true nếu cập nhật thành công, ngược lại là false.
+     */
+    public boolean updateAuctionStatus(int itemId, String newStatus) {
+        boolean isSuccess = false;
+        String sql = "UPDATE items SET status = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, newStatus);
+            pstmt.setInt(2, itemId);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) isSuccess = true;
+        } catch (Exception e) {
+            logger.error("Error updating Item status: {}", e.getMessage(), e);
         }
         return isSuccess;
     }

@@ -89,6 +89,9 @@ public class ClientHandler implements Runnable {
                     case "DEPOSIT":
                         handleDeposit(request);
                         break;
+                    case "OPEN_AUCTION_REQUEST":
+                        handleOpenAuction(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -274,6 +277,18 @@ public class ClientHandler implements Runnable {
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
 
+            // --- SECURITY GUARD CLAUSE ---
+            Item item = itemDAO.getItemById(itemId);
+            if (item != null && "PENDING".equalsIgnoreCase(item.getStatus())) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
+                logger.warn("Rejected bid for PENDING item: {}", itemId);
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            // -----------------------------
+
             boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
@@ -385,6 +400,56 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    /**
+     * Xử lý request mở phiên đấu giá.
+     * Chuyển trạng thái từ PENDING sang ACTIVE nếu là seller hoặc admin.
+     * @param request JSON chứa "itemId", "userId", và "role".
+     */
+    private void handleOpenAuction(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+            String role = request.has("role") ? request.get("role").getAsString() : "";
+
+            ItemDAO itemDAO = new ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+
+            if (item == null) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            // Verify user is ADMIN or the actual seller
+            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
+                boolean success = itemDAO.updateAuctionStatus(itemId, "ACTIVE");
+                if (success) {
+                    JsonObject broadcastMsg = new JsonObject();
+                    broadcastMsg.addProperty("action", "AUCTION_STARTED");
+                    broadcastMsg.addProperty("itemId", itemId);
+                    broadcastMsg.addProperty("message", "Phiên đấu giá đã chính thức bắt đầu!");
+                    
+                    logger.info("Auction {} status updated to ACTIVE by userId={}", itemId, userId);
+                    broadcast(broadcastMsg); // Broadcast to all connected clients
+                } else {
+                    JsonObject errorMsg = new JsonObject();
+                    errorMsg.addProperty("action", "ERROR");
+                    errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái!");
+                    this.writer.println(errorMsg.toString());
+                }
+            } else {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền mở phiên đấu giá này!");
+                logger.warn("Unauthorized OPEN_AUCTION_REQUEST for itemId={} by userId={}, role={}", itemId, userId, role);
+                this.writer.println(errorMsg.toString());
+            }
+        } catch (Exception e) {
+            logger.error("Error handling OPEN_AUCTION_REQUEST: {}", e.getMessage(), e);
+        }
+    }
 
     /**
      * Gửi (Broadcast) một thông báo dạng JSON đến tất cả các Client đang kết nối.
