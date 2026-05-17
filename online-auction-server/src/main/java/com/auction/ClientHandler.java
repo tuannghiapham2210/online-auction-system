@@ -92,6 +92,9 @@ public class ClientHandler implements Runnable {
                     case "OPEN_AUCTION_REQUEST":
                         handleOpenAuction(request);
                         break;
+                    case "CANCEL_AUCTION_REQUEST":
+                        handleCancelAuction(request);
+                        break;
                     case "REGISTER_AUTO_BID":
                         handleRegisterAutoBid(request);
                         break;
@@ -612,6 +615,60 @@ public class ClientHandler implements Runnable {
             }
         } catch (Exception e) {
             logger.error("Error handling OPEN_AUCTION_REQUEST: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Xử lý request hủy phiên đấu giá.
+     * Xóa sản phẩm khỏi hệ thống nếu sản phẩm đang PENDING.
+     * @param request JSON chứa "itemId", "userId", và "role".
+     */
+    private void handleCancelAuction(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+            String role = request.has("role") ? request.get("role").getAsString() : "";
+
+            ItemDAO itemDAO = new ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+
+            if (item == null) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
+                if (!"PENDING".equalsIgnoreCase(item.getStatus())) {
+                    JsonObject errorMsg = new JsonObject();
+                    errorMsg.addProperty("action", "ERROR");
+                    errorMsg.addProperty("message", "Không thể hủy phiên đã bắt đầu hoặc kết thúc!");
+                    this.writer.println(errorMsg.toString());
+                    return;
+                }
+                boolean success = itemDAO.deleteItem(itemId);
+                if (success) {
+                    JsonObject broadcastMsg = new JsonObject();
+                    broadcastMsg.addProperty("action", "AUCTION_CANCELLED");
+                    broadcastMsg.addProperty("itemId", itemId);
+                    broadcastMsg.addProperty("message", "Đã hủy phiên đấu giá thành công!");
+                    broadcast(broadcastMsg);
+                } else {
+                    JsonObject errorMsg = new JsonObject();
+                    errorMsg.addProperty("action", "ERROR");
+                    errorMsg.addProperty("message", "Lỗi CSDL khi hủy phiên!");
+                    this.writer.println(errorMsg.toString());
+                }
+            } else {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền hủy phiên đấu giá này!");
+                this.writer.println(errorMsg.toString());
+            }
+        } catch (Exception e) {
+            logger.error("Error handling CANCEL_AUCTION_REQUEST: {}", e.getMessage(), e);
         }
     }
 

@@ -191,7 +191,7 @@ public class ItemDAO {
         return isSuccess;
     }
     public boolean startAuction(int itemId, String endTime) {
-    boolean isSuccess = false;
+        boolean isSuccess = false;
 
         String sql = "UPDATE items SET status = ?, end_time = ? WHERE id = ?";
 
@@ -214,6 +214,25 @@ public class ItemDAO {
             logger.error("Error starting auction: {}", e.getMessage(), e);
         }
 
+        return isSuccess;
+    }
+    
+    /**
+     * Xóa hoàn toàn một sản phẩm khỏi CSDL.
+     * @param itemId ID của sản phẩm cần xóa.
+     * @return true nếu xóa thành công, ngược lại false.
+     */
+    public boolean deleteItem(int itemId) {
+        boolean isSuccess = false;
+        String sql = "DELETE FROM items WHERE id = ?";
+
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            pstmt.setInt(1, itemId);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) isSuccess = true;
+        } catch (Exception e) {
+            logger.error("Error deleting item: {}", e.getMessage(), e);
+        }
         return isSuccess;
     }
 }

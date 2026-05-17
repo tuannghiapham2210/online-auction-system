@@ -87,6 +87,7 @@ public class BidRoomController {
     @FXML private Button btnPlaceBid;
     @FXML private Label timerLabelTitle;
     @FXML private Button btnOpenAuction;
+    @FXML private Button btnCancelAuction;
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
@@ -163,6 +164,9 @@ public class BidRoomController {
         // Tự động ẩn/hiện Layout của nút Admin (Tránh lỗi HBox không giãn ra)
         if (btnOpenAuction != null) {
             btnOpenAuction.managedProperty().bind(btnOpenAuction.visibleProperty());
+        }
+        if (btnCancelAuction != null) {
+            btnCancelAuction.managedProperty().bind(btnCancelAuction.visibleProperty());
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
@@ -385,6 +389,9 @@ public class BidRoomController {
                         pulseAnimation.setAutoReverse(true);
                     }
                     pulseAnimation.play();
+                }
+                if (btnCancelAuction != null) {
+                    btnCancelAuction.setVisible(true);
                 }
             }
         } else {
@@ -817,6 +824,7 @@ private void hideNotification(HBox notification) {
                 if (liveBadge != null) liveBadge.setVisible(true);
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
+                if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
                 if (bidAmountField != null) bidAmountField.setDisable(false);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
@@ -832,6 +840,42 @@ private void hideNotification(HBox notification) {
             logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
         }
     }
+    
+    /**
+     * Xử lý sự kiện nhấn nút "Hủy phiên".
+     */
+    @FXML
+    private void handleCancelAuction() {
+        try {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "CANCEL_AUCTION_REQUEST");
+            request.addProperty("itemId", currentItemId);
+            request.addProperty("userId", Session.userId);
+            request.addProperty("role", Session.role);
+
+            if (out != null) {
+                out.println(request.toString());
+                logger.info("Sent CANCEL_AUCTION_REQUEST for item: {}", currentItemId);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send CANCEL_AUCTION_REQUEST", e);
+        }
+    }
+
+    /**
+     * Gọi bởi ServerListener khi có sự kiện AUCTION_CANCELLED từ Server.
+     */
+    public void auctionCancelledRealtime(int itemId) {
+        if (this.currentItemId == itemId) {
+            Platform.runLater(() -> {
+                showNotification("Thông báo", "Phiên đấu giá đã bị hủy!");
+                // Thoát về Dashboard sau vài giây
+                Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> handleLeaveRoom()));
+                timeline.play();
+            });
+        }
+    }
+
     /**
  * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
  */
@@ -867,6 +911,10 @@ private void hideNotification(HBox notification) {
                     }
 
                     btnOpenAuction.setVisible(false);
+                }
+                
+                if (btnCancelAuction != null) {
+                    btnCancelAuction.setVisible(false);
                 }
 
                 startCountdown(endTime);
