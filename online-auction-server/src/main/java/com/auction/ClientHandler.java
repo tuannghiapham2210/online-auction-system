@@ -200,12 +200,11 @@ public class ClientHandler implements Runnable {
             String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
             String description = request.has("description") ? request.get("description").getAsString() : "";
             double stepPrice = request.get("stepPrice").getAsDouble();
-            int durationHours = request.get("durationHours").getAsInt();
+            double durationHours = request.get("durationHours").getAsDouble();
 
             // 3. Tính toán EndTime
-            java.time.LocalDateTime endTarget = java.time.LocalDateTime.now().plusHours(durationHours);
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String endTime = endTarget.format(formatter);
+            // 3. Chưa bắt đầu đấu giá -> chưa set thời gian thật
+            String endTime = null;
 
             // 4. Khởi tạo đối tượng Item
             Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, "");
@@ -424,12 +423,28 @@ public class ClientHandler implements Runnable {
 
             // Verify user is ADMIN or the actual seller
             if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-                boolean success = itemDAO.updateAuctionStatus(itemId, "ACTIVE");
+                // Tính thời gian kết thúc khi bắt đầu đấu giá
+                double durationHours = item.getDurationHours();
+
+                long totalSeconds = (long) (durationHours * 3600);
+
+                java.time.LocalDateTime endTarget =
+                        java.time.LocalDateTime.now().plusSeconds(totalSeconds);
+
+                java.time.format.DateTimeFormatter formatter =
+                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+                String endTime = endTarget.format(formatter);
+
+                // Update status + end_time
+                boolean success =
+                        itemDAO.startAuction(itemId, endTime);
                 if (success) {
                     JsonObject broadcastMsg = new JsonObject();
                     broadcastMsg.addProperty("action", "AUCTION_STARTED");
                     broadcastMsg.addProperty("itemId", itemId);
                     broadcastMsg.addProperty("message", "Phiên đấu giá đã chính thức bắt đầu!");
+                    broadcastMsg.addProperty("endTime", endTime);
                     
                     logger.info("Auction {} status updated to ACTIVE by userId={}", itemId, userId);
                     broadcast(broadcastMsg); // Broadcast to all connected clients

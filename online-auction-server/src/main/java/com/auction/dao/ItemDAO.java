@@ -38,7 +38,7 @@ public class ItemDAO {
             pstmt.setDouble(4, item.getStartingPrice());
             pstmt.setDouble(5, item.getStepPrice());
             pstmt.setString(6, item.getEndTime());
-            pstmt.setInt(7, item.getDurationHours());
+            pstmt.setDouble(7, item.getDurationHours());
             pstmt.setString(8, item.getImageUrl());
             pstmt.setString(9, item.getDescription());
             pstmt.setString(10, item.getExtraInfo());
@@ -78,7 +78,7 @@ public class ItemDAO {
                 String itemType = rs.getString("item_type");
                 String extraInfo = rs.getString("extra_info");
                 double stepPrice = rs.getDouble("step_price");
-                int durationHours = rs.getInt("duration_hours");
+                double durationHours = rs.getDouble("duration_hours");
                 String imageUrl = rs.getString("image_url");
                 String description = rs.getString("description");
                 String status = rs.getString("status");
@@ -120,7 +120,7 @@ public class ItemDAO {
                     String itemType = rs.getString("item_type");
                     String extraInfo = rs.getString("extra_info");
                     double stepPrice = rs.getDouble("step_price");
-                    int durationHours = rs.getInt("duration_hours");
+                    double durationHours = rs.getDouble("duration_hours");
                     String imageUrl = rs.getString("image_url");
                     String description = rs.getString("description");
                     String status = rs.getString("status");
@@ -188,6 +188,32 @@ public class ItemDAO {
         } catch (Exception e) {
             logger.error("Error updating Item status: {}", e.getMessage(), e);
         }
+        return isSuccess;
+    }
+    public boolean startAuction(int itemId, String endTime) {
+    boolean isSuccess = false;
+
+        String sql = "UPDATE items SET status = ?, end_time = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt =
+                    DatabaseConnection.getInstance()
+                            .getConnection()
+                            .prepareStatement(sql)) {
+
+            pstmt.setString(1, "ACTIVE");
+            pstmt.setString(2, endTime);
+            pstmt.setInt(3, itemId);
+
+            int rowsAffected = pstmt.executeUpdate();
+
+            if (rowsAffected > 0) {
+                isSuccess = true;
+            }
+
+        } catch (Exception e) {
+            logger.error("Error starting auction: {}", e.getMessage(), e);
+        }
+
         return isSuccess;
     }
 }
