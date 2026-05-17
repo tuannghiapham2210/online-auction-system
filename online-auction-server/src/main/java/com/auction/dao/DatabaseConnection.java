@@ -123,12 +123,25 @@ public class DatabaseConnection {
                 + "FOREIGN KEY (bidder_id) REFERENCES users(id)"
                 + ");";
 
-        // 4. Thực thi tạo bảng bằng Statement thông thường
+        // 4. Chuẩn bị SQL tạo bảng AutoBids (Proxy Bidding)
+        String sqlAutoBids = "CREATE TABLE IF NOT EXISTS auto_bids ("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "item_id INTEGER NOT NULL,"
+                + "user_id INTEGER NOT NULL,"
+                + "max_bid REAL NOT NULL,"
+                + "increment_amount REAL NOT NULL,"
+                + "created_at TEXT NOT NULL,"
+                + "FOREIGN KEY (item_id) REFERENCES items(id),"
+                + "FOREIGN KEY (user_id) REFERENCES users(id)"
+                + ");";
+
+        // 5. Thực thi tạo bảng bằng Statement thông thường
         try (java.sql.Statement stmt = connection.createStatement()) {
             stmt.execute(sqlUsers);
             stmt.execute(sqlItems);
             stmt.execute(sqlBids);
-            logger.info("Ensured database tables exist: users, items, bids.");
+            stmt.execute(sqlAutoBids);
+            logger.info("Ensured database tables exist: users, items, bids, auto_bids.");
         } catch (java.sql.SQLException e) {
             logger.error("Database table creation error: {}", e.getMessage(), e);
         }

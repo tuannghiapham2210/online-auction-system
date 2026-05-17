@@ -162,8 +162,8 @@ public class BidRoomController {
 
         toastNotification.getChildren().addAll(toastIcon, toastLabel);
 
-        StackPane.setAlignment(toastNotification, Pos.TOP_RIGHT);
-        StackPane.setMargin(toastNotification, new Insets(20, 20, 0, 0));
+        StackPane.setAlignment(toastNotification, Pos.TOP_CENTER);
+        StackPane.setMargin(toastNotification, new Insets(20, 0, 0, 0));
         
         Platform.runLater(() -> {
             if (rootPane != null) rootPane.getChildren().add(toastNotification);
@@ -400,9 +400,8 @@ public class BidRoomController {
                 // Đảm bảo thanh bar có chiều cao và rộng cố định trước khi apply Transform
                 timeProgressBar.setMinHeight(3.0);
 
-                // Tính toán chính xác tiến trình khởi điểm dựa trên tổng thời gian (mặc định 24h)
-                long totalDuration = 24L * 60 * 60 * 1000;
-                double percentageRemaining = Math.min(1.0, (double) timeRemaining / totalDuration);
+                // Bắt đầu từ 100% chiều dài và giảm dần về 0 theo thời gian còn lại
+                double percentageRemaining = 1.0;
 
                 Scale scaleTransform = new Scale(percentageRemaining, 1.0, 0, 0); // PivotX = 0 (trái)
                 timeProgressBar.getTransforms().clear();
