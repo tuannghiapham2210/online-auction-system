@@ -880,6 +880,7 @@ private void hideNotification(HBox notification) {
         if (!now.isBefore(endTime)) {
 
             timerLabel.setText("ĐÃ KẾT THÚC");
+            if (liveBadge != null) liveBadge.setVisible(false);
 
             if (countdownTimeline != null) {
                 countdownTimeline.stop();

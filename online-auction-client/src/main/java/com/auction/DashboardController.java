@@ -75,6 +75,7 @@ public class DashboardController {
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
+    private Map<Label, Label> liveBadgeMap = new HashMap<>();
 
     /** Kho lưu trữ toàn bộ sản phẩm đã tải về để thực hiện lọc dữ liệu tức thì không cần load lại từ Server. */
     private List<Item> allItems = new ArrayList<>();
@@ -198,6 +199,7 @@ public class DashboardController {
             dashboardTimeline.stop();
         }
         timerMap.clear();
+        liveBadgeMap.clear();
 
         // 2. Tạo và thêm các thẻ sản phẩm mới
         for (Item item : itemsToDisplay) {
@@ -213,6 +215,10 @@ public class DashboardController {
                 if (now.isAfter(end)) {
                     lbl.setText("ĐÃ KẾT THÚC");
                     lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
+                    Label b = liveBadgeMap.get(lbl);
+                    if (b != null) {
+                        b.setVisible(false);
+                    }
                 } else {
                     java.time.Duration duration = java.time.Duration.between(now, end);
                     lbl.setText(String.format("⏳ %02d:%02d:%02d",
@@ -419,6 +425,7 @@ public class DashboardController {
             if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
                 try {
                     timerMap.put(timerLabel, LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    liveBadgeMap.put(timerLabel, badge);
                 } catch (Exception e) { logger.warn("Lỗi parse thời gian: {}", item.getId()); }
             }
         }
