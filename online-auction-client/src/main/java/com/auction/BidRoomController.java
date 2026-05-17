@@ -149,6 +149,7 @@ public class BidRoomController {
         toastNotification.setAlignment(Pos.CENTER_LEFT);
         toastNotification.setOpacity(0);
         toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
+        toastNotification.setVisible(false); // Ẩn để không chặn sự kiện click chuột
         toastNotification.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
         // Icon Checkmark (Thành công)
@@ -740,6 +741,7 @@ private void hideNotification(HBox notification) {
         if (toastNotification != null) {
             // Tạm thời bật managed để StackPane tính toán đúng vị trí TOP_RIGHT
             toastNotification.setManaged(true);
+            toastNotification.setVisible(true);
             
             FadeTransition fadeIn = new FadeTransition(Duration.millis(300), toastNotification);
             fadeIn.setToValue(1.0);
@@ -748,7 +750,10 @@ private void hideNotification(HBox notification) {
 
             FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastNotification);
             fadeOut.setToValue(0.0);
-            fadeOut.setOnFinished(e -> toastNotification.setManaged(false)); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
+            fadeOut.setOnFinished(e -> {
+                toastNotification.setManaged(false);
+                toastNotification.setVisible(false);
+            }); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
 
             SequentialTransition toastSequence = new SequentialTransition(fadeIn, delay, fadeOut);
             toastSequence.play();
