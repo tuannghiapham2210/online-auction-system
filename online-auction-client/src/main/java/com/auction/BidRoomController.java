@@ -325,6 +325,7 @@ public class BidRoomController {
         
         // 6. Kiểm tra trạng thái Lockout PENDING
         if ("PENDING".equalsIgnoreCase(status)) {
+            if (liveBadge != null) liveBadge.setVisible(false);
             bidAmountField.setDisable(true);
             if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
             if (timerLabel != null) timerLabel.setText("CHỜ MỞ PHIÊN");
@@ -356,6 +357,7 @@ public class BidRoomController {
             }
         } else {
             // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
+            if (liveBadge != null) liveBadge.setVisible(true);
             startCountdown(endTime);
         }
     }
@@ -772,6 +774,7 @@ private void hideNotification(HBox notification) {
                 // --- OPTIMISTIC UI UPDATE ---
                 // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
                 this.currentStatus = "ACTIVE";
+                if (liveBadge != null) liveBadge.setVisible(true);
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (bidAmountField != null) bidAmountField.setDisable(false);
@@ -795,6 +798,7 @@ private void hideNotification(HBox notification) {
 
                 this.currentStatus = "ACTIVE";
                 this.currentEndTime = endTime;
+                if (liveBadge != null) liveBadge.setVisible(true);
 
                 bidAmountField.setDisable(false);
 
