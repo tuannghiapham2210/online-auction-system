@@ -80,11 +80,15 @@
                 </VBox>
 
                 <VBox spacing="8.0" HBox.hgrow="ALWAYS">
-                    <Label styleClass="target-label" text="- THỜI GIAN (HOURS) *" />
+                    <Label styleClass="target-label" text="- THỜI GIAN (HH:MM:SS) *" />
+
                     <HBox styleClass="target-input-box">
-                        <!-- Thêm minWidth="-Infinity" và dùng ký tự đồng hồ -->
                         <Label styleClass="target-input-icon" text="🕒" minWidth="-Infinity" />
-                        <TextField fx:id="durationField" promptText="VD: 24" styleClass="target-textfield" HBox.hgrow="ALWAYS" />
+                        <TextField fx:id="durationField"
+                                promptText="00:00:00"
+                                text="00:00:00"
+                                styleClass="target-textfield"
+                                HBox.hgrow="ALWAYS" />
                     </HBox>
                 </VBox>
             </HBox>

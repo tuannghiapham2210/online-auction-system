@@ -17,7 +17,7 @@ public abstract class Item extends Entity implements Serializable {
     protected int sellerId;
 
     protected double stepPrice;
-    protected int durationHours;
+    protected double durationHours;
     protected String imageUrl;
     protected String description;
     protected String status = "PENDING";
@@ -76,8 +76,8 @@ public abstract class Item extends Entity implements Serializable {
     public double getStepPrice() { return stepPrice; }
     public void setStepPrice(double stepPrice) { this.stepPrice = stepPrice; }
 
-    public int getDurationHours() { return durationHours; }
-    public void setDurationHours(int durationHours) { this.durationHours = durationHours; }
+    public double getDurationHours() { return durationHours; }
+    public void setDurationHours(double durationHours) { this.durationHours = durationHours; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }

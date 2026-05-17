@@ -44,6 +44,8 @@ public class AddItemController {
         // 1. Khởi tạo các lựa chọn loại sản phẩm và xóa thông báo rác
         typeComboBox.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
         messageLabel.setText("");
+
+        durationField.setText("00:00:00");
     }
 
     /**
@@ -77,9 +79,34 @@ public class AddItemController {
             // 3. Ép kiểu các dữ liệu dạng chuỗi sang số
             double startingPrice = Double.parseDouble(priceStr);
             double stepPrice = Double.parseDouble(stepStr);
-            int durationHours = Integer.parseInt(durationStr);
 
-            // 4. Kiểm tra Logic nghiệp vụ (bắt buộc > 0)
+            // Parse thời gian HH:mm:ss
+            String[] timeParts = durationStr.trim().split(":");
+
+            if (timeParts.length != 3) {
+                messageLabel.setText("Thời gian phải đúng định dạng HH:mm:ss");
+                return;
+            }
+
+            int hours = Integer.parseInt(timeParts[0]);
+            int minutes = Integer.parseInt(timeParts[1]);
+            int seconds = Integer.parseInt(timeParts[2]);
+
+            // Validate thời gian
+            if (hours < 0 || minutes < 0 || seconds < 0 ||
+                    minutes >= 60 || seconds >= 60) {
+
+                messageLabel.setText("Thời gian không hợp lệ!");
+                return;
+            }
+
+            // Tổng thời gian theo giờ (double)
+            double durationHours =
+                    hours +
+                    (minutes / 60.0) +
+                    (seconds / 3600.0);
+
+            // Kiểm tra logic
             if(startingPrice <= 0 || stepPrice <= 0 || durationHours <= 0) {
                 messageLabel.setText("Giá tiền và thời gian phải lớn hơn 0");
                 return;

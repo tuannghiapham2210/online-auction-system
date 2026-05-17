@@ -38,7 +38,7 @@ public class ItemDAO {
             pstmt.setDouble(4, item.getStartingPrice());
             pstmt.setDouble(5, item.getStepPrice());
             pstmt.setString(6, item.getEndTime());
-            pstmt.setInt(7, item.getDurationHours());
+            pstmt.setDouble(7, item.getDurationHours());
             pstmt.setString(8, item.getImageUrl());
             pstmt.setString(9, item.getDescription());
             pstmt.setString(10, item.getExtraInfo());

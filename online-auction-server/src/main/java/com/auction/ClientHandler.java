@@ -200,10 +200,12 @@ public class ClientHandler implements Runnable {
             String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
             String description = request.has("description") ? request.get("description").getAsString() : "";
             double stepPrice = request.get("stepPrice").getAsDouble();
-            int durationHours = request.get("durationHours").getAsInt();
+            double durationHours = request.get("durationHours").getAsDouble();
 
             // 3. Tính toán EndTime
-            java.time.LocalDateTime endTarget = java.time.LocalDateTime.now().plusHours(durationHours);
+            long totalSeconds = (long) (durationHours * 3600);
+
+            java.time.LocalDateTime endTarget = java.time.LocalDateTime.now().plusSeconds(totalSeconds);
             java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             String endTime = endTarget.format(formatter);
 
