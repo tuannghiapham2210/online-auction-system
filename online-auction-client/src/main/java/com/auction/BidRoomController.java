@@ -94,6 +94,7 @@ public class BidRoomController {
     private Timeline progressTimeline;
     private FadeTransition pulseAnimation;
     private HBox toastNotification;
+    private VBox autoBidPanel;
 
     private Socket socket;
     private PrintWriter out;
@@ -364,6 +365,12 @@ public class BidRoomController {
                 timeProgressBar.getTransforms().add(scaleTransform);
             }
 
+            // Tắt chức năng Auto-Bid khi phòng đang chờ
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(true);
+                autoBidPanel.setOpacity(0.4);
+            }
+
             // Hiện Nút Admin unlock cho seller/admin
             if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == sellerId) {
                 if (btnOpenAuction != null) {
@@ -383,6 +390,11 @@ public class BidRoomController {
         } else {
             // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
             if (liveBadge != null) liveBadge.setVisible(true);
+            
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(false);
+                autoBidPanel.setOpacity(1.0);
+            }
             startCountdown(endTime);
         }
     }
@@ -809,6 +821,11 @@ private void hideNotification(HBox notification) {
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
+                }
+                
                 showSuccessToast();
             }
         } catch (Exception e) {
@@ -836,6 +853,11 @@ private void hideNotification(HBox notification) {
 
                 if (timerLabelTitle != null) {
                     timerLabelTitle.setText("THỜI GIAN");
+                }
+                
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
                 }
 
                 if (btnOpenAuction != null) {
@@ -902,7 +924,7 @@ private void hideNotification(HBox notification) {
      * Khởi tạo giao diện bảng điều khiển Auto-Bid (Proxy Bidding) bằng JavaFX code.
      */
     private void initAutoBidPanel() {
-        VBox autoBidPanel = new VBox(20);
+        autoBidPanel = new VBox(20);
         autoBidPanel.setStyle("-fx-background-color: #1A1D27; -fx-background-radius: 12; -fx-padding: 20;");
         autoBidPanel.setMaxWidth(Double.MAX_VALUE);
 

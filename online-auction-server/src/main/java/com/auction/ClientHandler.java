@@ -331,6 +331,19 @@ public class ClientHandler implements Runnable {
             double increment = request.get("increment").getAsDouble();
             String username = request.has("username") ? request.get("username").getAsString() : "Khách";
 
+            // --- SECURITY GUARD CLAUSE ---
+            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+            if (item != null && "PENDING".equalsIgnoreCase(item.getStatus())) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("status", "ERROR");
+                errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently PENDING.");
+                logger.warn("Rejected Auto-Bid for PENDING item: {}", itemId);
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            // -----------------------------
+
             logger.info("Received REGISTER_AUTO_BID: user={}, item={}, max={}, inc={}", username, itemId, maxBid, increment);
 
             String sql = "INSERT INTO auto_bids (item_id, user_id, max_bid, increment_amount, created_at) VALUES (?, ?, ?, ?, ?)";
