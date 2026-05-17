@@ -277,6 +277,15 @@ public class ClientHandler implements Runnable {
             int bidderId = request.get("bidderId").getAsInt();
             double bidAmount = request.get("bidAmount").getAsDouble();
             String username = request.has("username") ? request.get("username").getAsString() : "Khách";
+            String role = request.has("role") ? request.get("role").getAsString() : "";
+
+            if (!"BIDDER".equalsIgnoreCase(role)) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
 
             // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
@@ -333,6 +342,15 @@ public class ClientHandler implements Runnable {
             double maxBid = request.get("maxBid").getAsDouble();
             double increment = request.get("increment").getAsDouble();
             String username = request.has("username") ? request.get("username").getAsString() : "Khách";
+            String role = request.has("role") ? request.get("role").getAsString() : "";
+
+            if (!"BIDDER".equalsIgnoreCase(role)) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("status", "ERROR");
+                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể thiết lập Auto-Bid!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
 
             // --- SECURITY GUARD CLAUSE ---
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();

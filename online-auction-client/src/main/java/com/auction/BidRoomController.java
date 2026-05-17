@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Controller quản lý phòng đấu giá trực tiếp (Live Bid Room).
  * <p>
- * Chịu trách nhiệm hiển thị thông tin chi tiết của sản phẩm, đếm ngược thời gian,
+ * Chịu trách nhiệm hiển thị thông báo chi tiết của sản phẩm, đếm ngược thời gian,
  * vẽ biểu đồ giá trực tiếp, và gửi/nhận yêu cầu đặt giá (PLACE_BID) qua Socket.
  */
 public class BidRoomController {
@@ -398,9 +398,21 @@ public class BidRoomController {
             // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
             if (liveBadge != null) liveBadge.setVisible(true);
             
-            if (autoBidPanel != null) {
-                autoBidPanel.setDisable(false);
-                autoBidPanel.setOpacity(1.0);
+            if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
+                }
+                bidAmountField.setDisable(false);
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+            } else {
+                bidAmountField.setDisable(true);
+                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(true);
+                    autoBidPanel.setOpacity(0.4);
+                }
             }
             startCountdown(endTime);
         }
@@ -512,6 +524,7 @@ public class BidRoomController {
             request.addProperty("bidderId", currentUserId);
             request.addProperty("bidAmount", bidAmount);
             request.addProperty("username", Session.username);
+            request.addProperty("role", Session.role);
 
             // 2. Gửi request lên Server
             if (out != null) {
@@ -825,14 +838,27 @@ private void hideNotification(HBox notification) {
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
-                if (bidAmountField != null) bidAmountField.setDisable(false);
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (bidAmountField != null) bidAmountField.setDisable(false);
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
                 }
+                
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 
                 showSuccessToast();
             }
@@ -889,19 +915,27 @@ private void hideNotification(HBox notification) {
                 this.currentEndTime = endTime;
                 if (liveBadge != null) liveBadge.setVisible(true);
 
-                bidAmountField.setDisable(false);
-
-                if (btnPlaceBid != null) {
-                    btnPlaceBid.setDisable(false);
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (bidAmountField != null) bidAmountField.setDisable(false);
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
                 }
 
                 if (timerLabelTitle != null) {
                     timerLabelTitle.setText("THỜI GIAN");
-                }
-                
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
                 }
 
                 if (btnOpenAuction != null) {
@@ -938,7 +972,7 @@ private void hideNotification(HBox notification) {
                 progressTimeline.stop();
             }
 
-            bidAmountField.setDisable(true);
+            if (bidAmountField != null) bidAmountField.setDisable(true);
             
             if (autoBidPanel != null) {
                 autoBidPanel.setDisable(true);
@@ -1098,6 +1132,7 @@ private void hideNotification(HBox notification) {
             request.addProperty("maxBid", maxBid);
             request.addProperty("increment", inc);
             request.addProperty("username", Session.username);
+            request.addProperty("role", Session.role);
 
             if (out != null) {
                 out.println(request.toString());
