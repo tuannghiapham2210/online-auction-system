@@ -890,6 +890,11 @@ private void hideNotification(HBox notification) {
             }
 
             bidAmountField.setDisable(true);
+            
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(true);
+                autoBidPanel.setOpacity(0.4);
+            }
 
             return;
         }

@@ -334,11 +334,11 @@ public class ClientHandler implements Runnable {
             // --- SECURITY GUARD CLAUSE ---
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             Item item = itemDAO.getItemById(itemId);
-            if (item != null && "PENDING".equalsIgnoreCase(item.getStatus())) {
+            if (item != null && ("PENDING".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus()))) {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently PENDING.");
-                logger.warn("Rejected Auto-Bid for PENDING item: {}", itemId);
+                errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently " + item.getStatus() + ".");
+                logger.warn("Rejected Auto-Bid for {} item: {}", item.getStatus(), itemId);
                 this.writer.println(errorMsg.toString());
                 return;
             }
