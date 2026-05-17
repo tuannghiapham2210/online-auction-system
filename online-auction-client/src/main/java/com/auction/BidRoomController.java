@@ -125,6 +125,28 @@ public class BidRoomController {
      */
     @FXML
     public void initialize() {
+        // --- FIX: SCROLLABLE ROOT & COMPRESSION PREVENTION ---
+        // 1. Bọc nội dung chính vào ScrollPane để chống bị ép nén UI
+        if (rootPane != null && !rootPane.getChildren().isEmpty()) {
+            Node mainContent = rootPane.getChildren().get(0);
+            if (!(mainContent instanceof ScrollPane)) {
+                rootPane.getChildren().remove(mainContent);
+                ScrollPane scrollPane = new ScrollPane(mainContent);
+                scrollPane.setFitToWidth(true);
+                scrollPane.setFitToHeight(false); // Cho phép nội dung giãn dài xuống dưới
+                scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;");
+                rootPane.getChildren().add(0, scrollPane);
+            }
+        }
+
+        // 2. Cố định chiều cao tối thiểu cho Chart và Socket Log (Middle Row)
+        if (priceChart != null && priceChart.getParent() instanceof Region) {
+            ((Region) priceChart.getParent()).setMinHeight(350);
+        }
+        if (bidHistoryList != null && bidHistoryList.getParent() instanceof Region) {
+            ((Region) bidHistoryList.getParent()).setMinHeight(350);
+        }
+
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
@@ -226,6 +248,8 @@ public class BidRoomController {
                 }
             }
         });
+        
+        initAutoBidPanel();
     }
 
     /**
@@ -871,6 +895,142 @@ private void hideNotification(HBox notification) {
                             minutes,
                             seconds)
             );
+        }
+    }
+
+    /**
+     * Khởi tạo giao diện bảng điều khiển Auto-Bid (Proxy Bidding) bằng JavaFX code.
+     */
+    private void initAutoBidPanel() {
+        VBox autoBidPanel = new VBox(20);
+        autoBidPanel.setStyle("-fx-background-color: #1A1D27; -fx-background-radius: 12; -fx-padding: 20;");
+        autoBidPanel.setMaxWidth(Double.MAX_VALUE);
+
+        // --- THE HEADER ---
+        HBox headerBox = new HBox(10);
+        headerBox.setAlignment(Pos.CENTER_LEFT);
+        
+        SVGPath trendIcon = new SVGPath();
+        trendIcon.setContent("M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z");
+        trendIcon.setFill(Color.web("#F59E0B"));
+
+        Label titleLabel = new Label("THIẾT LẬP ĐẤU GIÁ TỰ ĐỘNG (AUTO-BID)");
+        titleLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+        headerBox.getChildren().addAll(trendIcon, titleLabel);
+
+        // --- THE INPUT SECTION ---
+        HBox inputSectionBox = new HBox(20);
+        
+        // Left Side (Inputs)
+        VBox leftSideBox = new VBox(15);
+        leftSideBox.setMinWidth(250); // FIX: Bảo vệ inputs khỏi bị ép dẹp theo chiều ngang
+        leftSideBox.setPrefWidth(300);
+
+        VBox group1 = new VBox(8);
+        Label maxBidLbl = new Label("GIÁ TỐI ĐA (MAX BID)");
+        maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        TextField maxBidField = new TextField();
+        maxBidField.setPromptText("$");
+        maxBidField.setStyle("-fx-background-color: #151A22; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 10;");
+        group1.getChildren().addAll(maxBidLbl, maxBidField);
+
+        VBox group2 = new VBox(8);
+        Label incLbl = new Label("BƯỚC GIÁ (INCREMENT)");
+        incLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        TextField incField = new TextField();
+        incField.setPromptText("$");
+        incField.setStyle("-fx-background-color: #151A22; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 10;");
+        group2.getChildren().addAll(incLbl, incField);
+
+        Button btnRegister = new Button("Đăng ký Auto-Bid");
+        btnRegister.setStyle("-fx-background-color: #F59E0B; -fx-text-fill: #111827; -fx-font-weight: bold; -fx-padding: 12; -fx-background-radius: 8; -fx-cursor: hand;");
+        btnRegister.setMaxWidth(Double.MAX_VALUE);
+        btnRegister.setOnAction(e -> handleRegisterAutoBid(maxBidField.getText(), incField.getText()));
+
+        leftSideBox.getChildren().addAll(group1, group2, btnRegister);
+
+        // Right Side (Info Box)
+        HBox rightSideBox = new HBox(15);
+        rightSideBox.setStyle("-fx-background-color: transparent; -fx-border-color: #303645; -fx-border-radius: 8; -fx-padding: 20;");
+        rightSideBox.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(rightSideBox, Priority.ALWAYS);
+
+        SVGPath robotIcon = new SVGPath();
+        robotIcon.setContent("M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a3 3 0 0 1 3 3v2h2v2h-2v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-4H3v-2h2v-2a3 3 0 0 1 3-3h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM8 9a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H8zm1 2h2v2H9v-2zm4 0h2v2h-2v-2z");
+        robotIcon.setFill(Color.web("#9CA3AF"));
+
+        Label infoLabel = new Label("Hệ thống sẽ tự động trả giá thay bạn khi có đối thủ cạnh tranh. Đảm bảo không vượt quá Giá tối đa bạn thiết lập và ưu tiên người đăng ký trước nếu có xung đột.");
+        infoLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 13px; -fx-line-spacing: 5px;");
+        infoLabel.setWrapText(true);
+
+        rightSideBox.getChildren().addAll(robotIcon, infoLabel);
+        inputSectionBox.getChildren().addAll(leftSideBox, rightSideBox);
+        autoBidPanel.getChildren().addAll(headerBox, inputSectionBox);
+
+        // Inject into layout gracefully
+        Platform.runLater(() -> {
+            try {
+                if (priceChart != null && priceChart.getParent() != null) {
+                    Node leftColumn = priceChart.getParent();
+                    Node middleRow = leftColumn != null ? leftColumn.getParent() : null;
+                    if (middleRow instanceof HBox && middleRow.getParent() instanceof VBox) {
+                        VBox mainContainer = (VBox) middleRow.getParent();
+                        VBox.setMargin(autoBidPanel, new Insets(20, 0, 0, 0));
+                        mainContainer.getChildren().add(autoBidPanel);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Could not inject auto-bid panel", e);
+            }
+        });
+    }
+
+    private void handleRegisterAutoBid(String maxBidStr, String incStr) {
+        if (maxBidStr.isEmpty() || incStr.isEmpty()) {
+            showNotification("Thiếu thông tin", "Vui lòng nhập đầy đủ Giá tối đa và Bước giá!");
+            return;
+        }
+
+        try {
+            double maxBid = Double.parseDouble(maxBidStr);
+            double inc = Double.parseDouble(incStr);
+
+            // Lấy mức giá hiện tại trên giao diện để đối chiếu
+            double currentPrice = 0.0;
+            try {
+                currentPrice = Double.parseDouble(currentPriceLabel.getText().replace("$", "").replace(",", "").trim());
+            } catch (Exception ex) {
+                logger.warn("Could not parse current price for validation", ex);
+            }
+
+            // Đảm bảo bot không tự đăng ký với mức giá đã bị vượt qua
+            if (maxBid <= currentPrice) {
+                showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn mức giá hiện tại của sản phẩm ($" + currentPrice + ")!");
+                return;
+            }
+            if (inc <= 0) {
+                showNotification("Bước giá không hợp lệ", "Bước giá (Increment) phải lớn hơn 0!");
+                return;
+            }
+
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "REGISTER_AUTO_BID");
+            request.addProperty("itemId", currentItemId);
+            request.addProperty("userId", Session.userId);
+            request.addProperty("maxBid", maxBid);
+            request.addProperty("increment", inc);
+            request.addProperty("username", Session.username);
+
+            if (out != null) {
+                out.println(request.toString());
+                logger.info("Sent REGISTER_AUTO_BID request: {}", request);
+                showNotification("Thành công", "Đã gửi yêu cầu đăng ký Auto-Bid!");
+            }
+
+        } catch (NumberFormatException e) {
+            showNotification("Lỗi nhập liệu", "Vui lòng nhập số hợp lệ!");
         }
     }
 }
