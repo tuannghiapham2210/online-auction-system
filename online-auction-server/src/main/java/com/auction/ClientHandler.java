@@ -286,6 +286,24 @@ public class ClientHandler implements Runnable {
                 this.writer.println(errorMsg.toString());
                 return;
             }
+            
+            // --- PREVENT SELF-BIDDING ---
+            int currentHighestBidderId = -1;
+            String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
+            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
+                pstmt.setInt(1, itemId);
+                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) currentHighestBidderId = rs.getInt("bidder_id");
+                }
+            }
+            if (currentHighestBidderId == bidderId) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Bạn đang là người trả giá cao nhất, hãy đợi đối thủ ra giá!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            // -----------------------------
 
             // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();

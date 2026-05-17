@@ -62,6 +62,10 @@ public class ServerListener implements Runnable {
                     int itemId = json.get("itemId").getAsInt();
                     controller.auctionCancelledRealtime(itemId);
                 }
+                else if ("ERROR".equals(action)) {
+                    String errorMessage = json.has("message") ? json.get("message").getAsString() : "Đã có lỗi xảy ra!";
+                    controller.showErrorRealtime(errorMessage);
+                }
             }
         } catch (Exception e) {
             logger.warn("Listener disconnected: {}", e.getMessage(), e);

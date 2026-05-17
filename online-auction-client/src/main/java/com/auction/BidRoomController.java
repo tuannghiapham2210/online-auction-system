@@ -903,6 +903,15 @@ private void hideNotification(HBox notification) {
     }
 
     /**
+     * Gọi bởi ServerListener để hiển thị thông báo lỗi ngay lập tức.
+     */
+    public void showErrorRealtime(String errorMessage) {
+        Platform.runLater(() -> {
+            showNotification("Lỗi", errorMessage);
+        });
+    }
+
+    /**
  * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
  */
     public void startAuctionRealtime(int itemId, String endTime, String message) {
