@@ -105,6 +105,7 @@ public class BidRoomController {
     private int currentUserId;
     private String currentEndTime;
     private String currentStatus;
+    private double currentStepPrice;
     private boolean isNotificationShowing = false;
 
     public static class BidEvent {
@@ -276,6 +277,7 @@ public class BidRoomController {
      * @param itemId ID của sản phẩm.
      * @param itemName Tên sản phẩm.
      * @param currentPrice Giá hiện tại.
+     * @param stepPrice Bước giá.
      * @param userId ID của người dùng đang tham gia.
      * @param endTime Thời gian kết thúc phiên đấu.
      * @param imageUrl Đường dẫn ảnh sản phẩm.
@@ -284,12 +286,13 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
         this.currentEndTime = endTime;
         this.currentStatus = status;
+        this.currentStepPrice = stepPrice;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -403,7 +406,10 @@ public class BidRoomController {
                     autoBidPanel.setDisable(false);
                     autoBidPanel.setOpacity(1.0);
                 }
-                bidAmountField.setDisable(false);
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(false);
+                    bidAmountField.setText(String.valueOf(currentPrice + stepPrice));
+                }
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
             } else {
                 bidAmountField.setDisable(true);
@@ -530,7 +536,8 @@ public class BidRoomController {
             if (out != null) {
                 out.println(request.toString());
                 logger.info("Sent PLACE_BID request: {}", request);
-                bidAmountField.clear();
+                // Sau khi gửi bid, không tự động clear ô nhập nữa vì nó sẽ được updateRealtime đè lên giá mới + step.
+                // bidAmountField.clear(); 
             }
 
         } catch (NumberFormatException e) {
@@ -550,6 +557,10 @@ public class BidRoomController {
             // Cập nhật nhãn giá và người dẫn đầu
             currentPriceLabel.setText("$" + newPrice);
             highestBidderLabel.setText("Dẫn đầu bởi: " + username);
+
+            if ("BIDDER".equalsIgnoreCase(Session.role) && bidAmountField != null) {
+                bidAmountField.setText(String.valueOf(newPrice + currentStepPrice));
+            }
 
             // Cập nhật lại Y-Axis khi có giá mới
             NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
@@ -840,7 +851,14 @@ private void hideNotification(HBox notification) {
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
                 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                    if (bidAmountField != null) bidAmountField.setDisable(false);
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        double cp = 0;
+                        try {
+                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                        } catch (Exception ex) {}
+                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                    }
                     if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                     if (autoBidPanel != null) {
                         autoBidPanel.setDisable(false);
@@ -925,7 +943,14 @@ private void hideNotification(HBox notification) {
                 if (liveBadge != null) liveBadge.setVisible(true);
 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                    if (bidAmountField != null) bidAmountField.setDisable(false);
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        double cp = 0;
+                        try {
+                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                        } catch (Exception ex) {}
+                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                    }
                     if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                     if (autoBidPanel != null) {
                         autoBidPanel.setDisable(false);

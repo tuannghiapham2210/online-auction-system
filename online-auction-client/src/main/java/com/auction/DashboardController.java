@@ -163,6 +163,9 @@ public class DashboardController {
 
                             item.setId(obj.get("id").getAsInt());
                             if (obj.has("currentPrice")) item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                            if (obj.has("stepPrice") && !obj.get("stepPrice").isJsonNull()) {
+                                item.setStepPrice(obj.get("stepPrice").getAsDouble());
+                            }
                             if (obj.has("imageUrl")) item.setImageUrl(obj.get("imageUrl").getAsString());
                             if (obj.has("description") && !obj.get("description").isJsonNull()) {
                                 item.setDescription(obj.get("description").getAsString());
@@ -329,7 +332,7 @@ public class DashboardController {
             }
 
             ((BidRoomController) loader.getController()).setAuctionData(
-                    item.getId(), item.getName(), item.getCurrentPrice(),
+                    item.getId(), item.getName(), item.getCurrentPrice(), item.getStepPrice(),
                     Session.userId, item.getEndTime(), item.getImageUrl(),
                     item.getItemType(), desc, item.getSellerId(), item.getStatus()
             );
