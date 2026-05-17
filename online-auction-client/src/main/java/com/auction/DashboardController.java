@@ -145,11 +145,17 @@ public class DashboardController {
                                 }
                             }
 
+                            String endTime = "";
+
+                            if (obj.has("endTime") && !obj.get("endTime").isJsonNull()) {
+                                endTime = obj.get("endTime").getAsString();
+                            }
+
                             Item item = com.auction.factory.ItemFactory.createItem(
                                     type,
                                     obj.get("name").getAsString(),
                                     obj.get("startingPrice").getAsDouble(),
-                                    obj.get("endTime").getAsString(),
+                                    endTime,
                                     obj.get("sellerId").getAsInt(),
                                     extraInfo
                             );

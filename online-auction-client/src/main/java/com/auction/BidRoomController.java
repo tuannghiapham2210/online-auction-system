@@ -372,35 +372,23 @@ public class BidRoomController {
 
             // 1. Chuyển đổi chuỗi thời gian sang định dạng LocalDateTime
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter);
+            LocalDateTime endTime = LocalDateTime.parse(endTimeStr, formatter).plusSeconds(1);
 
             // 2. Tạo Timeline chạy lặp lại mỗi giây (1 second tick)
-            countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-                LocalDateTime now = LocalDateTime.now();
 
-                // 3. Xử lý khi hết giờ: Dừng đếm ngược và khóa chức năng đặt giá
-                if (now.isAfter(endTime)) {
-                    if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
-                    countdownTimeline.stop();
-                    if (progressTimeline != null) progressTimeline.stop();
-                    bidAmountField.setDisable(true);
-                } else {
-                    // 4. Tính toán và cập nhật thời gian còn lại lên UI
-                    java.time.Duration duration = java.time.Duration.between(now, endTime);
-                    long hours = duration.toHours();
-                    long minutes = duration.toMinutesPart();
-                    long seconds = duration.toSecondsPart();
-                    if (timerLabel != null) {
-                        if (hours > 0) {
-                            timerLabel.setText(String.format("%d:%02d:%02d", hours, minutes, seconds));
-                        } else {
-                            timerLabel.setText(String.format("%d:%02d", minutes, seconds));
-                        }
-                    }
-                }
-            }));
+            // chạy ngay lập tức
+            countdownTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(1), e -> {
+                    updateCountdownLabel(endTime);
+                })
+            );
 
             countdownTimeline.setCycleCount(Timeline.INDEFINITE);
+
+            // hiện ngay lần đầu
+            updateCountdownLabel(endTime);
+
+            // chạy mỗi giây
             countdownTimeline.play();
             
             // 5. Khởi chạy thanh tiến trình (Dynamic Time Progress Bar)
@@ -789,7 +777,6 @@ private void hideNotification(HBox notification) {
                 if (bidAmountField != null) bidAmountField.setDisable(false);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
-                startCountdown(this.currentEndTime);
                 
                 showSuccessToast();
             }
@@ -797,27 +784,85 @@ private void hideNotification(HBox notification) {
             logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
         }
     }
-
     /**
-     * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
-     */
-    public void startAuctionRealtime(int itemId, String message) {
+ * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
+ */
+    public void startAuctionRealtime(int itemId, String endTime, String message) {
+
         if (this.currentItemId == itemId) {
+
             Platform.runLater(() -> {
+
                 this.currentStatus = "ACTIVE";
+                this.currentEndTime = endTime;
 
                 bidAmountField.setDisable(false);
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+
+                if (btnPlaceBid != null) {
+                    btnPlaceBid.setDisable(false);
+                }
+
+                if (timerLabelTitle != null) {
+                    timerLabelTitle.setText("THỜI GIAN");
+                }
 
                 if (btnOpenAuction != null) {
-                    if (pulseAnimation != null) pulseAnimation.stop();
+
+                    if (pulseAnimation != null) {
+                        pulseAnimation.stop();
+                    }
+
                     btnOpenAuction.setVisible(false);
                 }
 
-                startCountdown(this.currentEndTime);
-                showNotification("MỞ PHIÊN ĐẤU GIÁ!", message != null ? message : "Sản phẩm đã sẵn sàng!");
+                startCountdown(endTime);
             });
+        }
+    }
+    private void updateCountdownLabel(LocalDateTime endTime) {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!now.isBefore(endTime)) {
+
+            timerLabel.setText("ĐÃ KẾT THÚC");
+
+            if (countdownTimeline != null) {
+                countdownTimeline.stop();
+            }
+
+            if (progressTimeline != null) {
+                progressTimeline.stop();
+            }
+
+            bidAmountField.setDisable(true);
+
+            return;
+        }
+
+        java.time.Duration duration =
+                java.time.Duration.between(now, endTime);
+
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+
+        if (hours > 0) {
+
+            timerLabel.setText(
+                    String.format("%d:%02d:%02d",
+                            hours,
+                            minutes,
+                            seconds)
+            );
+
+        } else {
+
+            timerLabel.setText(
+                    String.format("%02d:%02d",
+                            minutes,
+                            seconds)
+            );
         }
     }
 }
