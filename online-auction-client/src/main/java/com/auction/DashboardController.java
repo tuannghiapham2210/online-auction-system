@@ -12,6 +12,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -72,6 +73,7 @@ public class DashboardController {
     @FXML private Label lblUsername;
     @FXML private Label lblRole;
     @FXML private Label lblAvatar;
+    @FXML private TextField searchField;
 
     @FXML private Button btnFilterAll;
     @FXML private Button btnFilterArt;
@@ -108,6 +110,25 @@ public class DashboardController {
         if (Session.role != null) {
             lblRole.setText(Session.role.toUpperCase());
         }
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterItems(newValue);
+        });
+    }
+
+    private void filterItems(String searchText) {
+        if (searchText == null || searchText.isEmpty()) {
+            displayItems(allItems);
+            return;
+        }
+
+        String lowerCaseFilter = searchText.toLowerCase();
+
+        List<Item> filteredList = allItems.stream()
+                .filter(item -> item.getName().toLowerCase().contains(lowerCaseFilter))
+                .collect(Collectors.toList());
+
+        displayItems(filteredList);
     }
 
     /**
