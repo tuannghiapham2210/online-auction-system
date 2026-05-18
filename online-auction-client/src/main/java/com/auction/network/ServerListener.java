@@ -51,6 +51,12 @@ public class ServerListener implements Runnable {
                     String username = json.has("username") ? json.get("username").getAsString() : "Khách";
 
                     controller.updatePriceRealtime(newPrice, bidderId, username);
+
+                    // Kiểm tra xem Server có gửi kèm thời gian gia hạn phút chót không
+                    if (json.has("newEndTime")) {
+                        String newEndTime = json.get("newEndTime").getAsString();
+                        controller.extendTimeRealtime(newEndTime);
+                    }
                 }
                 else if ("AUCTION_STARTED".equals(action)) {
                     int itemId = json.get("itemId").getAsInt();
