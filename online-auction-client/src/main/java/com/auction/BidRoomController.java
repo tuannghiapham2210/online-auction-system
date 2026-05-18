@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Controller quản lý phòng đấu giá trực tiếp (Live Bid Room).
  * <p>
- * Chịu trách nhiệm hiển thị thông tin chi tiết của sản phẩm, đếm ngược thời gian,
+ * Chịu trách nhiệm hiển thị thông báo chi tiết của sản phẩm, đếm ngược thời gian,
  * vẽ biểu đồ giá trực tiếp, và gửi/nhận yêu cầu đặt giá (PLACE_BID) qua Socket.
  */
 public class BidRoomController {
@@ -87,6 +87,7 @@ public class BidRoomController {
     @FXML private Button btnPlaceBid;
     @FXML private Label timerLabelTitle;
     @FXML private Button btnOpenAuction;
+    @FXML private Button btnCancelAuction;
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
@@ -104,6 +105,7 @@ public class BidRoomController {
     private int currentUserId;
     private String currentEndTime;
     private String currentStatus;
+    private double currentStepPrice;
     private boolean isNotificationShowing = false;
 
     public static class BidEvent {
@@ -163,6 +165,9 @@ public class BidRoomController {
         // Tự động ẩn/hiện Layout của nút Admin (Tránh lỗi HBox không giãn ra)
         if (btnOpenAuction != null) {
             btnOpenAuction.managedProperty().bind(btnOpenAuction.visibleProperty());
+        }
+        if (btnCancelAuction != null) {
+            btnCancelAuction.managedProperty().bind(btnCancelAuction.visibleProperty());
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
@@ -272,6 +277,7 @@ public class BidRoomController {
      * @param itemId ID của sản phẩm.
      * @param itemName Tên sản phẩm.
      * @param currentPrice Giá hiện tại.
+     * @param stepPrice Bước giá.
      * @param userId ID của người dùng đang tham gia.
      * @param endTime Thời gian kết thúc phiên đấu.
      * @param imageUrl Đường dẫn ảnh sản phẩm.
@@ -280,12 +286,13 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
         this.currentEndTime = endTime;
         this.currentStatus = status;
+        this.currentStepPrice = stepPrice;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -386,14 +393,32 @@ public class BidRoomController {
                     }
                     pulseAnimation.play();
                 }
+                if (btnCancelAuction != null) {
+                    btnCancelAuction.setVisible(true);
+                }
             }
         } else {
             // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
             if (liveBadge != null) liveBadge.setVisible(true);
             
-            if (autoBidPanel != null) {
-                autoBidPanel.setDisable(false);
-                autoBidPanel.setOpacity(1.0);
+            if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
+                }
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(false);
+                    bidAmountField.setText(String.valueOf(currentPrice + stepPrice));
+                }
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+            } else {
+                bidAmountField.setDisable(true);
+                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(true);
+                    autoBidPanel.setOpacity(0.4);
+                }
             }
             startCountdown(endTime);
         }
@@ -505,12 +530,14 @@ public class BidRoomController {
             request.addProperty("bidderId", currentUserId);
             request.addProperty("bidAmount", bidAmount);
             request.addProperty("username", Session.username);
+            request.addProperty("role", Session.role);
 
             // 2. Gửi request lên Server
             if (out != null) {
                 out.println(request.toString());
                 logger.info("Sent PLACE_BID request: {}", request);
-                bidAmountField.clear();
+                // Sau khi gửi bid, không tự động clear ô nhập nữa vì nó sẽ được updateRealtime đè lên giá mới + step.
+                // bidAmountField.clear(); 
             }
 
         } catch (NumberFormatException e) {
@@ -530,6 +557,10 @@ public class BidRoomController {
             // Cập nhật nhãn giá và người dẫn đầu
             currentPriceLabel.setText("$" + newPrice);
             highestBidderLabel.setText("Dẫn đầu bởi: " + username);
+
+            if ("BIDDER".equalsIgnoreCase(Session.role) && bidAmountField != null) {
+                bidAmountField.setText(String.valueOf(newPrice + currentStepPrice));
+            }
 
             // Cập nhật lại Y-Axis khi có giá mới
             NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
@@ -817,14 +848,35 @@ private void hideNotification(HBox notification) {
                 if (liveBadge != null) liveBadge.setVisible(true);
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
-                if (bidAmountField != null) bidAmountField.setDisable(false);
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
                 
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        double cp = 0;
+                        try {
+                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                        } catch (Exception ex) {}
+                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
                 }
+                
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 
                 showSuccessToast();
             }
@@ -832,6 +884,51 @@ private void hideNotification(HBox notification) {
             logger.error("Failed to send OPEN_AUCTION_REQUEST", e);
         }
     }
+    
+    /**
+     * Xử lý sự kiện nhấn nút "Hủy phiên".
+     */
+    @FXML
+    private void handleCancelAuction() {
+        try {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "CANCEL_AUCTION_REQUEST");
+            request.addProperty("itemId", currentItemId);
+            request.addProperty("userId", Session.userId);
+            request.addProperty("role", Session.role);
+
+            if (out != null) {
+                out.println(request.toString());
+                logger.info("Sent CANCEL_AUCTION_REQUEST for item: {}", currentItemId);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send CANCEL_AUCTION_REQUEST", e);
+        }
+    }
+
+    /**
+     * Gọi bởi ServerListener khi có sự kiện AUCTION_CANCELLED từ Server.
+     */
+    public void auctionCancelledRealtime(int itemId) {
+        if (this.currentItemId == itemId) {
+            Platform.runLater(() -> {
+                showNotification("Thông báo", "Phiên đấu giá đã bị hủy!");
+                // Thoát về Dashboard sau vài giây
+                Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), ev -> handleLeaveRoom()));
+                timeline.play();
+            });
+        }
+    }
+
+    /**
+     * Gọi bởi ServerListener để hiển thị thông báo lỗi ngay lập tức.
+     */
+    public void showErrorRealtime(String errorMessage) {
+        Platform.runLater(() -> {
+            showNotification("Lỗi", errorMessage);
+        });
+    }
+
     /**
  * Gọi bởi ServerListener khi có sự kiện AUCTION_STARTED từ Server.
  */
@@ -845,19 +942,34 @@ private void hideNotification(HBox notification) {
                 this.currentEndTime = endTime;
                 if (liveBadge != null) liveBadge.setVisible(true);
 
-                bidAmountField.setDisable(false);
-
-                if (btnPlaceBid != null) {
-                    btnPlaceBid.setDisable(false);
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        double cp = 0;
+                        try {
+                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                        } catch (Exception ex) {}
+                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
                 }
 
                 if (timerLabelTitle != null) {
                     timerLabelTitle.setText("THỜI GIAN");
-                }
-                
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
                 }
 
                 if (btnOpenAuction != null) {
@@ -867,6 +979,10 @@ private void hideNotification(HBox notification) {
                     }
 
                     btnOpenAuction.setVisible(false);
+                }
+                
+                if (btnCancelAuction != null) {
+                    btnCancelAuction.setVisible(false);
                 }
 
                 startCountdown(endTime);
@@ -890,7 +1006,7 @@ private void hideNotification(HBox notification) {
                 progressTimeline.stop();
             }
 
-            bidAmountField.setDisable(true);
+            if (bidAmountField != null) bidAmountField.setDisable(true);
             
             if (autoBidPanel != null) {
                 autoBidPanel.setDisable(true);
@@ -1050,6 +1166,7 @@ private void hideNotification(HBox notification) {
             request.addProperty("maxBid", maxBid);
             request.addProperty("increment", inc);
             request.addProperty("username", Session.username);
+            request.addProperty("role", Session.role);
 
             if (out != null) {
                 out.println(request.toString());

@@ -16,22 +16,16 @@
 <?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.shape.Rectangle?>
 
-<!-- LỚP NGOÀI CÙNG: StackPane giúp hiển thị các Notification và các Layer đè lên nhau -->
 <StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
    <children>
 
-      <!-- LAYER 1: CHỨA CÁC CARD SẢN PHẨM & BIỂU ĐỒ -->
-      <!-- ĐIỀU CHỈNH: Đổi padding top thành 70 để đẩy toàn bộ khối này lùi xuống dưới một chút -->
       <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 70 20 20 20;">
          <children>
-            <!-- ĐIỀU CHỈNH: Giảm maxWidth xuống 920px để các khối nhỏ lại, tạo lề 2 bên rộng hơn -->
-            <VBox maxWidth="920.0" spacing="20.0" VBox.vgrow="NEVER">
+            <VBox maxWidth="960.0" spacing="20.0" VBox.vgrow="NEVER">
                <children>
 
-                  <!-- Middle: Thông tin Sản phẩm (Hero Banner) -->
-                  <VBox style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12;" VBox.vgrow="NEVER">
+                  <VBox style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #2A3441; -fx-border-width: 1;" VBox.vgrow="NEVER">
                      <children>
-                        <!-- Section A: The Hero Image Header -->
                         <StackPane fx:id="heroImageContainer" prefHeight="250.0">
                            <children>
                               <Rectangle fx:id="heroImageRect" height="250.0" />
@@ -56,13 +50,10 @@
                            </children>
                         </StackPane>
 
-                        <!-- Section B: The Divider (Dynamic Time Progress Bar) -->
                         <Region fx:id="timeProgressBar" maxWidth="Infinity" minHeight="3.0" prefHeight="3.0" style="-fx-background-color: #FFA500;" />
 
-                        <!-- Section C: The Control Panel -->
                         <VBox spacing="15.0" style="-fx-padding: 20;">
                            <children>
-                              <!-- Row 1: Price and Timer -->
                               <BorderPane>
                                  <left>
                                     <VBox spacing="5.0" BorderPane.alignment="CENTER">
@@ -89,7 +80,6 @@
                                  </right>
                               </BorderPane>
 
-                              <!-- Row 2: Input and Submit Button -->
                               <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 15 0 0 0;">
                                  <children>
                                     <TextField fx:id="bidAmountField" promptText="\$ Nhập giá thầu..." style="-fx-background-color: #0B101A; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-padding: 12 15; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
@@ -103,10 +93,17 @@
 
                   <HBox spacing="20.0" VBox.vgrow="ALWAYS">
                      <children>
-                        <VBox prefWidth="380.0" spacing="10.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 20;" HBox.hgrow="ALWAYS">
+
+                        <VBox prefWidth="480.0" spacing="15.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #2A3441; -fx-border-width: 1; -fx-padding: 20;" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="ĐƯỜNG CONG GIÁ" />
-                              <AreaChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart" VBox.vgrow="ALWAYS">
+                              <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                 <children>
+                                    <SVGPath content="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" fill="#FFA500" scaleX="0.8" scaleY="0.8"/>
+                                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 15px;" text="ĐƯỜNG CONG GIÁ" />
+                                    <Label style="-fx-text-fill: #64748B; -fx-font-size: 12px;" text="(Live Data)" />
+                                 </children>
+                              </HBox>
+                              <AreaChart fx:id="priceChart" createSymbols="true" legendVisible="false" styleClass="bid-chart" horizontalGridLinesVisible="true" verticalGridLinesVisible="true" VBox.vgrow="ALWAYS">
                                  <xAxis>
                                     <CategoryAxis side="BOTTOM" />
                                  </xAxis>
@@ -117,12 +114,20 @@
                            </children>
                         </VBox>
 
-                        <VBox prefWidth="540.0" spacing="10.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 20;" HBox.hgrow="ALWAYS">
+                        <VBox prefWidth="480.0" spacing="15.0" style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #2A3441; -fx-border-width: 1; -fx-padding: 20;" HBox.hgrow="ALWAYS">
                            <children>
-                              <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold;" text="SOCKET EVENT LOG" />
-                              <ListView fx:id="bidHistoryList" styleClass="log-list" VBox.vgrow="ALWAYS" />
+                              <BorderPane>
+                                 <left>
+                                    <Label style="-fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 15px;" text="SOCKET EVENT LOG" BorderPane.alignment="CENTER" />
+                                 </left>
+                                 <right>
+                                    <Label style="-fx-text-fill: #10B981; -fx-font-size: 16px;" text="●" BorderPane.alignment="CENTER" />
+                                 </right>
+                              </BorderPane>
+                              <ListView fx:id="bidHistoryList" styleClass="log-list" style="-fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-padding: 0;" VBox.vgrow="ALWAYS" />
                            </children>
                         </VBox>
+
                      </children>
                   </HBox>
 
@@ -137,6 +142,7 @@
 
             <HBox alignment="CENTER_LEFT" spacing="15.0" AnchorPane.rightAnchor="25.0" AnchorPane.topAnchor="20.0">
                <children>
+                  <Button fx:id="btnCancelAuction" onAction="#handleCancelAuction" prefHeight="40.0" style="-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12; -fx-cursor: hand;" text="❌ Hủy phiên" visible="false" />
                   <Button fx:id="btnOpenAuction" onAction="#handleOpenAuction" prefHeight="40.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12; -fx-cursor: hand;" text="⏻ Mở phiên" visible="false" />
                   <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #1E293B; -fx-background-radius: 12; -fx-padding: 5 15; -fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 12;">
                      <children>
