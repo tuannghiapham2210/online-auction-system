@@ -326,15 +326,23 @@ public class ClientHandler implements Runnable {
 
             // 3. Broadcast cho tất cả Client nếu thành công
             if (updateSuccess && logSuccess) {
+                // Kích hoạt kiểm tra Anti-sniping
+                String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
+
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
                 broadcastMsg.addProperty("newPrice", bidAmount);
                 broadcastMsg.addProperty("bidderId", bidderId);
                 broadcastMsg.addProperty("username", username);
 
+                // Nếu có gia hạn, đính kèm luôn thời gian mới vào loa phát thanh
+                if (extendedTime != null) {
+                    broadcastMsg.addProperty("newEndTime", extendedTime);
+                }
+
                 logger.info("New bid accepted. Broadcasting price update...");
                 broadcast(broadcastMsg);
-                
+
                 // --- TRIGGER THE AUTO-BID ENGINE ---
                 evaluateAutoBids(itemId);
             } else {
@@ -467,6 +475,9 @@ public class ClientHandler implements Runnable {
                                 boolean logSuccess = bidDAO.insertBidTransaction(itemId, botUserId, nextBid);
                                 
                                 if (updateSuccess && logSuccess) {
+                                    // Kích hoạt kiểm tra Anti-sniping
+                                    String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
+
                                     String username = getUsernameById(botUserId);
                                     
                                     JsonObject broadcastMsg = new JsonObject();
@@ -475,7 +486,11 @@ public class ClientHandler implements Runnable {
                                     broadcastMsg.addProperty("bidderId", botUserId);
                                     broadcastMsg.addProperty("username", username);
                                     broadcastMsg.addProperty("isAutoBid", true); // Flag UI nhận biết bid tự động
-                                    
+
+                                    if (extendedTime != null) {
+                                        broadcastMsg.addProperty("newEndTime", extendedTime);
+                                    }
+
                                     logger.info("[PROXY ENGINE] Đã ra giá tự động cho item {} bởi {} tại ${}", itemId, username, nextBid);
                                     broadcast(broadcastMsg);
                                     
@@ -725,5 +740,32 @@ public class ClientHandler implements Runnable {
                 }
             }
         }
+    }
+    /**
+     * Kiểm tra xem phiên đấu giá có đang ở 10 giây cuối không.
+     * Nếu có, tự động cộng thêm 10 giây và lưu vào Database.
+     */
+    private String checkAndExtendAuctionTime(int itemId, ItemDAO itemDAO) {
+        try {
+            Item item = itemDAO.getItemById(itemId);
+            if (item == null) return null;
+
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+            long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
+
+            // Nếu thời gian còn lại <= 10 giây (và phiên chưa kết thúc)
+            if (secondsLeft <= 10 && secondsLeft >= 0) {
+                String extendedTime = endTime.plusSeconds(10).format(formatter);
+                itemDAO.updateEndTime(itemId, extendedTime);
+                logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);
+                return extendedTime; // Trả về thời gian mới để báo cho các Client
+            }
+        } catch (Exception ex) {
+            logger.error("Lỗi tính toán thời gian gia hạn: {}", ex.getMessage());
+        }
+        return null;
     }
 }

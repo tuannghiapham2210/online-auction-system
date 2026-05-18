@@ -1205,6 +1205,29 @@ private void hideNotification(HBox notification) {
         }
     }
     /**
+
+     * Gọi bởi ServerListener để gia hạn thời gian (Anti-Sniping).
+     */
+    public void extendTimeRealtime(String newEndTime) {
+        Platform.runLater(() -> {
+            this.currentEndTime = newEndTime;
+
+            // Khởi động lại vòng lặp đếm ngược và thanh Progress Bar với mốc thời gian mới
+            startCountdown(newEndTime);
+
+            // Hiển thị thông báo góc trên màn hình
+            showNotification("🔥 Gia hạn tự động", "Phiên đấu giá được cộng thêm 10s do có lượt ra giá phút chót!");
+
+            // Tạo hiệu ứng giật màu đỏ (Flash) cho cái bảng thời gian để thu hút sự chú ý
+            if (timerLabel != null) {
+                FadeTransition ft = new FadeTransition(Duration.millis(150), timerLabel);
+                ft.setFromValue(1.0);
+                ft.setToValue(0.1);
+                ft.setCycleCount(6); // Chớp chớp 3 lần
+                ft.setAutoReverse(true);
+                ft.play();
+            }
+          
  * Hiển thị màn hình người chiến thắng khi phiên đấu giá kết thúc.
  */
     public void showWinnerOverlay(String winnerUsername, double finalPrice) {
@@ -1362,6 +1385,7 @@ private void hideNotification(HBox notification) {
                     );
 
             sequence.play();
+
         });
     }
 }

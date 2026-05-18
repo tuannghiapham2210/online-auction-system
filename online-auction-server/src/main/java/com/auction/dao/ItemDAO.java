@@ -235,4 +235,21 @@ public class ItemDAO {
         }
         return isSuccess;
     }
+    /**
+     * Gia hạn thời gian kết thúc phiên đấu giá (Chống bắn tỉa - Anti-sniping).
+     */
+    public boolean updateEndTime(int itemId, String newEndTime) {
+        boolean isSuccess = false;
+        String sql = "UPDATE items SET end_time = ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+            pstmt.setString(1, newEndTime);
+            pstmt.setInt(2, itemId);
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) isSuccess = true;
+        } catch (Exception e) {
+            logger.error("Lỗi khi gia hạn thời gian: {}", e.getMessage(), e);
+        }
+        return isSuccess;
+    }
 }
