@@ -855,6 +855,18 @@
     -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.2), 5, 0, 0, 0);
 }
 
+.profile-role-badge-bidder {
+    -fx-background-color: rgba(59, 130, 246, 0.15);
+    -fx-text-fill: #60A5FA;
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+    -fx-padding: 3 6;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(59, 130, 246, 0.4);
+    -fx-border-radius: 6;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.2), 5, 0, 0, 0);
+}
+
 .profile-avatar {
     -fx-background-color: #1E293B;
     -fx-text-fill: #FBBF24;

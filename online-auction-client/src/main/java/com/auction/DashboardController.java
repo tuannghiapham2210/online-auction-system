@@ -109,6 +109,10 @@ public class DashboardController {
         }
         if (Session.role != null) {
             lblRole.setText(Session.role.toUpperCase());
+            if (Session.role.equalsIgnoreCase("bidder")) {
+                lblRole.getStyleClass().remove("profile-role-badge");
+                lblRole.getStyleClass().add("profile-role-badge-bidder");
+            }
         }
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
