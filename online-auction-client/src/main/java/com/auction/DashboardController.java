@@ -12,6 +12,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -72,6 +73,12 @@ public class DashboardController {
     @FXML private Label lblUsername;
     @FXML private Label lblRole;
     @FXML private Label lblAvatar;
+    @FXML private TextField searchField;
+
+    @FXML private Button btnFilterAll;
+    @FXML private Button btnFilterArt;
+    @FXML private Button btnFilterVehicle;
+    @FXML private Button btnFilterElectronics;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -102,7 +109,30 @@ public class DashboardController {
         }
         if (Session.role != null) {
             lblRole.setText(Session.role.toUpperCase());
+            if (Session.role.equalsIgnoreCase("bidder")) {
+                lblRole.getStyleClass().remove("profile-role-badge");
+                lblRole.getStyleClass().add("profile-role-badge-bidder");
+            }
         }
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterItems(newValue);
+        });
+    }
+
+    private void filterItems(String searchText) {
+        if (searchText == null || searchText.isEmpty()) {
+            displayItems(allItems);
+            return;
+        }
+
+        String lowerCaseFilter = searchText.toLowerCase();
+
+        List<Item> filteredList = allItems.stream()
+                .filter(item -> item.getName().toLowerCase().contains(lowerCaseFilter))
+                .collect(Collectors.toList());
+
+        displayItems(filteredList);
     }
 
     /**
@@ -233,19 +263,41 @@ public class DashboardController {
         dashboardTimeline.play();
     }
 
+    private void updateFilterButtonsStyle(Button activeButton) {
+        Button[] filterButtons = {btnFilterAll, btnFilterArt, btnFilterVehicle, btnFilterElectronics};
+        for (Button btn : filterButtons) {
+            if (btn != null) {
+                btn.getStyleClass().remove("menu-item-active");
+                if (!btn.getStyleClass().contains("menu-item-inactive")) {
+                    btn.getStyleClass().add("menu-item-inactive");
+                }
+            }
+        }
+        if (activeButton != null) {
+            activeButton.getStyleClass().remove("menu-item-inactive");
+            activeButton.getStyleClass().add("menu-item-active");
+        }
+    }
+
     // --- CÁC HÀM XỬ LÝ LỌC DANH MỤC (FILTERS) ---
 
-    @FXML private void filterAll() { displayItems(allItems); }
+    @FXML private void filterAll() {
+        updateFilterButtonsStyle(btnFilterAll);
+        displayItems(allItems);
+    }
 
     @FXML private void filterArt() {
+        updateFilterButtonsStyle(btnFilterArt);
         displayItems(allItems.stream().filter(i -> "ART".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
     @FXML private void filterVehicle() {
+        updateFilterButtonsStyle(btnFilterVehicle);
         displayItems(allItems.stream().filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
     @FXML private void filterElectronics() {
+        updateFilterButtonsStyle(btnFilterElectronics);
         displayItems(allItems.stream().filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
     }
 
