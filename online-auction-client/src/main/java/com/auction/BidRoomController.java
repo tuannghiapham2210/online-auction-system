@@ -96,6 +96,7 @@ public class BidRoomController {
     private FadeTransition pulseAnimation;
     private HBox toastNotification;
     private VBox autoBidPanel;
+    private StackPane winnerOverlay;
 
     private Socket socket;
     private PrintWriter out;
@@ -107,6 +108,7 @@ public class BidRoomController {
     private String currentStatus;
     private double currentStepPrice;
     private boolean isNotificationShowing = false;
+    private boolean auctionEndedShown = false;
 
     public static class BidEvent {
         public String timestamp;
@@ -994,8 +996,32 @@ private void hideNotification(HBox notification) {
         LocalDateTime now = LocalDateTime.now();
 
         if (!now.isBefore(endTime)) {
+            if (auctionEndedShown) {
+                return;
+            }
+
+            auctionEndedShown = true;
 
             timerLabel.setText("ĐÃ KẾT THÚC");
+            String winnerName = highestBidderLabel
+                    .getText()
+                    .replace("Dẫn đầu bởi: ", "")
+                    .trim();
+
+            double finalPrice = 0;
+
+            try {
+                finalPrice = Double.parseDouble(
+                        currentPriceLabel.getText()
+                                .replace("$", "")
+                                .replace(",", "")
+                                .trim()
+                );
+            } catch (Exception ex) {
+                logger.error("Parse final price failed", ex);
+            }
+
+            showWinnerOverlay(winnerName, finalPrice);
             if (liveBadge != null) liveBadge.setVisible(false);
 
             if (countdownTimeline != null) {
@@ -1179,6 +1205,7 @@ private void hideNotification(HBox notification) {
         }
     }
     /**
+
      * Gọi bởi ServerListener để gia hạn thời gian (Anti-Sniping).
      */
     public void extendTimeRealtime(String newEndTime) {
@@ -1200,6 +1227,165 @@ private void hideNotification(HBox notification) {
                 ft.setAutoReverse(true);
                 ft.play();
             }
+          
+ * Hiển thị màn hình người chiến thắng khi phiên đấu giá kết thúc.
+ */
+    public void showWinnerOverlay(String winnerUsername, double finalPrice) {
+
+        Platform.runLater(() -> {
+
+            // ===== OVERLAY ROOT =====
+            winnerOverlay = new StackPane();
+
+            winnerOverlay.setStyle(
+                "-fx-background-color: rgba(15,15,15,0.92);"
+            );
+
+            winnerOverlay.setOpacity(0);
+
+            // full screen
+            winnerOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+
+            // ===== MAIN CONTENT =====
+            VBox contentBox = new VBox(22);
+            contentBox.setAlignment(Pos.CENTER);
+
+            // ===== TROPHY =====
+            Label trophy = new Label("🏆");
+
+            trophy.setStyle(
+                "-fx-font-size: 90px;"
+            );
+
+            // bounce animation
+            TranslateTransition bounce = new TranslateTransition(
+                    Duration.millis(900),
+                    trophy
+            );
+
+            bounce.setFromY(0);
+            bounce.setToY(-12);
+            bounce.setCycleCount(Animation.INDEFINITE);
+            bounce.setAutoReverse(true);
+
+            bounce.play();
+
+            // ===== TITLE =====
+            Label title = new Label("PHIÊN ĐẤU GIÁ KẾT THÚC");
+
+            title.setStyle(
+                "-fx-text-fill: white;" +
+                "-fx-font-size: 52px;" +
+                "-fx-font-weight: 900;"
+            );
+
+            // ===== SUBTITLE =====
+            Label sub = new Label("Chủ nhân mới:");
+
+            sub.setStyle(
+                "-fx-text-fill: #D1D5DB;" +
+                "-fx-font-size: 26px;"
+            );
+
+            // ===== WINNER NAME =====
+            Label winner = new Label(winnerUsername);
+
+            winner.setStyle(
+                "-fx-text-fill: #FBBF24;" +
+                "-fx-font-size: 48px;" +
+                "-fx-font-weight: bold;"
+            );
+
+            // ===== PRICE BOX =====
+            HBox priceBox = new HBox(15);
+
+            priceBox.setAlignment(Pos.CENTER);
+
+            priceBox.setMaxWidth(820);
+
+            priceBox.setPadding(new Insets(24, 40, 24, 40));
+
+            priceBox.setStyle(
+                "-fx-background-color: rgba(30,41,59,0.9);" +
+                "-fx-background-radius: 999;" +
+                "-fx-border-color: rgba(59,130,246,0.25);" +
+                "-fx-border-radius: 999;" +
+                "-fx-border-width: 1.5;"
+            );
+
+            Label checkIcon = new Label("✔");
+
+            checkIcon.setStyle(
+                "-fx-text-fill: #34D399;" +
+                "-fx-font-size: 34px;" +
+                "-fx-font-weight: bold;"
+            );
+
+            Label priceText = new Label(
+                    "Mức giá chốt: $" +
+                    String.format("%,.0f", finalPrice)
+            );
+
+            priceText.setStyle(
+                "-fx-text-fill: #34D399;" +
+                "-fx-font-size: 34px;" +
+                "-fx-font-weight: bold;"
+            );
+
+            priceBox.getChildren().addAll(checkIcon, priceText);
+
+            contentBox.getChildren().addAll(
+                    trophy,
+                    title,
+                    sub,
+                    winner,
+                    priceBox
+            );
+
+            winnerOverlay.getChildren().add(contentBox);
+
+            rootPane.getChildren().add(winnerOverlay);
+
+            // ===== FADE IN =====
+            FadeTransition fadeIn = new FadeTransition(
+                    Duration.millis(800),
+                    winnerOverlay
+            );
+
+            fadeIn.setFromValue(0);
+            fadeIn.setToValue(1);
+
+            // ===== WAIT =====
+            PauseTransition wait = new PauseTransition(
+                    Duration.seconds(5)
+            );
+
+            // ===== FADE OUT =====
+            FadeTransition fadeOut = new FadeTransition(
+                    Duration.millis(800),
+                    winnerOverlay
+            );
+
+            fadeOut.setFromValue(1);
+            fadeOut.setToValue(0);
+
+            fadeOut.setOnFinished(e -> {
+
+                rootPane.getChildren().remove(winnerOverlay);
+
+                // về dashboard
+                handleLeaveRoom();
+            });
+
+            SequentialTransition sequence =
+                    new SequentialTransition(
+                            fadeIn,
+                            wait,
+                            fadeOut
+                    );
+
+            sequence.play();
+
         });
     }
 }
