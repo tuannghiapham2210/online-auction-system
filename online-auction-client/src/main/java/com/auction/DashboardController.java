@@ -74,6 +74,7 @@ public class DashboardController {
     @FXML private Label lblRole;
     @FXML private Label lblAvatar;
     @FXML private TextField searchField;
+    @FXML private Label lblItemCount;
 
     @FXML private Button btnFilterAll;
     @FXML private Button btnFilterArt;
@@ -233,6 +234,10 @@ public class DashboardController {
         }
         timerMap.clear();
         liveBadgeMap.clear();
+
+        if (lblItemCount != null) {
+            lblItemCount.setText(String.valueOf(itemsToDisplay.size()));
+        }
 
         // 2. Tạo và thêm các thẻ sản phẩm mới
         for (Item item : itemsToDisplay) {
