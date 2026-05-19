@@ -1,5 +1,6 @@
 package com.auction;
 
+import com.auction.util.NumberUtil;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -161,7 +162,7 @@ public class BidRoomController {
         startBlinkingAnimation(hotBadge);
 
         if (lblBalance != null) {
-            lblBalance.setText("$" + Session.balance);
+            lblBalance.setText("$" + NumberUtil.format(Session.balance));
         }
 
         // Tự động ẩn/hiện Layout của nút Admin (Tránh lỗi HBox không giãn ra)
@@ -237,7 +238,7 @@ public class BidRoomController {
                     Region spacer = new Region();
                     HBox.setHgrow(spacer, Priority.ALWAYS);
 
-                    Label priceLabel = new Label("$" + item.price);
+                    Label priceLabel = new Label("$" + NumberUtil.format(item.price));
                     priceLabel.getStyleClass().add("price-label");
                     priceLabel.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 14px; -fx-font-weight: bold;");
 
@@ -298,7 +299,7 @@ public class BidRoomController {
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
-        currentPriceLabel.setText("$" + currentPrice);
+        currentPriceLabel.setText("$" + NumberUtil.format(currentPrice));
         
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
@@ -347,7 +348,7 @@ public class BidRoomController {
         dot.setFill(Color.web("#f9a825"));
         dot.setStroke(Color.WHITE);
         dot.setStrokeWidth(2);
-        Label priceLbl = new Label("$" + currentPrice);
+        Label priceLbl = new Label("$" + NumberUtil.format(currentPrice));
         priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
         priceLbl.setTranslateY(-25);
         customNode.getChildren().addAll(dot, priceLbl);
@@ -410,7 +411,7 @@ public class BidRoomController {
                 }
                 if (bidAmountField != null) {
                     bidAmountField.setDisable(false);
-                    bidAmountField.setText(String.valueOf(currentPrice + stepPrice));
+                    bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
                 }
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
             } else {
@@ -514,14 +515,14 @@ public class BidRoomController {
 
         try {
             // 1. Đóng gói request dạng JSON
-            double bidAmount = Double.parseDouble(bidText);
+            double bidAmount = NumberUtil.parse(bidText).doubleValue();
 
             // CHECK KHÔNG ĐƯỢC VƯỢT QUÁ SỐ DƯ
             if (bidAmount > Session.balance) {
 
                 showNotification(
                     "Không đủ số dư!",
-                    "Bạn chỉ còn $" + Session.balance
+                    "Bạn chỉ còn $" + NumberUtil.format(Session.balance)
                 );
 
                 return;
@@ -542,7 +543,7 @@ public class BidRoomController {
                 // bidAmountField.clear(); 
             }
 
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             logger.warn("Invalid bid amount. Expected a number, got: {}", bidText, e);
         }
     }
@@ -557,11 +558,11 @@ public class BidRoomController {
         // 1. Gói lệnh cập nhật giao diện vào Platform.runLater
         Platform.runLater(() -> {
             // Cập nhật nhãn giá và người dẫn đầu
-            currentPriceLabel.setText("$" + newPrice);
+            currentPriceLabel.setText("$" + NumberUtil.format(newPrice));
             highestBidderLabel.setText("Dẫn đầu bởi: " + username);
 
             if ("BIDDER".equalsIgnoreCase(Session.role) && bidAmountField != null) {
-                bidAmountField.setText(String.valueOf(newPrice + currentStepPrice));
+                bidAmountField.setText(NumberUtil.format(newPrice + currentStepPrice));
             }
 
             // Cập nhật lại Y-Axis khi có giá mới
@@ -580,7 +581,7 @@ public class BidRoomController {
             dot.setFill(Color.web("#f9a825"));
             dot.setStroke(Color.WHITE);
             dot.setStrokeWidth(2);
-            Label priceLbl = new Label("$" + newPrice);
+            Label priceLbl = new Label("$" + NumberUtil.format(newPrice));
             priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
             priceLbl.setTranslateY(-25);
             customNode.getChildren().addAll(dot, priceLbl);
@@ -595,7 +596,7 @@ public class BidRoomController {
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
                 if (dot != null) {
-                    Tooltip tooltip = new Tooltip("Live: $" + newPrice);
+                    Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(newPrice));
                     tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
                     Tooltip.install(dot, tooltip);
 
@@ -793,7 +794,7 @@ private void hideNotification(HBox notification) {
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, depositGroup);
-                if (lblBalance != null) lblBalance.setText("$" + Session.balance);
+                if (lblBalance != null) lblBalance.setText("$" + NumberUtil.format(Session.balance));
             });
 
             rootPane.getChildren().addAll(darkOverlay, depositGroup);
@@ -857,9 +858,9 @@ private void hideNotification(HBox notification) {
                         bidAmountField.setDisable(false);
                         double cp = 0;
                         try {
-                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                            cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
                         } catch (Exception ex) {}
-                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                        bidAmountField.setText(NumberUtil.format(cp + currentStepPrice));
                     }
                     if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                     if (autoBidPanel != null) {
@@ -949,9 +950,9 @@ private void hideNotification(HBox notification) {
                         bidAmountField.setDisable(false);
                         double cp = 0;
                         try {
-                            cp = Double.parseDouble(currentPriceLabel.getText().replace("$", "").trim());
+                            cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
                         } catch (Exception ex) {}
-                        bidAmountField.setText(String.valueOf(cp + currentStepPrice));
+                        bidAmountField.setText(NumberUtil.format(cp + currentStepPrice));
                     }
                     if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
                     if (autoBidPanel != null) {
@@ -1011,12 +1012,11 @@ private void hideNotification(HBox notification) {
             double finalPrice = 0;
 
             try {
-                finalPrice = Double.parseDouble(
+                finalPrice = NumberUtil.parse(
                         currentPriceLabel.getText()
                                 .replace("$", "")
-                                .replace(",", "")
                                 .trim()
-                );
+                ).doubleValue();
             } catch (Exception ex) {
                 logger.error("Parse final price failed", ex);
             }
@@ -1164,20 +1164,20 @@ private void hideNotification(HBox notification) {
         }
 
         try {
-            double maxBid = Double.parseDouble(maxBidStr);
-            double inc = Double.parseDouble(incStr);
+            double maxBid = NumberUtil.parse(maxBidStr).doubleValue();
+            double inc = NumberUtil.parse(incStr).doubleValue();
 
             // Lấy mức giá hiện tại trên giao diện để đối chiếu
             double currentPrice = 0.0;
             try {
-                currentPrice = Double.parseDouble(currentPriceLabel.getText().replace("$", "").replace(",", "").trim());
+                currentPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
             } catch (Exception ex) {
                 logger.warn("Could not parse current price for validation", ex);
             }
 
             // Đảm bảo bot không tự đăng ký với mức giá đã bị vượt qua
             if (maxBid <= currentPrice) {
-                showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn mức giá hiện tại của sản phẩm ($" + currentPrice + ")!");
+                showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn mức giá hiện tại của sản phẩm ($" + NumberUtil.format(currentPrice) + ")!");
                 return;
             }
             if (inc <= 0) {
@@ -1200,7 +1200,7 @@ private void hideNotification(HBox notification) {
                 showNotification("Thành công", "Đã gửi yêu cầu đăng ký Auto-Bid!");
             }
 
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             showNotification("Lỗi nhập liệu", "Vui lòng nhập số hợp lệ!");
         }
     }
@@ -1290,7 +1290,7 @@ private void hideNotification(HBox notification) {
             Label checkIcon = new Label("✔");
             checkIcon.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
 
-            Label priceText = new Label("Mức giá chốt: $" + String.format("%,.0f", finalPrice));
+            Label priceText = new Label("Mức giá chốt: $" + NumberUtil.format(finalPrice));
             priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
 
             priceBox.getChildren().addAll(checkIcon, priceText);

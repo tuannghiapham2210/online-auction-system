@@ -2,6 +2,7 @@ package com.auction;
 
 import com.auction.model.Item;
 import com.auction.model.User;
+import com.auction.util.NumberUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -101,7 +102,7 @@ public class DashboardController {
         }
 
         // Cập nhật số dư từ Session toàn cục
-        lblBalance.setText("$" + Session.balance);
+        lblBalance.setText("$" + NumberUtil.format(Session.balance));
 
         // Cập nhật thông tin người dùng từ Session
         if (Session.username != null && !Session.username.isEmpty()) {
@@ -331,7 +332,7 @@ public class DashboardController {
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, depositGroup);
-                lblBalance.setText("$" + Session.balance);
+                lblBalance.setText("$" + NumberUtil.format(Session.balance));
             });
 
             rootPane.getChildren().addAll(darkOverlay, depositGroup);
@@ -533,7 +534,7 @@ public class DashboardController {
         title.setWrapText(true); title.setPrefHeight(50);
 
         HBox priceRow = new HBox();
-        VBox priceV = new VBox(new Label(priceLabelText), new Label("$" + item.getCurrentPrice()));
+        VBox priceV = new VBox(new Label(priceLabelText), new Label("$" + NumberUtil.format(item.getCurrentPrice())));
         priceV.getChildren().get(0).setStyle("-fx-text-fill: gray; -fx-font-size: 10;");
         priceV.getChildren().get(1).getStyleClass().add("card-price");
         priceV.getChildren().get(1).setStyle("-fx-text-fill: white;"); // Fix màu giá
