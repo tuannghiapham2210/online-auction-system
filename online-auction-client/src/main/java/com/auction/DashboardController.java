@@ -101,7 +101,7 @@ public class DashboardController {
         }
 
         // Cập nhật số dư từ Session toàn cục
-        lblBalance.setText("Số dư: $" + Session.balance);
+        lblBalance.setText("$" + Session.balance);
 
         // Cập nhật thông tin người dùng từ Session
         if (Session.username != null && !Session.username.isEmpty()) {
@@ -331,7 +331,7 @@ public class DashboardController {
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, depositGroup);
-                lblBalance.setText("Số dư: $" + Session.balance);
+                lblBalance.setText("$" + Session.balance);
             });
 
             rootPane.getChildren().addAll(darkOverlay, depositGroup);

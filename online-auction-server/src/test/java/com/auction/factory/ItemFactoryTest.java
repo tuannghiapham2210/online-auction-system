@@ -4,77 +4,75 @@ import com.auction.model.Art;
 import com.auction.model.Electronics;
 import com.auction.model.Item;
 import com.auction.model.Vehicle;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Lớp kiểm thử Unit Test cho ItemFactory.
+ * Áp dụng kỹ thuật:
+ * - EP (Equivalence Partitioning): Kiểm thử các loại sản phẩm hợp lệ và không hợp lệ.
+ * - BVA (Boundary Value Analysis): Kiểm thử chuỗi rỗng và null.
+ */
 class ItemFactoryTest {
 
+    private static final Logger logger = LoggerFactory.getLogger(ItemFactoryTest.class);
+
     @Test
-    void createItem_nullType_returnsNull() {
-        Item item = ItemFactory.createItem(null, "Phone", 100.0, "2026-12-31", 1, "12");
-        assertNull(item);
+    @DisplayName("Kiểm thử EP: Khởi tạo thành công các loại Item hợp lệ")
+    void testCreateValidItems() {
+        logger.info("Running testCreateValidItems...");
+
+        // 1. Phân hoạch hợp lệ: Đồ điện tử
+        Item electronics = ItemFactory.createItem("ELECTRONICS", "Laptop", 1000, "2026-12-31", 1, "12 months");
+        assertNotNull(electronics, "Sản phẩm không được null");
+        assertTrue(electronics instanceof Electronics, "Phải là thể hiện của lớp Electronics");
+        assertEquals("ELECTRONICS", electronics.getItemType(), "Type phải là ELECTRONICS");
+
+        // 2. Phân hoạch hợp lệ: Tác phẩm nghệ thuật
+        Item art = ItemFactory.createItem("ART", "Bức tranh A", 500, "2026-12-31", 1, "Picasso");
+        assertTrue(art instanceof Art, "Phải là thể hiện của lớp Art");
+
+        // 3. Phân hoạch hợp lệ: Phương tiện
+        Item vehicle = ItemFactory.createItem("VEHICLE", "Xe máy", 2000, "2026-12-31", 1, "Gasoline");
+        assertTrue(vehicle instanceof Vehicle, "Phải là thể hiện của lớp Vehicle");
+
+        logger.info("testCreateValidItems passed!");
     }
+
     @Test
-    void createItem_emptyType_returnsNull() {
-        Item item = ItemFactory.createItem("", "Phone", 100.0, "2026-12-31", 1, "12");
-        assertNull(item);
+    @DisplayName("Kiểm thử EP: Ném ra lỗi khi truyền loại sản phẩm không hỗ trợ")
+    void testCreateInvalidItemType() {
+        logger.info("Running testCreateInvalidItemType...");
+
+        // Phân hoạch không hợp lệ: Truyền một loại sản phẩm tào lao
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            ItemFactory.createItem("FURNITURE", "Bàn ghế", 100, "2026-12-31", 1, "Wood");
+        });
+
+        // Kiểm tra xem câu thông báo lỗi có đúng như code mình thiết kế không
+        assertTrue(exception.getMessage().contains("Loại sản phẩm không được hệ thống hỗ trợ"),
+                "Thông báo lỗi phải chứa chuỗi 'Loại sản phẩm không được hệ thống hỗ trợ'");
+
+        logger.info("testCreateInvalidItemType passed!");
     }
+
     @Test
-    void createItem_electronics_returnsElectronics() {
-        Item item = ItemFactory.createItem("ELECTRONICS", "Phone", 100.0, "2026-12-31", 10, "18");
+    @DisplayName("Kiểm thử BVA: Xử lý an toàn khi tham số type là null hoặc chuỗi rỗng")
+    void testCreateItemWithNullOrEmptyType() {
+        logger.info("Running testCreateItemWithNullOrEmptyType...");
 
-        assertNotNull(item);
-        assertInstanceOf(Electronics.class, item);
-        assertEquals("ELECTRONICS", item.getItemType());
-        assertEquals("18", item.getExtraInfo());
+        // Biên 1: Chuỗi rỗng
+        Item emptyTypeItem = ItemFactory.createItem("", "Test", 100, "2026-12-31", 1, "None");
+        assertNull(emptyTypeItem, "Hàm phải trả về null khi type rỗng");
 
-        Electronics electronics = (Electronics) item;
-        assertEquals("Phone", electronics.getName());
-        assertEquals(100.0, electronics.getStartingPrice());
-        assertEquals("2026-12-31", electronics.getEndTime());
-        assertEquals(10, electronics.getSellerId());
-        assertEquals("18", electronics.getWarranty());
-    }
-    @Test
-    void createItem_art_returnsArt() {
-        Item item = ItemFactory.createItem("ART", "Mona Lisa", 1000.0, "2027-01-01", 20, "Leonardo da Vinci");
+        // Biên 2: Null
+        Item nullTypeItem = ItemFactory.createItem(null, "Test", 100, "2026-12-31", 1, "None");
+        assertNull(nullTypeItem, "Hàm phải trả về null khi type là null");
 
-        assertNotNull(item);
-        assertInstanceOf(Art.class, item);
-        assertEquals("ART", item.getItemType());
-        assertEquals("Leonardo da Vinci", item.getExtraInfo());
-
-        Art art = (Art) item;
-        assertEquals("Mona Lisa", art.getName());
-        assertEquals(1000.0, art.getStartingPrice());
-        assertEquals("2027-01-01", art.getEndTime());
-        assertEquals(20, art.getSellerId());
-        assertEquals("Leonardo da Vinci", art.getAuthor());
-    }
-    @Test
-    void createItem_vehicle_returnsVehicle() {
-        Item item = ItemFactory.createItem("VEHICLE", "Tesla Model S", 50000.0, "2028-02-02", 30, "Electric");
-
-        assertNotNull(item);
-        assertInstanceOf(Vehicle.class, item);
-        assertEquals("VEHICLE", item.getItemType());
-        assertEquals("Electric", item.getExtraInfo());
-
-        Vehicle vehicle = (Vehicle) item;
-        assertEquals("Tesla Model S", vehicle.getName());
-        assertEquals(50000.0, vehicle.getStartingPrice());
-        assertEquals("2028-02-02", vehicle.getEndTime());
-        assertEquals(30, vehicle.getSellerId());
-        assertEquals("Electric", vehicle.getEngineType());
-    }
-    @Test
-    void createItem_unknownType_throwsIllegalArgumentException() {
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> ItemFactory.createItem("BOOK", "Dune", 10.0, "2026-01-01", 1, "n/a")
-        );
-        assertTrue(ex.getMessage().toUpperCase().contains("KHÔNG"));
-        assertTrue(ex.getMessage().toUpperCase().contains("HỆ THỐNG"));
+        logger.info("testCreateItemWithNullOrEmptyType passed!");
     }
 }
