@@ -1,71 +1,84 @@
 package com.auction.dao;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.PreparedStatement;
 import java.sql.Connection;
-import java.sql.Statement;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Lớp kiểm thử (Unit Test) cho UserDAO.
+ * Lớp kiểm thử cho UserDAO.
+ * Bao phủ các tính năng: Đăng ký, Đăng nhập, Nạp tiền, Kiểm tra số dư.
  */
 class UserDAOTest {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserDAOTest.class);
     private UserDAO userDAO;
 
-    /**
-     * Hàm này tự động chạy TRƯỚC MỖI bài test.
-     * Nhiệm vụ: Khởi tạo lại DAO và xóa sạch dữ liệu cũ để test không bị nhiễu.
-     */
+    private static final String TEST_USER = "test_user_9999";
+    private static final String TEST_PASS = "123456";
+
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         userDAO = new UserDAO();
-        Connection conn = DatabaseConnection.getInstance().getConnection();
-        try (Statement stmt = conn.createStatement()) {
-            // Xóa theo thứ tự để không vi phạm khóa ngoại (Foreign Key)
-            stmt.execute("DELETE FROM bids");
-            stmt.execute("DELETE FROM items");
-            stmt.execute("DELETE FROM users");
-        }
+        cleanupTestUser();
+    }
+
+    @AfterEach
+    void tearDown() {
+        cleanupTestUser();
+    }
+
+    private void cleanupTestUser() {
+        // Xóa các dữ liệu phụ thuộc trước (nếu có vô tình tạo ra) rồi mới xóa User
+        try {
+            Connection conn = DatabaseConnection.getInstance().getConnection();
+            conn.createStatement().execute("DELETE FROM bids WHERE bidder_id IN (SELECT id FROM users WHERE username = '" + TEST_USER + "')");
+            conn.createStatement().execute("DELETE FROM auto_bids WHERE user_id IN (SELECT id FROM users WHERE username = '" + TEST_USER + "')");
+            conn.createStatement().execute("DELETE FROM items WHERE seller_id IN (SELECT id FROM users WHERE username = '" + TEST_USER + "')");
+            conn.createStatement().execute("DELETE FROM users WHERE username = '" + TEST_USER + "'");
+        } catch (Exception ignored) {}
     }
 
     @Test
+    @DisplayName("Test: Đăng ký, Đăng nhập và Lấy thông tin User")
     void testRegisterAndLogin() {
-        // 1. Act: Đăng ký một tài khoản mới
-        boolean isRegistered = userDAO.registerUser("testuser", "123", "BIDDER");
-        assertTrue(isRegistered); // Assert: Phải thành công
+        // 1. Đăng ký
+        boolean isRegistered = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
+        assertTrue(isRegistered, "Đăng ký User mới phải thành công");
 
-        // 2. Act: Cố tình đăng ký trùng username
-        boolean isRegisteredAgain = userDAO.registerUser("testuser", "123", "BIDDER");
-        assertFalse(isRegisteredAgain); // Assert: Phải thất bại (false)
+        // 2. Đăng ký trùng lặp (Phải thất bại)
+        boolean isDup = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
+        assertFalse(isDup, "Đăng ký trùng username phải bị từ chối");
 
-        // 3. Act: Đăng nhập với tài khoản vừa tạo
-        assertTrue(userDAO.login("testuser", "123"));
+        // 3. Đăng nhập
+        boolean isLoginOk = userDAO.login(TEST_USER, TEST_PASS);
+        assertTrue(isLoginOk, "Đăng nhập với mật khẩu đúng phải thành công");
 
-        // 4. Act: Đăng nhập sai mật khẩu
-        assertFalse(userDAO.login("testuser", "wrongpass"));
+        boolean isLoginFail = userDAO.login(TEST_USER, "wrong_pass");
+        assertFalse(isLoginFail, "Đăng nhập sai mật khẩu phải thất bại");
+
+        // 4. Lấy Role và ID
+        assertEquals("BIDDER", userDAO.getUserRole(TEST_USER, TEST_PASS));
+        assertTrue(userDAO.getUserId(TEST_USER, TEST_PASS) > 0);
     }
 
     @Test
-    void testGetRoleAndId() {
-        userDAO.registerUser("admin_test", "abc", "ADMIN");
+    @DisplayName("Test: Nạp tiền và Kiểm tra số dư")
+    void testDepositAndBalance() {
+        userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
 
-        assertEquals("ADMIN", userDAO.getUserRole("admin_test", "abc"));
-        assertTrue(userDAO.getUserId("admin_test", "abc") > 0);
-    }
+        // Kiểm tra số dư ban đầu
+        assertEquals(0, userDAO.getBalanceByUsername(TEST_USER), "Số dư ban đầu phải là 0");
 
-    @Test
-    void testDepositAndGetBalance() {
-        userDAO.registerUser("money_test", "123", "BIDDER");
+        // Nạp tiền
+        boolean isDeposited = userDAO.depositBalance(TEST_USER, 50000);
+        assertTrue(isDeposited, "Nạp tiền phải thành công");
 
-        // Kiểm tra số dư mặc định ban đầu
-        assertEquals(0, userDAO.getBalanceByUsername("money_test"));
-
-        // Nạp 500k
-        boolean isDeposited = userDAO.depositBalance("money_test", 500);
-        assertTrue(isDeposited);
-
-        // Kiểm tra lại số dư sau khi nạp
-        assertEquals(500, userDAO.getBalanceByUsername("money_test"));
+        // Kiểm tra số dư sau khi nạp
+        assertEquals(50000, userDAO.getBalanceByUsername(TEST_USER), "Số dư phải được cập nhật thành 50000");
     }
 }
