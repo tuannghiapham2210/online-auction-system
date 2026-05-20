@@ -87,6 +87,11 @@ public class DashboardController {
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
     private Map<Label, Label> liveBadgeMap = new HashMap<>();
+    
+    // Real-time listener socket connections
+    private Socket listenerSocket;
+    private PrintWriter listenerOut;
+    private BufferedReader listenerIn;
 
     /** Kho lưu trữ toàn bộ sản phẩm đã tải về để thực hiện lọc dữ liệu tức thì không cần load lại từ Server. */
     private List<Item> allItems = new ArrayList<>();
@@ -98,6 +103,9 @@ public class DashboardController {
     @FXML
     public void initialize() {
         loadDataFromServer();
+        
+        // Kết nối tới Server để lắng nghe các cập nhật thời gian thực
+        connectToServerListener();
 
         if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
             btnAddItem.setVisible(false);
@@ -822,5 +830,170 @@ public class DashboardController {
                 logger.error("Lỗi kết nối Socket khi gửi yêu cầu gỡ sản phẩm: {}", e.getMessage());
             }
         }).start();
+    }
+    
+    /**
+     * Kết nối tới Server để lắng nghe các sự kiện thời gian thực.
+     * Mở luồng riêng để tránh treo giao diện UI chính.
+     */
+    private void connectToServerListener() {
+        new Thread(() -> {
+            try {
+                // 1. Khởi tạo Socket riêng cho lắng nghe
+                listenerSocket = new Socket("localhost", 8080);
+                listenerOut = new PrintWriter(listenerSocket.getOutputStream(), true);
+                listenerIn = new BufferedReader(new InputStreamReader(listenerSocket.getInputStream()));
+
+                logger.info("Dashboard Listener connected to server");
+
+                // 2. Chạy luồng lắng nghe liên tục các cập nhật từ Server
+                com.auction.network.DashboardListener listener = new com.auction.network.DashboardListener(listenerIn, this);
+                new Thread(listener).start();
+
+            } catch (Exception e) {
+                logger.error("Failed to connect Dashboard Listener: {}", e.getMessage(), e);
+            }
+        }).start();
+    }
+    
+    /**
+     * Gọi bởi DashboardListener khi có item mới được tạo.
+     * Thêm item vào danh sách allItems và cập nhật giao diện.
+     */
+    public void addNewItemRealtime(JsonObject itemJson) {
+        Platform.runLater(() -> {
+            try {
+                String type = itemJson.get("itemType").getAsString();
+                String name = itemJson.get("name").getAsString();
+                double startingPrice = itemJson.get("startingPrice").getAsDouble();
+                int id = itemJson.get("id").getAsInt();
+                int sellerId = itemJson.get("sellerId").getAsInt();
+                String extraInfo = itemJson.has("extraInfo") ? itemJson.get("extraInfo").getAsString() : "";
+                String status = itemJson.has("status") ? itemJson.get("status").getAsString() : "PENDING";
+
+                // Tạo item mới từ dữ liệu nhận được
+                Item newItem = com.auction.factory.ItemFactory.createItem(type, name, startingPrice, "", sellerId, extraInfo);
+                newItem.setId(id);
+                newItem.setCurrentPrice(itemJson.get("currentPrice").getAsDouble());
+                newItem.setStepPrice(itemJson.get("stepPrice").getAsDouble());
+                newItem.setDurationHours((int) itemJson.get("durationHours").getAsDouble());
+                newItem.setImageUrl(itemJson.has("imageUrl") ? itemJson.get("imageUrl").getAsString() : "");
+                newItem.setDescription(itemJson.has("description") ? itemJson.get("description").getAsString() : "");
+                newItem.setStatus(status);
+
+                // Thêm vào danh sách
+                allItems.add(newItem);
+                
+                logger.info("New item added to dashboard: {} (ID: {})", name, id);
+
+                // Cập nhật giao diện
+                displayItems(allItems);
+            } catch (Exception e) {
+                logger.error("Error adding new item: {}", e.getMessage(), e);
+            }
+        });
+    }
+    
+    /**
+     * Gọi bởi DashboardListener khi phiên đấu giá bắt đầu.
+     * Cập nhật trạng thái item và hiển thị timer.
+     */
+    public void startAuctionRealtime(int itemId, String endTime) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setStatus("ACTIVE");
+                        item.setEndTime(endTime);
+                        
+                        logger.info("Auction started for item: {} at {}", itemId, endTime);
+                        
+                        // Cập nhật lại giao diện
+                        displayItems(allItems);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error starting auction: {}", e.getMessage(), e);
+            }
+        });
+    }
+    
+    /**
+     * Gọi bởi DashboardListener khi phiên đấu giá bị hủy.
+     * Cập nhật trạng thái item.
+     */
+    public void auctionCancelledRealtime(int itemId) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setStatus("CANCELLED");
+                        
+                        logger.info("Auction cancelled for item: {}", itemId);
+                        
+                        // Cập nhật lại giao diện
+                        displayItems(allItems);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error cancelling auction: {}", e.getMessage(), e);
+            }
+        });
+    }
+    
+    /**
+     * Gọi bởi DashboardListener khi phiên đấu giá kết thúc.
+     * Cập nhật trạng thái item và lưu thông tin người thắng.
+     */
+    public void auctionFinishedRealtime(int itemId, String winnerUsername, double finalPrice) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setStatus("FINISHED");
+                        item.setFinalPrice(finalPrice);
+                        item.setWinnerUsername(winnerUsername);
+                        
+                        logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId, winnerUsername, finalPrice);
+                        
+                        // Cập nhật lại giao diện
+                        displayItems(allItems);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error finishing auction: {}", e.getMessage(), e);
+            }
+        });
+    }
+    
+    /**
+     * Gọi bởi DashboardListener khi giá item được cập nhật trong phòng đấu giá.
+     * Cập nhật giá hiện tại của item.
+     */
+    public void updateItemPriceRealtime(int itemId, double newPrice) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setCurrentPrice(newPrice);
+                        
+                        logger.info("Item price updated: {} -> ${}", itemId, newPrice);
+                        
+                        // Cập nhật lại giao diện
+                        displayItems(allItems);
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error updating item price: {}", e.getMessage(), e);
+            }
+        });
     }
 }
