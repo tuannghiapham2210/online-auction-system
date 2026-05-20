@@ -163,6 +163,18 @@ public class BidRoomController {
             ((Region) bidHistoryList.getParent()).setMinHeight(350);
         }
 
+        // 3. Tăng chiều cao của ảnh sản phẩm và bỏ giới hạn chiều cao của Card cha
+        if (heroImageContainer != null) {
+            heroImageContainer.setMinHeight(320);
+            heroImageContainer.setPrefHeight(320);
+            if (heroImageContainer.getParent() instanceof Region) {
+                Region parentCard = (Region) heroImageContainer.getParent();
+                parentCard.setMinHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setPrefHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setMaxHeight(Double.MAX_VALUE);
+            }
+        }
+
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
@@ -330,14 +342,55 @@ public class BidRoomController {
             try {
                 Image img = new Image(imageUrl, true);
                 if (heroImageRect != null && heroImageContainer != null) {
+                    // Bind rectangle to container size to act as a background
                     heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    heroImageRect.setFill(Color.web("#1A1D27"));
+                    heroImageRect.heightProperty().bind(heroImageContainer.heightProperty());
+                    heroImageRect.setFill(Color.web("#1A1D27")); // Placeholder color
+
+                    // When image is loaded, calculate the correct pattern to "cover" the area without stretching
                     img.progressProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal.doubleValue() == 1.0 && !img.isError()) {
-                            heroImageRect.setFill(new ImagePattern(img));
+
+                            // This logic will run once loaded and on every resize to keep the "cover" effect
+                            Runnable updateImagePattern = () -> {
+                                double containerW = heroImageContainer.getWidth();
+                                double containerH = heroImageContainer.getHeight();
+                                if (containerW <= 0 || containerH <= 0) return;
+
+                                double imgW = img.getWidth();
+                                double imgH = img.getHeight();
+                                if (imgW <= 0 || imgH <= 0) return;
+
+                                double containerAspect = containerW / containerH;
+                                double imgAspect = imgW / imgH;
+
+                                double patternW, patternH, patternX, patternY;
+
+                                if (imgAspect > containerAspect) { // Image is wider than container, so scale by height
+                                    patternH = containerH;
+                                    patternW = containerH * imgAspect;
+                                    patternX = (containerW - patternW) / 2;
+                                    patternY = 0;
+                                } else { // Image is taller or same aspect, so scale by width
+                                    patternW = containerW;
+                                    patternH = containerW / imgAspect;
+                                    patternX = 0;
+                                    patternY = (containerH - patternH) / 2;
+                                }
+                                
+                                heroImageRect.setFill(new ImagePattern(img, patternX, patternY, patternW, patternH, false));
+                            };
+
+                            // Add listeners to update on resize
+                            heroImageContainer.widthProperty().addListener(o -> updateImagePattern.run());
+                            heroImageContainer.heightProperty().addListener(o -> updateImagePattern.run());
+
+                            // Run once now
+                            updateImagePattern.run();
                         }
                     });
                     
+                    // Apply rounded corner clip
                     Rectangle clipRect = new Rectangle();
                     clipRect.widthProperty().bind(heroImageContainer.widthProperty());
                     clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
@@ -350,33 +403,17 @@ public class BidRoomController {
             }
         }
 
-        // 4. Đánh dấu điểm giá khởi đầu trên biểu đồ
-        String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-        XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
-
-        // Cấu hình Y-Axis thủ công với 15% buffer
+        // 4. Xóa dữ liệu cũ và cấu hình trục Y cho biểu đồ
+        priceSeries.getData().clear();
+        historyLogs.clear();
         NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
         yAxis.setAutoRanging(false);
         yAxis.setLowerBound(0);
         double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
         yAxis.setUpperBound(initialUpperBound);
         yAxis.setTickUnit(initialUpperBound / 5);
-
-        StackPane customNode = new StackPane();
-        customNode.setStyle("-fx-background-color: transparent;");
-        Circle dot = new Circle(6);
-        dot.setFill(Color.web("#f9a825"));
-        dot.setStroke(Color.WHITE);
-        dot.setStrokeWidth(2);
-        Label priceLbl = new Label("$" + NumberUtil.format(currentPrice));
-        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-        priceLbl.setTranslateY(-25);
-        customNode.getChildren().addAll(dot, priceLbl);
-        initialData.setNode(customNode);
-        
-        priceSeries.getData().add(initialData);
-
-        // 5. Mở kết nối mạng
+ 
+        // 5. Mở kết nối mạng và yêu cầu lịch sử đấu giá
         connectToServer();
         
         // 6. Kiểm tra trạng thái Lockout PENDING
@@ -566,6 +603,13 @@ public class BidRoomController {
                 ServerListener listener = new ServerListener(in, this);
                 new Thread(listener).start();
 
+                // 3. Gửi yêu cầu lấy lịch sử đấu giá để hydrate UI
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "FETCH_BID_HISTORY_REQUEST");
+                request.addProperty("itemId", this.currentItemId);
+                out.println(request.toString());
+                logger.info("Sent FETCH_BID_HISTORY_REQUEST for item: {}", this.currentItemId);
+
             } catch (Exception e) {
                 logger.error("🔴 Lỗi mạng: Không thể kết nối", e);
             }
@@ -663,23 +707,7 @@ public class BidRoomController {
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
                 if (dot != null) {
-                    Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(newPrice));
-                    tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-                    Tooltip.install(dot, tooltip);
-
-                    ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
-                    st.setByX(0.5);
-                    st.setByY(0.5);
-                    st.setAutoReverse(true);
-                    st.setCycleCount(Timeline.INDEFINITE);
-
-                    FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
-                    ft.setFromValue(1.0);
-                    ft.setToValue(0.5);
-                    ft.setAutoReverse(true);
-                    ft.setCycleCount(Timeline.INDEFINITE);
-
-                    new ParallelTransition(st, ft).play();
+                    applyPulseAnimation(dot, newPrice);
                 }
             });
         });
@@ -1521,6 +1549,142 @@ private void hideNotification(HBox notification) {
             }
 
             showWinnerOverlay(winnerUsername, finalPrice);
+        });
+    }
+
+    /**
+     * Áp dụng hiệu ứng nhấp nháy (Pulse/Radar) cho điểm dữ liệu mới nhất trên biểu đồ.
+     */
+    private void applyPulseAnimation(Circle dot, double price) {
+        Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(price));
+        tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
+        Tooltip.install(dot, tooltip);
+
+        ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
+        st.setByX(0.5);
+        st.setByY(0.5);
+        st.setAutoReverse(true);
+        st.setCycleCount(Timeline.INDEFINITE);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.5);
+        ft.setAutoReverse(true);
+        ft.setCycleCount(Timeline.INDEFINITE);
+
+        new ParallelTransition(st, ft).play();
+    }
+
+    /**
+     * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
+     * Được gọi bởi ServerListener khi nhận được FETCH_BID_HISTORY_RESPONSE.
+     * @param history Mảng JSON chứa các giao dịch đặt giá đã xảy ra.
+     */
+    public void hydrateUIWithHistory(com.google.gson.JsonArray history) {
+        Platform.runLater(() -> {
+            if (history == null || history.isEmpty()) {
+                logger.info("No bid history to hydrate. Plotting initial price.");
+                double cp = 0;
+                try {
+                    cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                } catch (Exception e) {}
+                
+                String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, cp);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(cp));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                initialData.setNode(customNode);
+                
+                priceSeries.getData().add(initialData);
+                applyPulseAnimation(dot, cp);
+                return;
+            }
+
+            java.util.List<BidEvent> bidEvents = new java.util.ArrayList<>();
+            double maxPrice = 0;
+
+            for (com.google.gson.JsonElement element : history) {
+                com.google.gson.JsonObject record = element.getAsJsonObject();
+                
+                String fullTimestamp = record.get("timestamp").getAsString();
+                String timePart;
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(fullTimestamp, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    timePart = ldt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                } catch (Exception e) {
+                    timePart = "00:00:00"; // Fallback
+                }
+
+                int bidderId = record.get("bidderId").getAsInt();
+                String username = record.get("username").getAsString();
+                double price = record.get("price").getAsDouble();
+
+                bidEvents.add(new BidEvent(timePart, bidderId, username, price));
+
+                if (price > maxPrice) {
+                    maxPrice = price;
+                }
+            }
+
+            // 1. Cập nhật trục Y của biểu đồ dựa trên giá cao nhất trong lịch sử
+            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+            double newUpperBound = maxPrice * 1.15;
+            if (newUpperBound == 0) {
+                try {
+                    double initialPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                    newUpperBound = initialPrice > 0 ? initialPrice * 1.15 : 100;
+                } catch (Exception e) {
+                    newUpperBound = 100;
+                }
+            }
+            yAxis.setUpperBound(newUpperBound);
+            yAxis.setTickUnit(newUpperBound / 5);
+
+            // 2. Đổ dữ liệu vào biểu đồ (giữ tối đa 10 điểm)
+            priceSeries.getData().clear();
+            for (int i = 0; i < bidEvents.size(); i++) {
+                BidEvent event = bidEvents.get(i);
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(event.price));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                dataPoint.setNode(customNode);
+                
+                priceSeries.getData().add(dataPoint);
+                if (priceSeries.getData().size() > 10) {
+                    priceSeries.getData().remove(0);
+                }
+                
+                // --- THÊM HIỆU ỨNG NHẤP NHÁY VÀO ĐIỂM CUỐI CÙNG ---
+                if (i == bidEvents.size() - 1) {
+                    applyPulseAnimation(dot, event.price);
+                }
+            }
+            
+            // 3. Đổ dữ liệu vào Log (mới nhất ở trên cùng)
+            historyLogs.clear();
+            for (BidEvent event : bidEvents) {
+                historyLogs.add(0, event);
+            }
+            
+            logger.info("Successfully hydrated UI with {} history records.", bidEvents.size());
         });
     }
 }
