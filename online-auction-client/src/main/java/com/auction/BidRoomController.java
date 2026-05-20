@@ -1004,19 +1004,27 @@ private void hideNotification(HBox notification) {
             auctionEndedShown = true;
 
             timerLabel.setText("ĐÃ KẾT THÚC");
-            String winnerName = highestBidderLabel
-                    .getText()
-                    .replace("Dẫn đầu bởi: ", "")
-                    .trim();
+            String raw = highestBidderLabel != null ? highestBidderLabel.getText() : "";
+            String winnerName = null;
+
+            if (raw != null && raw.startsWith("Dẫn đầu bởi:")) {
+                winnerName = raw.replace("Dẫn đầu bởi:", "").trim();
+            }
+
+            if (winnerName == null || winnerName.isEmpty()) {
+                winnerName = null;
+            }
 
             double finalPrice = 0;
 
             try {
-                finalPrice = NumberUtil.parse(
+                finalPrice = Double.parseDouble(
                         currentPriceLabel.getText()
                                 .replace("$", "")
+                                .replace(",", "")
                                 .trim()
-                ).doubleValue();
+                );
+
             } catch (Exception ex) {
                 logger.error("Parse final price failed", ex);
             }
@@ -1238,6 +1246,12 @@ private void hideNotification(HBox notification) {
      */
     public void showWinnerOverlay(String winnerUsername, double finalPrice) {
         Platform.runLater(() -> {
+            boolean noWinner =
+        winnerUsername == null
+        || winnerUsername.trim().isEmpty()
+        || winnerUsername.equalsIgnoreCase("Chưa có")
+        || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có");
+
 
             // ===== OVERLAY ROOT =====
             winnerOverlay = new StackPane();
@@ -1266,14 +1280,6 @@ private void hideNotification(HBox notification) {
             Label title = new Label("PHIÊN ĐẤU GIÁ KẾT THÚC");
             title.setStyle("-fx-text-fill: white; -fx-font-size: 52px; -fx-font-weight: 900;");
 
-            // ===== SUBTITLE =====
-            Label sub = new Label("Chủ nhân mới:");
-            sub.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
-
-            // ===== WINNER NAME =====
-            Label winner = new Label(winnerUsername);
-            winner.setStyle("-fx-text-fill: #FBBF24; -fx-font-size: 48px; -fx-font-weight: bold;");
-
             // ===== PRICE BOX =====
             HBox priceBox = new HBox(15);
             priceBox.setAlignment(Pos.CENTER);
@@ -1290,8 +1296,36 @@ private void hideNotification(HBox notification) {
             Label checkIcon = new Label("✔");
             checkIcon.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
 
-            Label priceText = new Label("Mức giá chốt: $" + NumberUtil.format(finalPrice));
-            priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
+            Label sub;
+            Label winner;
+            Label priceText;
+
+            // ===== CASE NO WINNER =====
+            if (noWinner) {
+
+                sub = new Label("Không có người chiến thắng");
+                sub.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 26px; -fx-font-weight: bold;");
+
+                winner = new Label("Phiên đấu giá không có lượt trả giá nào");
+                winner.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 28px; -fx-font-weight: bold;");
+
+                priceText = new Label("Mức giá chốt: Không có");
+                priceText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 34px; -fx-font-weight: bold;");
+
+            } else {
+
+                // ===== GIỮ NGUYÊN CODE CŨ CỦA BẠN =====
+
+                sub = new Label("Chủ nhân mới:");
+                sub.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
+
+                winner = new Label(winnerUsername);
+                winner.setStyle("-fx-text-fill: #FBBF24; -fx-font-size: 48px; -fx-font-weight: bold;");
+
+                priceText = new Label("Mức giá chốt: $" + String.format("%,.0f", finalPrice));
+                priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
+            }
+
 
             priceBox.getChildren().addAll(checkIcon, priceText);
             contentBox.getChildren().addAll(trophy, title, sub, winner, priceBox);
