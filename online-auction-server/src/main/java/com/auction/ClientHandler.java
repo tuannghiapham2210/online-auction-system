@@ -324,7 +324,7 @@ public class ClientHandler implements Runnable {
             }
             // -----------------------------
 
-            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
+            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount, bidderId);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
             // 3. Broadcast cho tất cả Client nếu thành công
@@ -474,7 +474,7 @@ public class ClientHandler implements Runnable {
                             
                             // Nếu họ có thể vượt lên mức giá hiện tại hợp lệ
                             if (nextBid > currentPrice && maxBid > currentPrice) {
-                                boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, nextBid);
+                                boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, nextBid, botUserId);
                                 boolean logSuccess = bidDAO.insertBidTransaction(itemId, botUserId, nextBid);
                                 
                                 if (updateSuccess && logSuccess) {

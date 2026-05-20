@@ -115,6 +115,9 @@ public class BidRoomController {
     private String currentEndTime;
     private String currentStatus;
     private double currentStepPrice;
+    private int currentWinnerId = -1;
+    private double currentFinalPrice = 0.0;
+    private String currentWinnerUsername;
     private boolean isNotificationShowing = false;
     private boolean auctionEndedShown = false;
 
@@ -299,7 +302,7 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status, int winnerId, double finalPrice, String winnerUsername) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
@@ -307,6 +310,9 @@ public class BidRoomController {
         this.currentStatus = status;
         this.currentStepPrice = stepPrice;
         this.currentSellerId = sellerId;
+        this.currentWinnerId = winnerId;
+        this.currentFinalPrice = finalPrice;
+        this.currentWinnerUsername = winnerUsername;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -315,6 +321,9 @@ public class BidRoomController {
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
         if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
+        if (highestBidderLabel != null && winnerUsername != null && !winnerUsername.trim().isEmpty()) {
+            highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
+        }
 
         // 3. Tải và hiển thị ảnh sản phẩm
         if (imageUrl != null && !imageUrl.isEmpty()) {
@@ -412,36 +421,76 @@ public class BidRoomController {
                 }
             }
         } else {
-            // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
-            if (liveBadge != null) liveBadge.setVisible(true);
-
-            // Kích hoạt nút "Dừng phiên" cho Admin hoặc chính người bán
-            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
-                if (btnStopAuction != null) btnStopAuction.setVisible(true);
-            } else {
-                if (btnStopAuction != null) btnStopAuction.setVisible(false);
+            // =========================================================
+            // CODE CỦA BẠN BÈ: Kiểm tra xem phiên đấu giá đã hết hạn thật sự chưa
+            // =========================================================
+            boolean auctionExpired = false;
+            try {
+                if (endTime != null && !endTime.isEmpty()) {
+                    LocalDateTime parsedEnd = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    auctionExpired = !LocalDateTime.now().isBefore(parsedEnd);
+                }
+            } catch (Exception ignored) {
+                auctionExpired = false;
             }
-            
-            if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
-                }
-                if (bidAmountField != null) {
-                    bidAmountField.setDisable(false);
-                    bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
-                }
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-            } else {
-                bidAmountField.setDisable(true);
-                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+
+            // Nếu phiên đã kết thúc (CLOSED) hoặc thời gian đã hết thì hiển thị overlay chiến thắng luôn
+            if ("CLOSED".equalsIgnoreCase(status) || auctionExpired) {
+                if (liveBadge != null) liveBadge.setVisible(false);
+                if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                if (bidAmountField != null) bidAmountField.setDisable(true);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                if (btnStopAuction != null) btnStopAuction.setVisible(false); // Đã kết thúc thì tắt nút dừng
+
                 if (autoBidPanel != null) {
                     autoBidPanel.setDisable(true);
                     autoBidPanel.setOpacity(0.4);
                 }
+                if (currentWinnerUsername != null && !currentWinnerUsername.trim().isEmpty()) {
+                    if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + currentWinnerUsername);
+                }
+                showWinnerOverlay(currentWinnerUsername, currentFinalPrice);
+
+            } else {
+                // =========================================================
+                // CODE CỦA BẠN: Nếu đang ACTIVE thật sự thì bắt đầu đếm ngược
+                // =========================================================
+                if (liveBadge != null) liveBadge.setVisible(true);
+
+                // Phân quyền kích hoạt nút "Dừng phiên" cho Admin hoặc người bán
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
+                } else {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(false);
+                }
+
+                // Mở khóa ô nhập giá cho người mua
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
+                }
+
+                // Khởi chạy đồng hồ
+                startCountdown(endTime);
             }
-            startCountdown(endTime);
         }
     }
 
@@ -1030,19 +1079,27 @@ private void hideNotification(HBox notification) {
             auctionEndedShown = true;
 
             timerLabel.setText("ĐÃ KẾT THÚC");
-            String winnerName = highestBidderLabel
-                    .getText()
-                    .replace("Dẫn đầu bởi: ", "")
-                    .trim();
+            String raw = highestBidderLabel != null ? highestBidderLabel.getText() : "";
+            String winnerName = null;
+
+            if (raw != null && raw.startsWith("Dẫn đầu bởi:")) {
+                winnerName = raw.replace("Dẫn đầu bởi:", "").trim();
+            }
+
+            if (winnerName == null || winnerName.isEmpty()) {
+                winnerName = null;
+            }
 
             double finalPrice = 0;
 
             try {
-                finalPrice = NumberUtil.parse(
+                finalPrice = Double.parseDouble(
                         currentPriceLabel.getText()
                                 .replace("$", "")
+                                .replace(",", "")
                                 .trim()
-                ).doubleValue();
+                );
+
             } catch (Exception ex) {
                 logger.error("Parse final price failed", ex);
             }
@@ -1264,6 +1321,12 @@ private void hideNotification(HBox notification) {
      */
     public void showWinnerOverlay(String winnerUsername, double finalPrice) {
         Platform.runLater(() -> {
+            boolean noWinner =
+        winnerUsername == null
+        || winnerUsername.trim().isEmpty()
+        || winnerUsername.equalsIgnoreCase("Chưa có")
+        || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có");
+
 
             // ===== OVERLAY ROOT =====
             winnerOverlay = new StackPane();
@@ -1292,14 +1355,6 @@ private void hideNotification(HBox notification) {
             Label title = new Label("PHIÊN ĐẤU GIÁ KẾT THÚC");
             title.setStyle("-fx-text-fill: white; -fx-font-size: 52px; -fx-font-weight: 900;");
 
-            // ===== SUBTITLE =====
-            Label sub = new Label("Chủ nhân mới:");
-            sub.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
-
-            // ===== WINNER NAME =====
-            Label winner = new Label(winnerUsername);
-            winner.setStyle("-fx-text-fill: #FBBF24; -fx-font-size: 48px; -fx-font-weight: bold;");
-
             // ===== PRICE BOX =====
             HBox priceBox = new HBox(15);
             priceBox.setAlignment(Pos.CENTER);
@@ -1316,8 +1371,36 @@ private void hideNotification(HBox notification) {
             Label checkIcon = new Label("✔");
             checkIcon.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
 
-            Label priceText = new Label("Mức giá chốt: $" + NumberUtil.format(finalPrice));
-            priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
+            Label sub;
+            Label winner;
+            Label priceText;
+
+            // ===== CASE NO WINNER =====
+            if (noWinner) {
+
+                sub = new Label("Không có người chiến thắng");
+                sub.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 26px; -fx-font-weight: bold;");
+
+                winner = new Label("Phiên đấu giá không có lượt trả giá nào");
+                winner.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 28px; -fx-font-weight: bold;");
+
+                priceText = new Label("Mức giá chốt: Không có");
+                priceText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 34px; -fx-font-weight: bold;");
+
+            } else {
+
+                // ===== GIỮ NGUYÊN CODE CŨ CỦA BẠN =====
+
+                sub = new Label("Chủ nhân mới:");
+                sub.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
+
+                winner = new Label(winnerUsername);
+                winner.setStyle("-fx-text-fill: #FBBF24; -fx-font-size: 48px; -fx-font-weight: bold;");
+
+                priceText = new Label("Mức giá chốt: $" + String.format("%,.0f", finalPrice));
+                priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
+            }
+
 
             priceBox.getChildren().addAll(checkIcon, priceText);
             contentBox.getChildren().addAll(trophy, title, sub, winner, priceBox);

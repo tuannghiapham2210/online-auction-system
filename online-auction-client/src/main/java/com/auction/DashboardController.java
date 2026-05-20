@@ -208,6 +208,15 @@ public class DashboardController {
                             if (obj.has("status") && !obj.get("status").isJsonNull()) {
                                 item.setStatus(obj.get("status").getAsString());
                             }
+                            if (obj.has("winnerId") && !obj.get("winnerId").isJsonNull()) {
+                                item.setWinnerId(obj.get("winnerId").getAsInt());
+                            }
+                            if (obj.has("finalPrice") && !obj.get("finalPrice").isJsonNull()) {
+                                item.setFinalPrice(obj.get("finalPrice").getAsDouble());
+                            }
+                            if (obj.has("winnerUsername") && !obj.get("winnerUsername").isJsonNull()) {
+                                item.setWinnerUsername(obj.get("winnerUsername").getAsString());
+                            }
 
                             items.add(item);
                         }
@@ -392,7 +401,8 @@ public class DashboardController {
             ((BidRoomController) loader.getController()).setAuctionData(
                     item.getId(), item.getName(), item.getCurrentPrice(), item.getStepPrice(),
                     Session.userId, item.getEndTime(), item.getImageUrl(),
-                    item.getItemType(), desc, item.getSellerId(), item.getStatus()
+                    item.getItemType(), desc, item.getSellerId(), item.getStatus(),
+                    item.getWinnerId(), item.getFinalPrice(), item.getWinnerUsername()
             );
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();

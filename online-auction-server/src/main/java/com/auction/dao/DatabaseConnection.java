@@ -109,6 +109,8 @@ public class DatabaseConnection {
                 + "extra_info TEXT,"
                 + "seller_id INTEGER NOT NULL,"
                 + "status VARCHAR(20) DEFAULT 'PENDING',"
+                + "winner_id INTEGER,"
+                + "final_price REAL,"
                 + "FOREIGN KEY (seller_id) REFERENCES users(id)"
                 + ");";
 
@@ -144,6 +146,29 @@ public class DatabaseConnection {
             logger.info("Ensured database tables exist: users, items, bids, auto_bids.");
         } catch (java.sql.SQLException e) {
             logger.error("Database table creation error: {}", e.getMessage(), e);
+        }
+
+        ensureItemWinnerColumns();
+    }
+
+    private void ensureItemWinnerColumns() {
+        try (java.sql.Statement stmt = connection.createStatement()) {
+            java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(items);");
+            java.util.Set<String> columns = new java.util.HashSet<>();
+            while (rs.next()) {
+                columns.add(rs.getString("name"));
+            }
+
+            if (!columns.contains("winner_id")) {
+                stmt.execute("ALTER TABLE items ADD COLUMN winner_id INTEGER;");
+                logger.info("Added missing column winner_id to items table.");
+            }
+            if (!columns.contains("final_price")) {
+                stmt.execute("ALTER TABLE items ADD COLUMN final_price REAL;");
+                logger.info("Added missing column final_price to items table.");
+            }
+        } catch (java.sql.SQLException e) {
+            logger.error("Error applying schema update for winner fields: {}", e.getMessage(), e);
         }
     }
 
