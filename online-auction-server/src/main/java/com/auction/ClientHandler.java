@@ -240,6 +240,32 @@ public class ClientHandler implements Runnable {
                 logger.info("Saved item successfully [{}] into items table.", name);
                 response.addProperty("status", "SUCCESS");
                 response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
+                
+                // 6a. Lấy danh sách item mới nhất để broadcast (lấy item vừa tạo)
+                List<Item> allItems = itemDAO.getAllItems();
+                if (!allItems.isEmpty()) {
+                    Item newInsertedItem = allItems.get(allItems.size() - 1); // Lấy item cuối cùng (mới nhất)
+                    
+                    // 6b. Tạo message broadcast để thông báo cho tất cả client về item mới
+                    JsonObject broadcastMsg = new JsonObject();
+                    broadcastMsg.addProperty("action", "NEW_ITEM_ADDED");
+                    broadcastMsg.addProperty("id", newInsertedItem.getId());
+                    broadcastMsg.addProperty("name", newInsertedItem.getName());
+                    broadcastMsg.addProperty("itemType", newInsertedItem.getItemType());
+                    broadcastMsg.addProperty("startingPrice", newInsertedItem.getStartingPrice());
+                    broadcastMsg.addProperty("currentPrice", newInsertedItem.getCurrentPrice());
+                    broadcastMsg.addProperty("stepPrice", newInsertedItem.getStepPrice());
+                    broadcastMsg.addProperty("durationHours", newInsertedItem.getDurationHours());
+                    broadcastMsg.addProperty("imageUrl", newInsertedItem.getImageUrl());
+                    broadcastMsg.addProperty("description", newInsertedItem.getDescription());
+                    broadcastMsg.addProperty("extraInfo", newInsertedItem.getExtraInfo());
+                    broadcastMsg.addProperty("sellerId", newInsertedItem.getSellerId());
+                    broadcastMsg.addProperty("status", newInsertedItem.getStatus());
+                    broadcastMsg.addProperty("endTime", newInsertedItem.getEndTime() != null ? newInsertedItem.getEndTime() : "");
+                    
+                    logger.info("Broadcasting NEW_ITEM_ADDED event for itemId={}", newInsertedItem.getId());
+                    broadcast(broadcastMsg);
+                }
             } else {
                 logger.error("Failed to save item [{}] into items table.", name);
                 response.addProperty("status", "FAIL");
@@ -346,6 +372,7 @@ public class ClientHandler implements Runnable {
 
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");
+                broadcastMsg.addProperty("itemId", itemId);
                 broadcastMsg.addProperty("newPrice", bidAmount);
                 broadcastMsg.addProperty("bidderId", bidderId);
                 broadcastMsg.addProperty("username", username);
@@ -497,6 +524,7 @@ public class ClientHandler implements Runnable {
                                     
                                     JsonObject broadcastMsg = new JsonObject();
                                     broadcastMsg.addProperty("action", "UPDATE_PRICE");
+                                    broadcastMsg.addProperty("itemId", itemId);
                                     broadcastMsg.addProperty("newPrice", nextBid);
                                     broadcastMsg.addProperty("bidderId", botUserId);
                                     broadcastMsg.addProperty("username", username);
