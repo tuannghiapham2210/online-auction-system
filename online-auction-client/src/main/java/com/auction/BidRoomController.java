@@ -654,23 +654,7 @@ public class BidRoomController {
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
                 if (dot != null) {
-                    Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(newPrice));
-                    tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-                    Tooltip.install(dot, tooltip);
-
-                    ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
-                    st.setByX(0.5);
-                    st.setByY(0.5);
-                    st.setAutoReverse(true);
-                    st.setCycleCount(Timeline.INDEFINITE);
-
-                    FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
-                    ft.setFromValue(1.0);
-                    ft.setToValue(0.5);
-                    ft.setAutoReverse(true);
-                    ft.setCycleCount(Timeline.INDEFINITE);
-
-                    new ParallelTransition(st, ft).play();
+                    applyPulseAnimation(dot, newPrice);
                 }
             });
         });
@@ -1516,6 +1500,29 @@ private void hideNotification(HBox notification) {
     }
 
     /**
+     * Áp dụng hiệu ứng nhấp nháy (Pulse/Radar) cho điểm dữ liệu mới nhất trên biểu đồ.
+     */
+    private void applyPulseAnimation(Circle dot, double price) {
+        Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(price));
+        tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
+        Tooltip.install(dot, tooltip);
+
+        ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
+        st.setByX(0.5);
+        st.setByY(0.5);
+        st.setAutoReverse(true);
+        st.setCycleCount(Timeline.INDEFINITE);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.5);
+        ft.setAutoReverse(true);
+        ft.setCycleCount(Timeline.INDEFINITE);
+
+        new ParallelTransition(st, ft).play();
+    }
+
+    /**
      * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
      * Được gọi bởi ServerListener khi nhận được FETCH_BID_HISTORY_RESPONSE.
      * @param history Mảng JSON chứa các giao dịch đặt giá đã xảy ra.
@@ -1523,7 +1530,29 @@ private void hideNotification(HBox notification) {
     public void hydrateUIWithHistory(com.google.gson.JsonArray history) {
         Platform.runLater(() -> {
             if (history == null || history.isEmpty()) {
-                logger.info("No bid history to hydrate. UI remains initial.");
+                logger.info("No bid history to hydrate. Plotting initial price.");
+                double cp = 0;
+                try {
+                    cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                } catch (Exception e) {}
+                
+                String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, cp);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(cp));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                initialData.setNode(customNode);
+                
+                priceSeries.getData().add(initialData);
+                applyPulseAnimation(dot, cp);
                 return;
             }
 
@@ -1569,7 +1598,8 @@ private void hideNotification(HBox notification) {
 
             // 2. Đổ dữ liệu vào biểu đồ (giữ tối đa 10 điểm)
             priceSeries.getData().clear();
-            for (BidEvent event : bidEvents) {
+            for (int i = 0; i < bidEvents.size(); i++) {
+                BidEvent event = bidEvents.get(i);
                 XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
 
                 StackPane customNode = new StackPane();
@@ -1587,6 +1617,11 @@ private void hideNotification(HBox notification) {
                 priceSeries.getData().add(dataPoint);
                 if (priceSeries.getData().size() > 10) {
                     priceSeries.getData().remove(0);
+                }
+                
+                // --- THÊM HIỆU ỨNG NHẤP NHÁY VÀO ĐIỂM CUỐI CÙNG ---
+                if (i == bidEvents.size() - 1) {
+                    applyPulseAnimation(dot, event.price);
                 }
             }
             
