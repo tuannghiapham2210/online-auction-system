@@ -89,6 +89,13 @@ public class BidRoomController {
     @FXML private Label timerLabelTitle;
     @FXML private Button btnOpenAuction;
     @FXML private Button btnCancelAuction;
+    @FXML private Button btnStopAuction; // Nút dừng phiên
+    private int currentSellerId; // Lưu lại ID người bán để phân quyền
+
+    // Getter cho ServerListener
+    public int getItemId() {
+        return this.currentItemId;
+    }
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
@@ -171,6 +178,9 @@ public class BidRoomController {
         }
         if (btnCancelAuction != null) {
             btnCancelAuction.managedProperty().bind(btnCancelAuction.visibleProperty());
+        }
+        if (btnStopAuction != null) {
+            btnStopAuction.managedProperty().bind(btnStopAuction.visibleProperty());
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
@@ -296,6 +306,7 @@ public class BidRoomController {
         this.currentEndTime = endTime;
         this.currentStatus = status;
         this.currentStepPrice = stepPrice;
+        this.currentSellerId = sellerId;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -403,6 +414,13 @@ public class BidRoomController {
         } else {
             // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
             if (liveBadge != null) liveBadge.setVisible(true);
+
+            // Kích hoạt nút "Dừng phiên" cho Admin hoặc chính người bán
+            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                if (btnStopAuction != null) btnStopAuction.setVisible(true);
+            } else {
+                if (btnStopAuction != null) btnStopAuction.setVisible(false);
+            }
             
             if ("BIDDER".equalsIgnoreCase(Session.role)) {
                 if (autoBidPanel != null) {
@@ -852,6 +870,10 @@ private void hideNotification(HBox notification) {
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
+
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
+                }
                 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
                     if (bidAmountField != null) {
@@ -986,6 +1008,10 @@ private void hideNotification(HBox notification) {
                 
                 if (btnCancelAuction != null) {
                     btnCancelAuction.setVisible(false);
+                }
+
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
                 }
 
                 startCountdown(endTime);
@@ -1319,6 +1345,99 @@ private void hideNotification(HBox notification) {
             SequentialTransition sequence = new SequentialTransition(fadeIn, wait, fadeOut);
             sequence.play();
 
+        });
+    }
+    /**
+     * Xử lý sự kiện khi Admin/Seller nhấn nút dừng khẩn cấp (Đã thiết kế lại UI Popup).
+     */
+    @FXML
+    private void handleStopAuction() {
+        Alert alert = new Alert(Alert.AlertType.NONE, "", ButtonType.YES, ButtonType.NO);
+        // Ẩn các phần thừa mặc định của Alert
+        alert.setHeaderText(null);
+        alert.setGraphic(null);
+
+        DialogPane dialogPane = alert.getDialogPane();
+
+        // =========================================================
+        // CẮT BỎ NỀN TRẮNG HỆ THỐNG VÀ THANH TIÊU ĐỀ
+        // =========================================================
+        Stage stage = (Stage) dialogPane.getScene().getWindow();
+        stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+
+        dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: #F59E0B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+        VBox content = new VBox(15);
+        content.setAlignment(Pos.CENTER);
+        content.setPadding(new Insets(25, 20, 10, 20));
+
+        Label icon = new Label("!");
+        icon.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 60px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;");
+
+        Label titleLabel = new Label("XÁC NHẬN CHỐT SỔ SỚM");
+        titleLabel.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label msgLabel = new Label("Bạn có chắc chắn muốn chốt sổ sớm phiên đấu giá này không?\nNgười đang dẫn đầu sẽ giành chiến thắng ngay lập tức!");
+        msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
+
+        content.getChildren().addAll(icon, titleLabel, msgLabel);
+        dialogPane.setContent(content);
+
+        Button yesBtn = (Button) dialogPane.lookupButton(ButtonType.YES);
+        if (yesBtn != null) {
+            yesBtn.setText("Chốt ngay");
+            yesBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+        }
+
+        Button noBtn = (Button) dialogPane.lookupButton(ButtonType.NO);
+        if (noBtn != null) {
+            noBtn.setText("Hủy");
+            noBtn.setStyle("-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+        }
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    JsonObject request = new JsonObject();
+                    request.addProperty("action", "STOP_AUCTION_REQUEST");
+                    request.addProperty("itemId", currentItemId);
+                    request.addProperty("userId", Session.userId);
+                    request.addProperty("role", Session.role);
+
+                    if (out != null) {
+                        out.println(request.toString());
+                        logger.info("Sent STOP_AUCTION_REQUEST for item: {}", currentItemId);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to send STOP_AUCTION_REQUEST", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Cưỡng chế hiển thị cúp chiến thắng khi nhận lệnh đóng phiên sớm từ Server.
+     */
+    public void forceEndAuctionRealtime(String winnerUsername, double finalPrice) {
+        Platform.runLater(() -> {
+            if (countdownTimeline != null) countdownTimeline.stop();
+            if (progressTimeline != null) progressTimeline.stop();
+
+            if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+            if (liveBadge != null) liveBadge.setVisible(false);
+            if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
+            if (currentPriceLabel != null) currentPriceLabel.setText("$" + NumberUtil.format(finalPrice));
+
+            if (bidAmountField != null) bidAmountField.setDisable(true);
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (btnStopAuction != null) btnStopAuction.setVisible(false);
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(true);
+                autoBidPanel.setOpacity(0.4);
+            }
+
+            showWinnerOverlay(winnerUsername, finalPrice);
         });
     }
 }

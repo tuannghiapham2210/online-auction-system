@@ -68,6 +68,19 @@ public class ServerListener implements Runnable {
                     int itemId = json.get("itemId").getAsInt();
                     controller.auctionCancelledRealtime(itemId);
                 }
+                else if ("AUCTION_FINISHED".equals(action)) {
+                    int itemId = json.get("itemId").getAsInt();
+                    String winnerUsername = json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "Không có";
+                    double finalPrice = json.has("finalPrice") ? json.get("finalPrice").getAsDouble() : 0.0;
+
+                    logger.info("[CLIENT] Nhận sự kiện đóng phiên khẩn cấp từ Server cho itemId={}", itemId);
+
+                    // Kiểm tra xem phòng đấu giá đồ họa client hiện tại có trùng ID sản phẩm không
+                    if (controller != null && controller.getItemId() == itemId) {
+                        // Gọi hàm đóng băng giao diện phòng thầu và vinh danh người chiến thắng sớm
+                        controller.forceEndAuctionRealtime(winnerUsername, finalPrice);
+                    }
+                }
                 else if ("ERROR".equals(action)) {
                     String errorMessage = json.has("message") ? json.get("message").getAsString() : "Đã có lỗi xảy ra!";
                     controller.showErrorRealtime(errorMessage);

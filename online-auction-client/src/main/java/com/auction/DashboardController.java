@@ -545,11 +545,107 @@ public class DashboardController {
         timeV.setAlignment(Pos.CENTER_RIGHT);
         priceRow.getChildren().addAll(priceV, rSpacer, timeV);
 
-        Button btnEnter = new Button("Vào Phòng");
-        btnEnter.setMaxWidth(Double.MAX_VALUE); btnEnter.getStyleClass().add("btn-orange");
-        btnEnter.setOnAction(e -> openBidRoom(item));
+        // ==============================================================================
+        // TASK MỚI: BỔ SUNG NÚT GỠ/XÓA SẢN PHẨM CHO SELLER CHỦ SỞ HỮU HOẶC ADMIN
+        // ==============================================================================
+        HBox actionRow = new HBox(10);
+        actionRow.setAlignment(Pos.CENTER);
+        actionRow.setMaxWidth(Double.MAX_VALUE);
 
-        contentBox.getChildren().addAll(tags, title, priceRow, btnEnter);
+        // Nút Vào Phòng mặc định (Cố định kéo giãn theo chiều ngang để cân đối layout)
+        Button btnEnter = new Button("Vào Phòng");
+        btnEnter.setMaxWidth(Double.MAX_VALUE);
+        btnEnter.getStyleClass().add("btn-orange");
+        btnEnter.setOnAction(e -> openBidRoom(item));
+        HBox.setHgrow(btnEnter, Priority.ALWAYS);
+        actionRow.getChildren().add(btnEnter);
+
+        // KIỂM TRA PHÂN QUYỀN: Nếu là ADMIN hoặc chính SELLER đăng bán lô hàng này
+        if ("ADMIN".equalsIgnoreCase(Session.role) || item.getSellerId() == Session.userId) {
+            Button btnDelete = new Button("🗑 Gỡ");
+            btnDelete.setPrefWidth(75);
+            btnDelete.setPrefHeight(38); // Cân bằng tỉ lệ chiều cao với nút btn-orange
+            // Áp dụng style màu đỏ Neon phong cách Dark UI đồng bộ với hệ thống
+            btnDelete.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 13px;");
+
+            // Xử lý sự kiện click chuột để gỡ sản phẩm trực tuyến
+            btnDelete.setOnAction(e -> {
+                // Hiển thị hộp thoại xác nhận nhanh (Confirmation Alert) nhằm chống click nhầm
+                // =====================================================================
+                // CẬP NHẬT GIAO DIỆN: HỘP THOẠI XÁC NHẬN GỠ SẢN PHẨM (DARK THEME + DẤU ! VÀNG)
+                // =====================================================================
+                // Khởi tạo Alert với Type NONE để xóa bỏ hoàn toàn cấu trúc icon/nền mặc định của hệ điều hành
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.NONE,
+                        "",
+                        javafx.scene.control.ButtonType.YES,
+                        javafx.scene.control.ButtonType.NO
+                );
+                alert.setTitle("Xác nhận hành động");
+                alert.setHeaderText(null);
+                alert.setGraphic(null);
+
+                // Lấy DialogPane để thực hiện custom CSS và cấu trúc UI
+                javafx.scene.control.DialogPane dialogPane = alert.getDialogPane();
+
+                // Loại bỏ hoàn toàn khung viền trắng và thanh tiêu đề mặc định của Window hệ điều hành
+                javafx.stage.Stage stage = (javafx.stage.Stage) dialogPane.getScene().getWindow();
+                stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+                dialogPane.getScene().setFill(javafx.scene.paint.Color.TRANSPARENT);
+
+                // Thiết lập Style nền tối #1E293B, viền vàng cam #F59E0B và bo tròn góc 12px
+                dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: #F59E0B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+                // Tạo layout VBox để sắp xếp các thành phần giao diện theo chiều dọc
+                javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(15);
+                content.setAlignment(javafx.geometry.Pos.CENTER);
+                content.setPadding(new javafx.geometry.Insets(25, 20, 10, 20));
+
+                // Khởi tạo dấu chấm than (!) màu vàng cam, font Segoe UI in đậm kích thước 60px
+                javafx.scene.control.Label icon = new javafx.scene.control.Label("!");
+                icon.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 60px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;");
+
+                // Tiêu đề cảnh báo phía trên nội dung
+                javafx.scene.control.Label titleLabel = new javafx.scene.control.Label("XÁC NHẬN GỠ SẢN PHẨM");
+                titleLabel.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+                // Nội dung câu hỏi xác nhận
+                javafx.scene.control.Label msgLabel = new javafx.scene.control.Label("Bạn có chắc chắn muốn gỡ bỏ sản phẩm này khỏi danh sách không?");
+                msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
+
+                // Đẩy các thành phần giao diện vào khối layout chung
+                content.getChildren().addAll(icon, titleLabel, msgLabel);
+                dialogPane.setContent(content);
+
+                // Định dạng nút "Gỡ ngay" (ButtonType.YES) sang tông màu đỏ phẳng hiện đại
+                javafx.scene.control.Button yesBtn = (javafx.scene.control.Button) dialogPane.lookupButton(javafx.scene.control.ButtonType.YES);
+                if (yesBtn != null) {
+                    yesBtn.setText("Gỡ ngay");
+                    yesBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+                }
+
+                // Định dạng nút "Hủy" (ButtonType.NO) sang tông màu tối mờ
+                javafx.scene.control.Button noBtn = (javafx.scene.control.Button) dialogPane.lookupButton(javafx.scene.control.ButtonType.NO);
+                if (noBtn != null) {
+                    noBtn.setText("Hủy");
+                    noBtn.setStyle("-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+                }
+
+                // Hiển thị hộp thoại và lắng nghe tương tác bấm nút từ người dùng
+                alert.showAndWait().ifPresent(response -> {
+                    if (response == javafx.scene.control.ButtonType.YES) {
+                        // GIỮ NGUYÊN HOÀN TOÀN LOGIC CŨ:
+                        // Hãy điền đúng hàm gọi logic gửi yêu cầu xóa của nhóm bạn tại đây
+                        // Ví dụ: sendDeleteRequestToServer(item.getId()); hoặc tùy theo tên biến trong hàm của bạn.
+                        sendDeleteRequestToServer(item.getId());
+                    }
+                });
+            });
+            actionRow.getChildren().add(btnDelete);
+        }
+
+        // Thay vì đẩy mỗi btnEnter như bản cũ, ta đẩy nguyên cụm actionRow chứa cả 2 nút vào layout
+        contentBox.getChildren().addAll(tags, title, priceRow, actionRow);
 
         // 5. Kết hợp tất cả vào thẻ chính
         card.getChildren().addAll(imageContainer, contentBox);
@@ -567,5 +663,82 @@ public class DashboardController {
         } catch (IOException e) {
             logger.error("Lỗi đăng xuất: {}", e.getMessage());
         }
+    }
+    /**
+     * Gửi yêu cầu gỡ bỏ/xóa sản phẩm trực tuyến lên máy chủ Server thời gian thực.
+     */
+    private void sendDeleteRequestToServer(int itemId) {
+        new Thread(() -> {
+            try (Socket socket = new Socket("localhost", 8080);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "CANCEL_AUCTION_REQUEST");
+                request.addProperty("itemId", itemId);
+                request.addProperty("userId", Session.userId);
+                request.addProperty("role", Session.role);
+
+                out.println(request.toString());
+                logger.info("Sent CANCEL_AUCTION_REQUEST for itemId: {}", itemId);
+
+                String responseStr = in.readLine();
+                if (responseStr != null) {
+                    JsonObject responseJson = JsonParser.parseString(responseStr).getAsJsonObject();
+
+                    Platform.runLater(() -> {
+                        if (responseJson.has("action") && "ERROR".equals(responseJson.get("action").getAsString())) {
+
+                            String errorMsg = responseJson.has("message") ? responseJson.get("message").getAsString() : "Lỗi hệ thống khi gỡ sản phẩm!";
+
+                            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.NONE, "", javafx.scene.control.ButtonType.OK);
+                            // Ẩn các phần thừa mặc định của Alert
+                            alert.setHeaderText(null);
+                            alert.setGraphic(null);
+
+                            javafx.scene.control.DialogPane dialogPane = alert.getDialogPane();
+
+                            // =========================================================
+                            // CẮT BỎ NỀN TRẮNG HỆ THỐNG VÀ THANH TIÊU ĐỀ
+                            // =========================================================
+                            javafx.stage.Stage stage = (javafx.stage.Stage) dialogPane.getScene().getWindow();
+                            stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+                            dialogPane.getScene().setFill(javafx.scene.paint.Color.TRANSPARENT);
+
+                            dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: #EF4444; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+                            javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(15);
+                            content.setAlignment(javafx.geometry.Pos.CENTER);
+                            content.setPadding(new javafx.geometry.Insets(25, 20, 10, 20));
+
+                            javafx.scene.control.Label icon = new javafx.scene.control.Label("⚠️");
+                            icon.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 50px;");
+
+                            javafx.scene.control.Label titleLabel = new javafx.scene.control.Label("TỪ CHỐI THAO TÁC");
+                            titleLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+                            javafx.scene.control.Label msgLabel = new javafx.scene.control.Label(errorMsg);
+                            msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
+
+                            content.getChildren().addAll(icon, titleLabel, msgLabel);
+                            dialogPane.setContent(content);
+
+                            javafx.scene.control.Button okBtn = (javafx.scene.control.Button) dialogPane.lookupButton(javafx.scene.control.ButtonType.OK);
+                            if (okBtn != null) {
+                                okBtn.setText("Đã hiểu");
+                                okBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 25; -fx-background-radius: 6; -fx-cursor: hand;");
+                            }
+
+                            alert.showAndWait();
+
+                        } else {
+                            loadDataFromServer();
+                        }
+                    });
+                }
+            } catch (IOException e) {
+                logger.error("Lỗi kết nối Socket khi gửi yêu cầu gỡ sản phẩm: {}", e.getMessage());
+            }
+        }).start();
     }
 }
