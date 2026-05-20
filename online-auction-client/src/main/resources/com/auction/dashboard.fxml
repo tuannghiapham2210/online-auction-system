@@ -103,6 +103,7 @@
                 <children>
                     <HBox alignment="CENTER_LEFT" spacing="10">
                         <Label style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: 900; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" text="Tất cả lô hàng" />
+                        <Label fx:id="lblItemCount" style="-fx-text-fill: #94A3B8; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-color: #1E293B; -fx-padding: 2 10; -fx-background-radius: 12;" text="(0)" />
                         <Region HBox.hgrow="ALWAYS" />
                     </HBox>
 

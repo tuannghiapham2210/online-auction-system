@@ -1,5 +1,6 @@
 package com.auction;
 
+import com.auction.util.NumberUtil;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.fxml.FXML;
@@ -11,6 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,14 +51,14 @@ public class DepositController {
 
     @FXML
     public void initialize() {
-        spinnerAmount.setValueFactory(
-        new SpinnerValueFactory.IntegerSpinnerValueFactory(
+        SpinnerValueFactory.IntegerSpinnerValueFactory factory = new SpinnerValueFactory.IntegerSpinnerValueFactory(
                 0,
                 100000000,
                 10000,
-                1
-        )
-);
+                10000
+        );
+        factory.setConverter(NumberUtil.getIntegerConverter());
+        spinnerAmount.setValueFactory(factory);
 
         // preset buttons
         btn10k.setOnAction(e -> spinnerAmount.getValueFactory().setValue(10000));
@@ -64,17 +66,30 @@ public class DepositController {
         btn100k.setOnAction(e -> spinnerAmount.getValueFactory().setValue(100000));
         btn500k.setOnAction(e -> spinnerAmount.getValueFactory().setValue(500000));
 
-        spinnerAmount.getEditor().textProperty().addListener(
-        (obs, oldValue, newValue) -> {
-
-            if (!newValue.matches("\\d*")) {
-
-                spinnerAmount.getEditor().setText(
-                        newValue.replaceAll("[^\\d]", "")
-                );
+        TextField editor = spinnerAmount.getEditor();
+        editor.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null) return;
+            // Cho phép số và dấu phẩy
+            if (!newValue.matches("[\\d,]*")) {
+                editor.setText(newValue.replaceAll("[^\\d,]", ""));
             }
-        }
-);
+        });
+        
+        // Format khi mất focus
+        editor.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused) {
+                try {
+                    String text = editor.getText();
+                    if (text != null && !text.isEmpty()) {
+                        Number parsed = NumberUtil.parse(text);
+                        spinnerAmount.getValueFactory().setValue(parsed.intValue());
+                        editor.setText(NumberUtil.format(parsed));
+                    }
+                } catch (Exception e) {
+                    editor.setText(NumberUtil.format(spinnerAmount.getValue()));
+                }
+            }
+        });
     }
 
     /**
@@ -85,38 +100,13 @@ public class DepositController {
 
         try {
 
-            String amountText =
-                    spinnerAmount.getValue().toString();
+            Integer amount = spinnerAmount.getValue();
 
-            if (amountText.isEmpty()) {
-
-                showMessage(
-                        "Vui lòng nhập số tiền!",
-                        false
-                );
-
-                return;
-            }
-
-            if (!amountText.matches("\\d+")) {
-
-                showMessage(
-                        "Chỉ được nhập số!",
-                        false
-                );
-
-                return;
-            }
-
-            int amount = Integer.parseInt(amountText);
-
-            if (amount <= 0) {
-
+            if (amount == null || amount <= 0) {
                 showMessage(
                         "Số tiền không hợp lệ!",
                         false
                 );
-
                 return;
             }
 

@@ -1,5 +1,6 @@
 package com.auction;
 
+import com.auction.util.NumberUtil;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -17,6 +18,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.io.File;
 import javafx.stage.FileChooser;
+import java.text.ParseException;
 
 /**
  * Controller quản lý giao diện "Thêm Sản phẩm đấu giá".
@@ -46,6 +48,35 @@ public class AddItemController {
         messageLabel.setText("");
 
         durationField.setText("00:00:00");
+
+        // Thêm listener để định dạng số
+        addFormattingListener(priceField);
+        addFormattingListener(stepPriceField);
+    }
+
+    private void addFormattingListener(TextField textField) {
+        textField.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) return;
+            // Allow only digits and commas
+            if (!newValue.matches("[\\d,]*")) {
+                textField.setText(oldValue);
+            }
+        });
+
+        textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused) { // Lost focus
+                try {
+                    String text = textField.getText().replaceAll(",", "");
+                    if (!text.isEmpty()) {
+                        Number parsed = NumberUtil.parse(text);
+                        textField.setText(NumberUtil.format(parsed));
+                    }
+                } catch (Exception e) {
+                    // Handle parse exception if needed, maybe clear or set to default
+                    textField.setText("0");
+                }
+            }
+        });
     }
 
     /**
@@ -77,8 +108,8 @@ public class AddItemController {
 
         try {
             // 3. Ép kiểu các dữ liệu dạng chuỗi sang số
-            double startingPrice = Double.parseDouble(priceStr);
-            double stepPrice = Double.parseDouble(stepStr);
+            double startingPrice = NumberUtil.parse(priceStr).doubleValue();
+            double stepPrice = NumberUtil.parse(stepStr).doubleValue();
 
             // Parse thời gian HH:mm:ss
             String[] timeParts = durationStr.trim().split(":");
