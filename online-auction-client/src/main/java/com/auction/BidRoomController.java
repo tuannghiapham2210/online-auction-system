@@ -350,33 +350,17 @@ public class BidRoomController {
             }
         }
 
-        // 4. Đánh dấu điểm giá khởi đầu trên biểu đồ
-        String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-        XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
-
-        // Cấu hình Y-Axis thủ công với 15% buffer
+        // 4. Xóa dữ liệu cũ và cấu hình trục Y cho biểu đồ
+        priceSeries.getData().clear();
+        historyLogs.clear();
         NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
         yAxis.setAutoRanging(false);
         yAxis.setLowerBound(0);
         double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
         yAxis.setUpperBound(initialUpperBound);
         yAxis.setTickUnit(initialUpperBound / 5);
-
-        StackPane customNode = new StackPane();
-        customNode.setStyle("-fx-background-color: transparent;");
-        Circle dot = new Circle(6);
-        dot.setFill(Color.web("#f9a825"));
-        dot.setStroke(Color.WHITE);
-        dot.setStrokeWidth(2);
-        Label priceLbl = new Label("$" + NumberUtil.format(currentPrice));
-        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-        priceLbl.setTranslateY(-25);
-        customNode.getChildren().addAll(dot, priceLbl);
-        initialData.setNode(customNode);
-        
-        priceSeries.getData().add(initialData);
-
-        // 5. Mở kết nối mạng
+ 
+        // 5. Mở kết nối mạng và yêu cầu lịch sử đấu giá
         connectToServer();
         
         // 6. Kiểm tra trạng thái Lockout PENDING
@@ -565,6 +549,13 @@ public class BidRoomController {
                 // 4. Chạy luồng lắng nghe liên tục các cập nhật từ Server
                 ServerListener listener = new ServerListener(in, this);
                 new Thread(listener).start();
+
+                // 3. Gửi yêu cầu lấy lịch sử đấu giá để hydrate UI
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "FETCH_BID_HISTORY_REQUEST");
+                request.addProperty("itemId", this.currentItemId);
+                out.println(request.toString());
+                logger.info("Sent FETCH_BID_HISTORY_REQUEST for item: {}", this.currentItemId);
 
             } catch (Exception e) {
                 logger.error("🔴 Lỗi mạng: Không thể kết nối", e);
@@ -1521,6 +1512,91 @@ private void hideNotification(HBox notification) {
             }
 
             showWinnerOverlay(winnerUsername, finalPrice);
+        });
+    }
+
+    /**
+     * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
+     * Được gọi bởi ServerListener khi nhận được FETCH_BID_HISTORY_RESPONSE.
+     * @param history Mảng JSON chứa các giao dịch đặt giá đã xảy ra.
+     */
+    public void hydrateUIWithHistory(com.google.gson.JsonArray history) {
+        Platform.runLater(() -> {
+            if (history == null || history.isEmpty()) {
+                logger.info("No bid history to hydrate. UI remains initial.");
+                return;
+            }
+
+            java.util.List<BidEvent> bidEvents = new java.util.ArrayList<>();
+            double maxPrice = 0;
+
+            for (com.google.gson.JsonElement element : history) {
+                com.google.gson.JsonObject record = element.getAsJsonObject();
+                
+                String fullTimestamp = record.get("timestamp").getAsString();
+                String timePart;
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(fullTimestamp, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    timePart = ldt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                } catch (Exception e) {
+                    timePart = "00:00:00"; // Fallback
+                }
+
+                int bidderId = record.get("bidderId").getAsInt();
+                String username = record.get("username").getAsString();
+                double price = record.get("price").getAsDouble();
+
+                bidEvents.add(new BidEvent(timePart, bidderId, username, price));
+
+                if (price > maxPrice) {
+                    maxPrice = price;
+                }
+            }
+
+            // 1. Cập nhật trục Y của biểu đồ dựa trên giá cao nhất trong lịch sử
+            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+            double newUpperBound = maxPrice * 1.15;
+            if (newUpperBound == 0) {
+                try {
+                    double initialPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                    newUpperBound = initialPrice > 0 ? initialPrice * 1.15 : 100;
+                } catch (Exception e) {
+                    newUpperBound = 100;
+                }
+            }
+            yAxis.setUpperBound(newUpperBound);
+            yAxis.setTickUnit(newUpperBound / 5);
+
+            // 2. Đổ dữ liệu vào biểu đồ (giữ tối đa 10 điểm)
+            priceSeries.getData().clear();
+            for (BidEvent event : bidEvents) {
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(event.price));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                dataPoint.setNode(customNode);
+                
+                priceSeries.getData().add(dataPoint);
+                if (priceSeries.getData().size() > 10) {
+                    priceSeries.getData().remove(0);
+                }
+            }
+            
+            // 3. Đổ dữ liệu vào Log (mới nhất ở trên cùng)
+            historyLogs.clear();
+            for (BidEvent event : bidEvents) {
+                historyLogs.add(0, event);
+            }
+            
+            logger.info("Successfully hydrated UI with {} history records.", bidEvents.size());
         });
     }
 }

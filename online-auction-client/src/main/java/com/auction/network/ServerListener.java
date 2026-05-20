@@ -85,6 +85,12 @@ public class ServerListener implements Runnable {
                     String errorMessage = json.has("message") ? json.get("message").getAsString() : "Đã có lỗi xảy ra!";
                     controller.showErrorRealtime(errorMessage);
                 }
+                else if ("FETCH_BID_HISTORY_RESPONSE".equals(action)) {
+                    if (json.has("history") && json.get("history").isJsonArray()) {
+                        com.google.gson.JsonArray historyArray = json.get("history").getAsJsonArray();
+                        controller.hydrateUIWithHistory(historyArray);
+                    }
+                }
             }
         } catch (Exception e) {
             logger.warn("Listener disconnected: {}", e.getMessage(), e);
