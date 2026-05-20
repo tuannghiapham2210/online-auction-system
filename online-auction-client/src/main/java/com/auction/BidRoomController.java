@@ -2,6 +2,7 @@ package com.auction;
 
 import com.auction.util.NumberUtil;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -1350,14 +1351,15 @@ private void hideNotification(HBox notification) {
      * Hiển thị màn hình người chiến thắng khi phiên đấu giá kết thúc.
      */
     public void showWinnerOverlay(String winnerUsername, double finalPrice) {
-        Platform.runLater(() -> {
-            boolean noWinner =
-        winnerUsername == null
-        || winnerUsername.trim().isEmpty()
-        || winnerUsername.equalsIgnoreCase("Chưa có")
-        || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có");
+        boolean noWinner =
+                winnerUsername == null
+                        || winnerUsername.trim().isEmpty()
+                        || winnerUsername.equalsIgnoreCase("Chưa có")
+                        || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có");
 
+        boolean isWinner = !noWinner && Session.username != null && winnerUsername != null && winnerUsername.equalsIgnoreCase(Session.username);
 
+        Runnable showOverlayRunnable = () -> {
             // ===== OVERLAY ROOT =====
             winnerOverlay = new StackPane();
             winnerOverlay.setStyle("-fx-background-color: rgba(15,15,15,0.92);");
@@ -1407,7 +1409,6 @@ private void hideNotification(HBox notification) {
 
             // ===== CASE NO WINNER =====
             if (noWinner) {
-
                 sub = new Label("Không có người chiến thắng");
                 sub.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 26px; -fx-font-weight: bold;");
 
@@ -1418,9 +1419,6 @@ private void hideNotification(HBox notification) {
                 priceText.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 34px; -fx-font-weight: bold;");
 
             } else {
-
-                // ===== GIỮ NGUYÊN CODE CŨ CỦA BẠN =====
-
                 sub = new Label("Chủ nhân mới:");
                 sub.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
 
@@ -1430,7 +1428,6 @@ private void hideNotification(HBox notification) {
                 priceText = new Label("Mức giá chốt: $" + String.format("%,.0f", finalPrice));
                 priceText.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
             }
-
 
             priceBox.getChildren().addAll(checkIcon, priceText);
             contentBox.getChildren().addAll(trophy, title, sub, winner, priceBox);
@@ -1457,8 +1454,65 @@ private void hideNotification(HBox notification) {
 
             SequentialTransition sequence = new SequentialTransition(fadeIn, wait, fadeOut);
             sequence.play();
+        };
 
-        });
+        if (isWinner) {
+            // Deduct payment on server in background thread, update Session, then show overlay
+            new Thread(() -> {
+                try (Socket sock = new Socket("localhost", 8080);
+                     PrintWriter pout = new PrintWriter(sock.getOutputStream(), true);
+                     BufferedReader pin = new BufferedReader(new InputStreamReader(sock.getInputStream()))) {
+
+                    int deduct = (int) Math.round(finalPrice);
+
+                    JsonObject req = new JsonObject();
+                    req.addProperty("action", "DEPOSIT");
+                    req.addProperty("username", Session.username);
+                    req.addProperty("amount", -deduct);
+
+                    pout.println(req.toString());
+
+                    String respStr = pin.readLine();
+                    if (respStr != null) {
+                        try {
+                            JsonObject resp = JsonParser.parseString(respStr).getAsJsonObject();
+                            String status = resp.has("status") ? resp.get("status").getAsString() : "";
+                            if ("SUCCESS".equalsIgnoreCase(status) && resp.has("newBalance")) {
+                                int newBal = resp.get("newBalance").getAsInt();
+                                Session.balance = newBal;
+                                Session.justWon = true;
+                                Session.lastWonPrice = finalPrice;
+                                Session.lastWinRemainingBalance = newBal;
+                                Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                            } else {
+                                // Fallback: still mark as won but do not change balance
+                                Session.justWon = true;
+                                Session.lastWonPrice = finalPrice;
+                                Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                            }
+                        } catch (Exception ex) {
+                            Session.justWon = true;
+                            Session.lastWonPrice = finalPrice;
+                            Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                        }
+                    } else {
+                        Session.justWon = true;
+                        Session.lastWonPrice = finalPrice;
+                        Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                    }
+
+                } catch (Exception ex) {
+                    logger.warn("Failed to deduct winner payment: {}", ex.getMessage());
+                    Session.justWon = true;
+                    Session.lastWonPrice = finalPrice;
+                    Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                } finally {
+                    Platform.runLater(showOverlayRunnable);
+                }
+            }).start();
+        } else {
+            Platform.runLater(showOverlayRunnable);
+        }
     }
     /**
      * Xử lý sự kiện khi Admin/Seller nhấn nút dừng khẩn cấp (Đã thiết kế lại UI Popup).

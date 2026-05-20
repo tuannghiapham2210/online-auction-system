@@ -20,7 +20,9 @@ import javafx.scene.image.ImageView;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -119,6 +121,75 @@ public class DashboardController {
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
+        });
+
+        // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo thành công và số dư còn lại
+        Platform.runLater(() -> {
+            try {
+                if (Session.justWon) {
+                    // Cập nhật số dư hiển thị chính
+                    if (lblBalance != null) {
+                        lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                    }
+
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+
+                    HBox notification = new HBox();
+                    notification.setAlignment(Pos.CENTER_LEFT);
+                    notification.setSpacing(20);
+                    notification.setPrefWidth(520);
+                    notification.setPrefHeight(85);
+                    notification.setMaxWidth(520);
+                    notification.setMaxHeight(85);
+                    notification.setStyle(
+                            "-fx-background-color: rgba(15, 23, 42, 0.96);" +
+                            "-fx-background-radius: 18;" +
+                            "-fx-border-color: #22c55e;" +
+                            "-fx-border-radius: 18;" +
+                            "-fx-border-width: 1.5;" +
+                            "-fx-padding: 0 18 0 18;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);"
+                    );
+
+                    StackPane.setAlignment(notification, Pos.TOP_CENTER);
+                    notification.setTranslateY(-120);
+
+                    Label icon = new Label("✔");
+                    icon.setStyle("-fx-text-fill: #22c55e; -fx-font-size: 24px; -fx-font-weight: bold;");
+
+                    VBox textBox = new VBox(2);
+                    textBox.setAlignment(Pos.CENTER_LEFT);
+
+                    Label titleLabel = new Label(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.");
+                    titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+                    titleLabel.setWrapText(true);
+                    titleLabel.setMaxWidth(420);
+
+                    Label messageLabel = new Label("Số dư ví còn lại: $" + NumberUtil.format(Session.lastWinRemainingBalance));
+                    messageLabel.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 12px;");
+
+                    textBox.getChildren().addAll(titleLabel, messageLabel);
+                    notification.getChildren().addAll(icon, textBox);
+
+                    rootPane.getChildren().add(notification);
+
+                    TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
+                    slideDown.setToY(30);
+                    slideDown.play();
+
+                    PauseTransition wait = new PauseTransition(Duration.seconds(4));
+                    FadeTransition fade = new FadeTransition(Duration.millis(300), notification);
+                    fade.setFromValue(1.0);
+                    fade.setToValue(0.0);
+                    wait.setOnFinished(ev -> fade.play());
+                    fade.setOnFinished(ev -> rootPane.getChildren().remove(notification));
+                    wait.play();
+
+                    // Reset flag
+                    Session.justWon = false;
+                    Session.lastWinMessage = null;
+                }
+            } catch (Exception ignored) {}
         });
     }
 
