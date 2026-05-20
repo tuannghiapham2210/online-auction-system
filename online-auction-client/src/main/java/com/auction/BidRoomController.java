@@ -163,6 +163,18 @@ public class BidRoomController {
             ((Region) bidHistoryList.getParent()).setMinHeight(350);
         }
 
+        // 3. Tăng chiều cao của ảnh sản phẩm và bỏ giới hạn chiều cao của Card cha
+        if (heroImageContainer != null) {
+            heroImageContainer.setMinHeight(320);
+            heroImageContainer.setPrefHeight(320);
+            if (heroImageContainer.getParent() instanceof Region) {
+                Region parentCard = (Region) heroImageContainer.getParent();
+                parentCard.setMinHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setPrefHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setMaxHeight(Double.MAX_VALUE);
+            }
+        }
+
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
