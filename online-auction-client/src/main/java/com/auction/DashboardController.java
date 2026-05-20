@@ -22,6 +22,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -133,42 +134,55 @@ public class DashboardController {
 
                     StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
 
-                    HBox box = new HBox(12);
-                    box.setStyle("-fx-background-color: #064e3b; -fx-background-radius: 12; -fx-padding: 14 18; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);");
-                    box.setMaxWidth(520);
-                    box.setMaxHeight(Region.USE_PREF_SIZE);
-                    box.setAlignment(Pos.CENTER_LEFT);
-                    box.setManaged(false);
+                    HBox notification = new HBox();
+                    notification.setAlignment(Pos.CENTER_LEFT);
+                    notification.setSpacing(20);
+                    notification.setPrefWidth(520);
+                    notification.setPrefHeight(85);
+                    notification.setMaxWidth(520);
+                    notification.setMaxHeight(85);
+                    notification.setStyle(
+                            "-fx-background-color: rgba(15, 23, 42, 0.96);" +
+                            "-fx-background-radius: 18;" +
+                            "-fx-border-color: #22c55e;" +
+                            "-fx-border-radius: 18;" +
+                            "-fx-border-width: 1.5;" +
+                            "-fx-padding: 0 18 0 18;" +
+                            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);"
+                    );
+
+                    StackPane.setAlignment(notification, Pos.TOP_CENTER);
+                    notification.setTranslateY(-120);
 
                     Label icon = new Label("✔");
-                    icon.setStyle("-fx-text-fill: #34D399; -fx-font-size: 20px; -fx-font-weight: bold;");
+                    icon.setStyle("-fx-text-fill: #22c55e; -fx-font-size: 24px; -fx-font-weight: bold;");
 
-                    VBox textBox = new VBox(3);
+                    VBox textBox = new VBox(2);
                     textBox.setAlignment(Pos.CENTER_LEFT);
 
-                    Label main = new Label(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.");
-                    main.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 14px; -fx-font-weight: bold;");
-                    main.setWrapText(true);
-                    main.setMaxWidth(420);
+                    Label titleLabel = new Label(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.");
+                    titleLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+                    titleLabel.setWrapText(true);
+                    titleLabel.setMaxWidth(420);
 
-                    Label sub = new Label("Số dư ví còn lại: $" + NumberUtil.format(Session.lastWinRemainingBalance));
-                    sub.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 12px;");
+                    Label messageLabel = new Label("Số dư ví còn lại: $" + NumberUtil.format(Session.lastWinRemainingBalance));
+                    messageLabel.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 12px;");
 
-                    textBox.getChildren().addAll(main, sub);
-                    box.getChildren().addAll(icon, textBox);
+                    textBox.getChildren().addAll(titleLabel, messageLabel);
+                    notification.getChildren().addAll(icon, textBox);
 
-                    StackPane.setAlignment(box, Pos.TOP_CENTER);
-                    StackPane.setMargin(box, new Insets(80, 0, 0, 0));
+                    rootPane.getChildren().add(notification);
 
-                    rootPane.getChildren().add(box);
+                    TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
+                    slideDown.setToY(30);
+                    slideDown.play();
 
-                    // Tự ẩn sau 4 giây
                     PauseTransition wait = new PauseTransition(Duration.seconds(4));
-                    FadeTransition fade = new FadeTransition(Duration.millis(300), box);
+                    FadeTransition fade = new FadeTransition(Duration.millis(300), notification);
                     fade.setFromValue(1.0);
                     fade.setToValue(0.0);
                     wait.setOnFinished(ev -> fade.play());
-                    fade.setOnFinished(ev -> rootPane.getChildren().remove(box));
+                    fade.setOnFinished(ev -> rootPane.getChildren().remove(notification));
                     wait.play();
 
                     // Reset flag
