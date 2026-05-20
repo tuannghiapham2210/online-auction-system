@@ -288,6 +288,9 @@ public class DashboardController {
                             if (obj.has("winnerUsername") && !obj.get("winnerUsername").isJsonNull()) {
                                 item.setWinnerUsername(obj.get("winnerUsername").getAsString());
                             }
+                            if (obj.has("viewerCount") && !obj.get("viewerCount").isJsonNull()) {
+                                item.setViewerCount(obj.get("viewerCount").getAsInt());
+                            }
 
                             items.add(item);
                         }
@@ -582,7 +585,7 @@ public class DashboardController {
         eyeIcon.setFill(Color.web("#8B949E"));
         // eyeIcon.setScaleX(0.7); eyeIcon.setScaleY(0.7); // BỎ SCALE GÂY MEỐ Ô
 
-        Label viewerCount = new Label("124");
+        Label viewerCount = new Label(String.valueOf(item.getViewerCount()));
         // Giảm cỡ chữ để cân đối hơn
         viewerCount.setStyle("-fx-text-fill: #8B949E; -fx-font-size: 11px; -fx-font-weight: bold;");
         viewerBadge.getChildren().addAll(eyeIcon, viewerCount);

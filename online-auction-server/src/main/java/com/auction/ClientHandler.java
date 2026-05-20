@@ -34,6 +34,7 @@ public class ClientHandler implements Runnable {
 
     private Socket clientSocket;
     private PrintWriter writer;
+    private int currentItemId = -1;
 
     /**
      * Khởi tạo một ClientHandler mới cho một Socket cụ thể.
@@ -116,6 +117,7 @@ public class ClientHandler implements Runnable {
         } catch (Exception e) {
             logger.error("Communication error: {}", e.getMessage(), e);
         } finally {
+            int leftItemId = this.currentItemId;
             // 4. Dọn dẹp: Xóa khỏi danh sách activeClients và đóng Socket
             synchronized (activeClients) {
                 activeClients.remove(this);
@@ -124,6 +126,9 @@ public class ClientHandler implements Runnable {
                 clientSocket.close();
             } catch (Exception e) {
                 logger.warn("Failed to close client socket: {}", e.getMessage(), e);
+            }
+            if (leftItemId != -1) {
+                broadcastViewerCount(leftItemId);
             }
         }
     }
@@ -258,6 +263,10 @@ public class ClientHandler implements Runnable {
     private void handleGetAllItems(JsonObject request) {
         ItemDAO itemDAO = new ItemDAO();
         List<Item> items = itemDAO.getAllItems();
+
+        for (Item item : items) {
+            item.setViewerCount(getViewerCountForItem(item.getId()));
+        }
 
         Gson gson = new Gson();
         JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
@@ -865,6 +874,7 @@ public class ClientHandler implements Runnable {
     private void handleFetchBidHistory(JsonObject request) {
         try {
             int itemId = request.get("itemId").getAsInt();
+            this.currentItemId = itemId;
             
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
             java.util.List<java.util.Map<String, Object>> history = bidDAO.getBidHistory(itemId);
@@ -881,8 +891,41 @@ public class ClientHandler implements Runnable {
             writer.println(response.toString());
             logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
             
+            broadcastViewerCount(itemId);
         } catch (Exception e) {
             logger.error("Error handling FETCH_BID_HISTORY_REQUEST: {}", e.getMessage(), e);
+        }
+    }
+
+    public static int getViewerCountForItem(int itemId) {
+        int count = 0;
+        synchronized (activeClients) {
+            for (ClientHandler client : activeClients) {
+                if (client.currentItemId == itemId) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private void broadcastViewerCount(int itemId) {
+        int viewerCount = getViewerCountForItem(itemId);
+        JsonObject msg = new JsonObject();
+        msg.addProperty("action", "UPDATE_VIEWER_COUNT");
+        msg.addProperty("itemId", itemId);
+        msg.addProperty("viewerCount", viewerCount);
+        
+        synchronized (activeClients) {
+            for (ClientHandler client : activeClients) {
+                if (client.currentItemId == itemId && client.writer != null) {
+                    try {
+                        client.writer.println(msg.toString());
+                    } catch (Exception e) {
+                        logger.error("Failed to send viewer count update to client: {}", e.getMessage());
+                    }
+                }
+            }
         }
     }
 
