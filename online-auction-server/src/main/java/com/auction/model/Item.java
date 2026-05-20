@@ -22,6 +22,11 @@ public abstract class Item extends Entity implements Serializable {
     protected String description;
     protected String status = "PENDING";
 
+    // Winner info
+    protected int winnerId = -1;
+    protected double finalPrice = 0.0;
+    protected String winnerUsername;
+
     /**
      * Khởi tạo các thông tin cơ bản của một sản phẩm.
      * @param name Tên sản phẩm.
@@ -87,4 +92,13 @@ public abstract class Item extends Entity implements Serializable {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public int getWinnerId() { return winnerId; }
+    public void setWinnerId(int winnerId) { this.winnerId = winnerId; }
+
+    public double getFinalPrice() { return finalPrice; }
+    public void setFinalPrice(double finalPrice) { this.finalPrice = finalPrice; }
+
+    public String getWinnerUsername() { return winnerUsername; }
+    public void setWinnerUsername(String winnerUsername) { this.winnerUsername = winnerUsername; }
 }

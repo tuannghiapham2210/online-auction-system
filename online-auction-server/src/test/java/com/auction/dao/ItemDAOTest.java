@@ -79,11 +79,11 @@ class ItemDAOTest {
         itemDAO.insertItem(testItem);
         int itemId = getTestItemId();
 
-        boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, 600.0);
+        boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, 600.0, 9999);
         assertTrue(updateSuccess, "Đặt giá CAO HƠN phải thành công");
         assertEquals(600.0, itemDAO.getItemById(itemId).getCurrentPrice());
 
-        boolean updateFail = itemDAO.updateCurrentPrice(itemId, 550.0);
+        boolean updateFail = itemDAO.updateCurrentPrice(itemId, 550.0, 9999);
         assertFalse(updateFail, "Đặt giá THẤP HƠN giá hiện tại phải thất bại");
     }
 
