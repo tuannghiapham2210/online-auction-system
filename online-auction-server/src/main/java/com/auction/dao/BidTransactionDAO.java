@@ -43,4 +43,81 @@ public class BidTransactionDAO {
         }
         return isSuccess;
     }
+
+    /**
+     * Lấy toàn bộ lịch sử đấu giá của một sản phẩm, sắp xếp từ cũ đến mới (chronologically).
+     * Phục vụ cho mục đích tái tạo lại giao diện phòng đấu giá khi client load lại.
+     * @param itemId ID của sản phẩm.
+     * @return Danh sách các giao dịch đặt giá dạng List Map.
+     */
+    public java.util.List<java.util.Map<String, Object>> getBidHistory(int itemId) {
+        java.util.List<java.util.Map<String, Object>> history = new java.util.ArrayList<>();
+        // Truy vấn kèm JOIN bảng users để lấy tên người dùng (username) đặt giá
+        String sql = "SELECT b.bid_time, b.bidder_id, b.bid_amount, u.username " +
+                     "FROM bids b JOIN users u ON b.bidder_id = u.id " +
+                     "WHERE b.item_id = ? ORDER BY b.bid_time ASC";
+
+        try (java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, itemId);
+
+            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> record = new java.util.HashMap<>();
+                    record.put("timestamp", rs.getString("bid_time"));
+                    record.put("bidderId", rs.getInt("bidder_id"));
+                    record.put("username", rs.getString("username"));
+                    record.put("price", rs.getDouble("bid_amount"));
+                    history.add(record);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to fetch bid history for itemId {}: {}", itemId, e.getMessage(), e);
+        }
+        return history;
+    }
+
+    /**
+     * Truy vấn thông tin người trả giá cao nhất hiện tại của một sản phẩm từ cơ sở dữ liệu.
+     * Phục vụ cho tính năng dừng phiên đấu giá khẩn cấp để chốt người chiến thắng lập tức.
+     * @param itemId ID của sản phẩm cần kiểm tra lịch sử đặt giá.
+     * @return Một Map chứa thông tin: "bidderId" (Integer), "bidAmount" (Double), và "username" (String).
+     */
+    public java.util.Map<String, Object> getHighestBidder(int itemId) {
+        // Khởi tạo cấu trúc dữ liệu trả về với các giá trị mặc định nếu chưa có ai đặt giá
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("username", "Không có");
+        result.put("bidderId", -1);
+        result.put("bidAmount", 0.0);
+
+        // Câu lệnh SQL sắp xếp giá đặt từ cao xuống thấp và lấy bản ghi đầu tiên
+        String sql = "SELECT b.bidder_id, b.bid_amount, u.username " +
+                "FROM bids b JOIN users u ON b.bidder_id = u.id " +
+                "WHERE b.item_id = ? ORDER BY b.bid_amount DESC LIMIT 1";
+
+        try (java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Gán tham số ID sản phẩm vào câu lệnh truy vấn
+            pstmt.setInt(1, itemId);
+
+            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                // Nếu tìm thấy lượt đặt giá cao nhất
+                if (rs.next()) {
+                    result.put("bidderId", rs.getInt("bidder_id"));
+                    result.put("bidAmount", rs.getDouble("bid_amount"));
+                    result.put("username", rs.getString("username"));
+
+                    // Ghi log hệ thống ghi nhận người dẫn đầu hiện tại
+                    logger.info("[SERVER] Tìm thấy người dẫn đầu hiện tại cho itemId {}: {} với giá ${}",
+                            itemId, rs.getString("username"), rs.getDouble("bid_amount"));
+                }
+            }
+        } catch (Exception e) {
+            // Ghi log lỗi nếu quá trình truy vấn cơ sở dữ liệu thất bại
+            logger.error("[SERVER] Lỗi khi truy vấn người thầu cao nhất cho itemId {}: {}", itemId, e.getMessage(), e);
+        }
+        return result;
+    }
 }

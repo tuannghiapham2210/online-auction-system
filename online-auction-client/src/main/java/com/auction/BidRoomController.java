@@ -89,6 +89,13 @@ public class BidRoomController {
     @FXML private Label timerLabelTitle;
     @FXML private Button btnOpenAuction;
     @FXML private Button btnCancelAuction;
+    @FXML private Button btnStopAuction; // Nút dừng phiên
+    private int currentSellerId; // Lưu lại ID người bán để phân quyền
+
+    // Getter cho ServerListener
+    public int getItemId() {
+        return this.currentItemId;
+    }
 
     private XYChart.Series<String, Number> priceSeries;
     private ObservableList<BidEvent> historyLogs;
@@ -108,6 +115,9 @@ public class BidRoomController {
     private String currentEndTime;
     private String currentStatus;
     private double currentStepPrice;
+    private int currentWinnerId = -1;
+    private double currentFinalPrice = 0.0;
+    private String currentWinnerUsername;
     private boolean isNotificationShowing = false;
     private boolean auctionEndedShown = false;
 
@@ -153,6 +163,18 @@ public class BidRoomController {
             ((Region) bidHistoryList.getParent()).setMinHeight(350);
         }
 
+        // 3. Tăng chiều cao của ảnh sản phẩm và bỏ giới hạn chiều cao của Card cha
+        if (heroImageContainer != null) {
+            heroImageContainer.setMinHeight(320);
+            heroImageContainer.setPrefHeight(320);
+            if (heroImageContainer.getParent() instanceof Region) {
+                Region parentCard = (Region) heroImageContainer.getParent();
+                parentCard.setMinHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setPrefHeight(Region.USE_COMPUTED_SIZE);
+                parentCard.setMaxHeight(Double.MAX_VALUE);
+            }
+        }
+
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
@@ -171,6 +193,9 @@ public class BidRoomController {
         }
         if (btnCancelAuction != null) {
             btnCancelAuction.managedProperty().bind(btnCancelAuction.visibleProperty());
+        }
+        if (btnStopAuction != null) {
+            btnStopAuction.managedProperty().bind(btnStopAuction.visibleProperty());
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
@@ -289,13 +314,17 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status, int winnerId, double finalPrice, String winnerUsername) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
         this.currentEndTime = endTime;
         this.currentStatus = status;
         this.currentStepPrice = stepPrice;
+        this.currentSellerId = sellerId;
+        this.currentWinnerId = winnerId;
+        this.currentFinalPrice = finalPrice;
+        this.currentWinnerUsername = winnerUsername;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -304,20 +333,64 @@ public class BidRoomController {
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
         if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
+        if (highestBidderLabel != null && winnerUsername != null && !winnerUsername.trim().isEmpty()) {
+            highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
+        }
 
         // 3. Tải và hiển thị ảnh sản phẩm
         if (imageUrl != null && !imageUrl.isEmpty()) {
             try {
                 Image img = new Image(imageUrl, true);
                 if (heroImageRect != null && heroImageContainer != null) {
+                    // Bind rectangle to container size to act as a background
                     heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    heroImageRect.setFill(Color.web("#1A1D27"));
+                    heroImageRect.heightProperty().bind(heroImageContainer.heightProperty());
+                    heroImageRect.setFill(Color.web("#1A1D27")); // Placeholder color
+
+                    // When image is loaded, calculate the correct pattern to "cover" the area without stretching
                     img.progressProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal.doubleValue() == 1.0 && !img.isError()) {
-                            heroImageRect.setFill(new ImagePattern(img));
+
+                            // This logic will run once loaded and on every resize to keep the "cover" effect
+                            Runnable updateImagePattern = () -> {
+                                double containerW = heroImageContainer.getWidth();
+                                double containerH = heroImageContainer.getHeight();
+                                if (containerW <= 0 || containerH <= 0) return;
+
+                                double imgW = img.getWidth();
+                                double imgH = img.getHeight();
+                                if (imgW <= 0 || imgH <= 0) return;
+
+                                double containerAspect = containerW / containerH;
+                                double imgAspect = imgW / imgH;
+
+                                double patternW, patternH, patternX, patternY;
+
+                                if (imgAspect > containerAspect) { // Image is wider than container, so scale by height
+                                    patternH = containerH;
+                                    patternW = containerH * imgAspect;
+                                    patternX = (containerW - patternW) / 2;
+                                    patternY = 0;
+                                } else { // Image is taller or same aspect, so scale by width
+                                    patternW = containerW;
+                                    patternH = containerW / imgAspect;
+                                    patternX = 0;
+                                    patternY = (containerH - patternH) / 2;
+                                }
+                                
+                                heroImageRect.setFill(new ImagePattern(img, patternX, patternY, patternW, patternH, false));
+                            };
+
+                            // Add listeners to update on resize
+                            heroImageContainer.widthProperty().addListener(o -> updateImagePattern.run());
+                            heroImageContainer.heightProperty().addListener(o -> updateImagePattern.run());
+
+                            // Run once now
+                            updateImagePattern.run();
                         }
                     });
                     
+                    // Apply rounded corner clip
                     Rectangle clipRect = new Rectangle();
                     clipRect.widthProperty().bind(heroImageContainer.widthProperty());
                     clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
@@ -330,33 +403,17 @@ public class BidRoomController {
             }
         }
 
-        // 4. Đánh dấu điểm giá khởi đầu trên biểu đồ
-        String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-        XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, currentPrice);
-
-        // Cấu hình Y-Axis thủ công với 15% buffer
+        // 4. Xóa dữ liệu cũ và cấu hình trục Y cho biểu đồ
+        priceSeries.getData().clear();
+        historyLogs.clear();
         NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
         yAxis.setAutoRanging(false);
         yAxis.setLowerBound(0);
         double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
         yAxis.setUpperBound(initialUpperBound);
         yAxis.setTickUnit(initialUpperBound / 5);
-
-        StackPane customNode = new StackPane();
-        customNode.setStyle("-fx-background-color: transparent;");
-        Circle dot = new Circle(6);
-        dot.setFill(Color.web("#f9a825"));
-        dot.setStroke(Color.WHITE);
-        dot.setStrokeWidth(2);
-        Label priceLbl = new Label("$" + NumberUtil.format(currentPrice));
-        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-        priceLbl.setTranslateY(-25);
-        customNode.getChildren().addAll(dot, priceLbl);
-        initialData.setNode(customNode);
-        
-        priceSeries.getData().add(initialData);
-
-        // 5. Mở kết nối mạng
+ 
+        // 5. Mở kết nối mạng và yêu cầu lịch sử đấu giá
         connectToServer();
         
         // 6. Kiểm tra trạng thái Lockout PENDING
@@ -401,29 +458,76 @@ public class BidRoomController {
                 }
             }
         } else {
-            // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
-            if (liveBadge != null) liveBadge.setVisible(true);
-            
-            if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
+            // =========================================================
+            // CODE CỦA BẠN BÈ: Kiểm tra xem phiên đấu giá đã hết hạn thật sự chưa
+            // =========================================================
+            boolean auctionExpired = false;
+            try {
+                if (endTime != null && !endTime.isEmpty()) {
+                    LocalDateTime parsedEnd = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    auctionExpired = !LocalDateTime.now().isBefore(parsedEnd);
                 }
-                if (bidAmountField != null) {
-                    bidAmountField.setDisable(false);
-                    bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
-                }
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-            } else {
-                bidAmountField.setDisable(true);
-                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+            } catch (Exception ignored) {
+                auctionExpired = false;
+            }
+
+            // Nếu phiên đã kết thúc (CLOSED) hoặc thời gian đã hết thì hiển thị overlay chiến thắng luôn
+            if ("CLOSED".equalsIgnoreCase(status) || auctionExpired) {
+                if (liveBadge != null) liveBadge.setVisible(false);
+                if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                if (bidAmountField != null) bidAmountField.setDisable(true);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                if (btnStopAuction != null) btnStopAuction.setVisible(false); // Đã kết thúc thì tắt nút dừng
+
                 if (autoBidPanel != null) {
                     autoBidPanel.setDisable(true);
                     autoBidPanel.setOpacity(0.4);
                 }
+                if (currentWinnerUsername != null && !currentWinnerUsername.trim().isEmpty()) {
+                    if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + currentWinnerUsername);
+                }
+                showWinnerOverlay(currentWinnerUsername, currentFinalPrice);
+
+            } else {
+                // =========================================================
+                // CODE CỦA BẠN: Nếu đang ACTIVE thật sự thì bắt đầu đếm ngược
+                // =========================================================
+                if (liveBadge != null) liveBadge.setVisible(true);
+
+                // Phân quyền kích hoạt nút "Dừng phiên" cho Admin hoặc người bán
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
+                } else {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(false);
+                }
+
+                // Mở khóa ô nhập giá cho người mua
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                } else {
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(true);
+                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
+                }
+
+                // Khởi chạy đồng hồ
+                startCountdown(endTime);
             }
-            startCountdown(endTime);
         }
     }
 
@@ -498,6 +602,13 @@ public class BidRoomController {
                 // 4. Chạy luồng lắng nghe liên tục các cập nhật từ Server
                 ServerListener listener = new ServerListener(in, this);
                 new Thread(listener).start();
+
+                // 3. Gửi yêu cầu lấy lịch sử đấu giá để hydrate UI
+                JsonObject request = new JsonObject();
+                request.addProperty("action", "FETCH_BID_HISTORY_REQUEST");
+                request.addProperty("itemId", this.currentItemId);
+                out.println(request.toString());
+                logger.info("Sent FETCH_BID_HISTORY_REQUEST for item: {}", this.currentItemId);
 
             } catch (Exception e) {
                 logger.error("🔴 Lỗi mạng: Không thể kết nối", e);
@@ -596,23 +707,7 @@ public class BidRoomController {
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
                 if (dot != null) {
-                    Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(newPrice));
-                    tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-                    Tooltip.install(dot, tooltip);
-
-                    ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
-                    st.setByX(0.5);
-                    st.setByY(0.5);
-                    st.setAutoReverse(true);
-                    st.setCycleCount(Timeline.INDEFINITE);
-
-                    FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
-                    ft.setFromValue(1.0);
-                    ft.setToValue(0.5);
-                    ft.setAutoReverse(true);
-                    ft.setCycleCount(Timeline.INDEFINITE);
-
-                    new ParallelTransition(st, ft).play();
+                    applyPulseAnimation(dot, newPrice);
                 }
             });
         });
@@ -852,6 +947,10 @@ private void hideNotification(HBox notification) {
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
+
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
+                }
                 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
                     if (bidAmountField != null) {
@@ -986,6 +1085,10 @@ private void hideNotification(HBox notification) {
                 
                 if (btnCancelAuction != null) {
                     btnCancelAuction.setVisible(false);
+                }
+
+                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
                 }
 
                 startCountdown(endTime);
@@ -1353,6 +1456,235 @@ private void hideNotification(HBox notification) {
             SequentialTransition sequence = new SequentialTransition(fadeIn, wait, fadeOut);
             sequence.play();
 
+        });
+    }
+    /**
+     * Xử lý sự kiện khi Admin/Seller nhấn nút dừng khẩn cấp (Đã thiết kế lại UI Popup).
+     */
+    @FXML
+    private void handleStopAuction() {
+        Alert alert = new Alert(Alert.AlertType.NONE, "", ButtonType.YES, ButtonType.NO);
+        // Ẩn các phần thừa mặc định của Alert
+        alert.setHeaderText(null);
+        alert.setGraphic(null);
+
+        DialogPane dialogPane = alert.getDialogPane();
+
+        // =========================================================
+        // CẮT BỎ NỀN TRẮNG HỆ THỐNG VÀ THANH TIÊU ĐỀ
+        // =========================================================
+        Stage stage = (Stage) dialogPane.getScene().getWindow();
+        stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+
+        dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: #F59E0B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+
+        VBox content = new VBox(15);
+        content.setAlignment(Pos.CENTER);
+        content.setPadding(new Insets(25, 20, 10, 20));
+
+        Label icon = new Label("!");
+        icon.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 60px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;");
+
+        Label titleLabel = new Label("XÁC NHẬN CHỐT SỔ SỚM");
+        titleLabel.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label msgLabel = new Label("Bạn có chắc chắn muốn chốt sổ sớm phiên đấu giá này không?\nNgười đang dẫn đầu sẽ giành chiến thắng ngay lập tức!");
+        msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
+
+        content.getChildren().addAll(icon, titleLabel, msgLabel);
+        dialogPane.setContent(content);
+
+        Button yesBtn = (Button) dialogPane.lookupButton(ButtonType.YES);
+        if (yesBtn != null) {
+            yesBtn.setText("Chốt ngay");
+            yesBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+        }
+
+        Button noBtn = (Button) dialogPane.lookupButton(ButtonType.NO);
+        if (noBtn != null) {
+            noBtn.setText("Hủy");
+            noBtn.setStyle("-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+        }
+
+        alert.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    JsonObject request = new JsonObject();
+                    request.addProperty("action", "STOP_AUCTION_REQUEST");
+                    request.addProperty("itemId", currentItemId);
+                    request.addProperty("userId", Session.userId);
+                    request.addProperty("role", Session.role);
+
+                    if (out != null) {
+                        out.println(request.toString());
+                        logger.info("Sent STOP_AUCTION_REQUEST for item: {}", currentItemId);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to send STOP_AUCTION_REQUEST", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Cưỡng chế hiển thị cúp chiến thắng khi nhận lệnh đóng phiên sớm từ Server.
+     */
+    public void forceEndAuctionRealtime(String winnerUsername, double finalPrice) {
+        Platform.runLater(() -> {
+            if (countdownTimeline != null) countdownTimeline.stop();
+            if (progressTimeline != null) progressTimeline.stop();
+
+            if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+            if (liveBadge != null) liveBadge.setVisible(false);
+            if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
+            if (currentPriceLabel != null) currentPriceLabel.setText("$" + NumberUtil.format(finalPrice));
+
+            if (bidAmountField != null) bidAmountField.setDisable(true);
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (btnStopAuction != null) btnStopAuction.setVisible(false);
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(true);
+                autoBidPanel.setOpacity(0.4);
+            }
+
+            showWinnerOverlay(winnerUsername, finalPrice);
+        });
+    }
+
+    /**
+     * Áp dụng hiệu ứng nhấp nháy (Pulse/Radar) cho điểm dữ liệu mới nhất trên biểu đồ.
+     */
+    private void applyPulseAnimation(Circle dot, double price) {
+        Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(price));
+        tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
+        Tooltip.install(dot, tooltip);
+
+        ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
+        st.setByX(0.5);
+        st.setByY(0.5);
+        st.setAutoReverse(true);
+        st.setCycleCount(Timeline.INDEFINITE);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.5);
+        ft.setAutoReverse(true);
+        ft.setCycleCount(Timeline.INDEFINITE);
+
+        new ParallelTransition(st, ft).play();
+    }
+
+    /**
+     * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
+     * Được gọi bởi ServerListener khi nhận được FETCH_BID_HISTORY_RESPONSE.
+     * @param history Mảng JSON chứa các giao dịch đặt giá đã xảy ra.
+     */
+    public void hydrateUIWithHistory(com.google.gson.JsonArray history) {
+        Platform.runLater(() -> {
+            if (history == null || history.isEmpty()) {
+                logger.info("No bid history to hydrate. Plotting initial price.");
+                double cp = 0;
+                try {
+                    cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                } catch (Exception e) {}
+                
+                String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, cp);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(cp));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                initialData.setNode(customNode);
+                
+                priceSeries.getData().add(initialData);
+                applyPulseAnimation(dot, cp);
+                return;
+            }
+
+            java.util.List<BidEvent> bidEvents = new java.util.ArrayList<>();
+            double maxPrice = 0;
+
+            for (com.google.gson.JsonElement element : history) {
+                com.google.gson.JsonObject record = element.getAsJsonObject();
+                
+                String fullTimestamp = record.get("timestamp").getAsString();
+                String timePart;
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(fullTimestamp, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    timePart = ldt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                } catch (Exception e) {
+                    timePart = "00:00:00"; // Fallback
+                }
+
+                int bidderId = record.get("bidderId").getAsInt();
+                String username = record.get("username").getAsString();
+                double price = record.get("price").getAsDouble();
+
+                bidEvents.add(new BidEvent(timePart, bidderId, username, price));
+
+                if (price > maxPrice) {
+                    maxPrice = price;
+                }
+            }
+
+            // 1. Cập nhật trục Y của biểu đồ dựa trên giá cao nhất trong lịch sử
+            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+            double newUpperBound = maxPrice * 1.15;
+            if (newUpperBound == 0) {
+                try {
+                    double initialPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                    newUpperBound = initialPrice > 0 ? initialPrice * 1.15 : 100;
+                } catch (Exception e) {
+                    newUpperBound = 100;
+                }
+            }
+            yAxis.setUpperBound(newUpperBound);
+            yAxis.setTickUnit(newUpperBound / 5);
+
+            // 2. Đổ dữ liệu vào biểu đồ (giữ tối đa 10 điểm)
+            priceSeries.getData().clear();
+            for (int i = 0; i < bidEvents.size(); i++) {
+                BidEvent event = bidEvents.get(i);
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
+
+                StackPane customNode = new StackPane();
+                customNode.setStyle("-fx-background-color: transparent;");
+                Circle dot = new Circle(6);
+                dot.setFill(Color.web("#f9a825"));
+                dot.setStroke(Color.WHITE);
+                dot.setStrokeWidth(2);
+                Label priceLbl = new Label("$" + NumberUtil.format(event.price));
+                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+                priceLbl.setTranslateY(-25);
+                customNode.getChildren().addAll(dot, priceLbl);
+                dataPoint.setNode(customNode);
+                
+                priceSeries.getData().add(dataPoint);
+                if (priceSeries.getData().size() > 10) {
+                    priceSeries.getData().remove(0);
+                }
+                
+                // --- THÊM HIỆU ỨNG NHẤP NHÁY VÀO ĐIỂM CUỐI CÙNG ---
+                if (i == bidEvents.size() - 1) {
+                    applyPulseAnimation(dot, event.price);
+                }
+            }
+            
+            // 3. Đổ dữ liệu vào Log (mới nhất ở trên cùng)
+            historyLogs.clear();
+            for (BidEvent event : bidEvents) {
+                historyLogs.add(0, event);
+            }
+            
+            logger.info("Successfully hydrated UI with {} history records.", bidEvents.size());
         });
     }
 }

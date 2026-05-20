@@ -95,8 +95,14 @@ public class ClientHandler implements Runnable {
                     case "CANCEL_AUCTION_REQUEST":
                         handleCancelAuction(request);
                         break;
+                    case "STOP_AUCTION_REQUEST":
+                        handleStopAuction(request);
+                        break;
                     case "REGISTER_AUTO_BID":
                         handleRegisterAutoBid(request);
+                        break;
+                    case "FETCH_BID_HISTORY_REQUEST":
+                        handleFetchBidHistory(request);
                         break;
 
                     default:
@@ -321,7 +327,7 @@ public class ClientHandler implements Runnable {
             }
             // -----------------------------
 
-            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount);
+            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount, bidderId);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
 
             // 3. Broadcast cho tất cả Client nếu thành công
@@ -471,7 +477,7 @@ public class ClientHandler implements Runnable {
                             
                             // Nếu họ có thể vượt lên mức giá hiện tại hợp lệ
                             if (nextBid > currentPrice && maxBid > currentPrice) {
-                                boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, nextBid);
+                                boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, nextBid, botUserId);
                                 boolean logSuccess = bidDAO.insertBidTransaction(itemId, botUserId, nextBid);
                                 
                                 if (updateSuccess && logSuccess) {
@@ -668,11 +674,11 @@ public class ClientHandler implements Runnable {
             logger.error("Error handling OPEN_AUCTION_REQUEST: {}", e.getMessage(), e);
         }
     }
-    
+
     /**
-     * Xử lý request hủy phiên đấu giá.
-     * Xóa sản phẩm khỏi hệ thống nếu sản phẩm đang PENDING.
-     * @param request JSON chứa "itemId", "userId", và "role".
+     * Xử lý request hủy/gỡ/xóa hoàn toàn phiên đấu giá khỏi hệ thống.
+     * Đã nâng cấp bảo mật: Chặn đứng hành vi gỡ sản phẩm khi phiên đấu giá đang diễn ra trực tiếp.
+     * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
      */
     private void handleCancelAuction(JsonObject request) {
         try {
@@ -686,40 +692,197 @@ public class ClientHandler implements Runnable {
             if (item == null) {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại trên hệ thống!");
                 this.writer.println(errorMsg.toString());
                 return;
             }
 
-            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-                if (!"PENDING".equalsIgnoreCase(item.getStatus())) {
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Không thể hủy phiên đã bắt đầu hoặc kết thúc!");
-                    this.writer.println(errorMsg.toString());
-                    return;
+            // =========================================================================
+            // CRITICAL BUG FIX: Kiểm tra trạng thái kèm đối chiếu thời gian kết thúc thực tế
+            // =========================================================================
+            boolean isLive = false; // Biến cờ xác định xem phiên có đang chạy THẬT SỰ hay không
+
+            if ("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) {
+                try {
+                    // Lấy thời gian kết thúc của phiên thầu từ Database
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
+
+                    // Nếu thời gian hiện tại (now) vẫn nằm TRƯỚC thời gian kết thúc -> Đang chạy thật sự
+                    if (java.time.LocalDateTime.now().isBefore(endTime)) {
+                        isLive = true;
+                    } else {
+                        // Hết giờ rồi mà DB vẫn kẹt chữ ACTIVE -> Cập nhật thành FINISHED để đồng bộ
+                        itemDAO.updateAuctionStatus(itemId, "FINISHED");
+                        logger.info("[SERVER] Đã tự động chốt trạng thái FINISHED cho itemId={} do hết hạn.", itemId);
+                    }
+                } catch (Exception e) {
+                    // Nếu cấu trúc chuỗi thời gian bị lỗi, an toàn nhất là chặn xóa
+                    logger.error("[SERVER] Lỗi parse thời gian khi xóa: {}", e.getMessage());
+                    isLive = true;
                 }
+            }
+
+            // Nếu phiên đang chạy thật sự (isLive == true) thì mới quăng lỗi từ chối xóa
+            if (isLive) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Không được phép gỡ bỏ sản phẩm khi phiên đấu giá đang diễn ra trực tiếp!");
+                logger.warn("[SERVER] Chặn hành vi gỡ sản phẩm đang đấu giá: itemId={}, bởi userId={}", itemId, userId);
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            // KIỂM TRA PHÂN QUYỀN: Chỉ ADMIN hoặc chính chủ SELLER tạo ra món đồ mới được phép gỡ
+            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
+
+                // THỰC THI XÓA: Gọi ItemDAO thực hiện lệnh DELETE xóa bản ghi khỏi SQLite CSDL
                 boolean success = itemDAO.deleteItem(itemId);
+
                 if (success) {
                     JsonObject broadcastMsg = new JsonObject();
                     broadcastMsg.addProperty("action", "AUCTION_CANCELLED");
                     broadcastMsg.addProperty("itemId", itemId);
-                    broadcastMsg.addProperty("message", "Đã hủy phiên đấu giá thành công!");
+                    broadcastMsg.addProperty("message", "Sản phẩm '" + item.getName() + "' đã bị gỡ bỏ khỏi hệ thống.");
+
+                    logger.info("Product ID {} successfully removed by userId={}, role={}", itemId, userId, role);
+
+                    // Phát loa phát thanh (Broadcast) báo hiệu cho tất cả client đang online đồng loạt dọn dẹp sảnh chờ
                     broadcast(broadcastMsg);
+
+                    // Phản hồi kết quả thành công cho Client gửi yêu cầu
+                    JsonObject response = new JsonObject();
+                    response.addProperty("status", "SUCCESS");
+                    this.writer.println(response.toString());
                 } else {
                     JsonObject errorMsg = new JsonObject();
                     errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Lỗi CSDL khi hủy phiên!");
+                    errorMsg.addProperty("message", "Lỗi cơ sở dữ liệu khi thực hiện xóa sản phẩm!");
                     this.writer.println(errorMsg.toString());
                 }
             } else {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền hủy phiên đấu giá này!");
+                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền gỡ sản phẩm này!");
                 this.writer.println(errorMsg.toString());
             }
         } catch (Exception e) {
-            logger.error("Error handling CANCEL_AUCTION_REQUEST: {}", e.getMessage(), e);
+            logger.error("Error inside handleCancelAuction: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * TÍNH NĂNG MỚI: Xử lý request dừng phiên đấu giá lập tức (Chốt sổ sớm khẩn cấp).
+     * Chỉ cho phép Admin hệ thống hoặc chính Seller sở hữu sản phẩm thực hiện hành động này.
+     * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
+     */
+    private void handleStopAuction(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+            String role = request.has("role") ? request.get("role").getAsString() : "";
+
+            logger.info("[SERVER] Nhận yêu cầu dừng phiên khẩn cấp từ client: itemId={}, userId={}, role={}", itemId, userId, role);
+
+            ItemDAO itemDAO = new ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+
+            if (item == null) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            // PHÂN QUYỀN HỆ THỐNG: Kiểm tra xem có phải ADMIN hay chủ sở hữu món hàng không
+            if (!"ADMIN".equalsIgnoreCase(role) && item.getSellerId() != userId) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Từ chối: Bạn không có thẩm quyền đóng phiên đấu giá này!");
+                logger.warn("[SERVER] Yêu cầu dừng phiên bị từ chối do sai phân quyền: userId={}", userId);
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            // KIỂM TRA TRẠNG THÁI: Chỉ có thể ép dừng khi phiên thầu đang hoạt động trực tiếp (ACTIVE)
+            if (!"ACTIVE".equalsIgnoreCase(item.getStatus())) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Phiên đấu giá hiện không ở trạng thái chạy trực tiếp!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+
+            // Tiến hành cập nhật trạng thái kết thúc "FINISHED" vào Database
+            boolean statusUpdated = itemDAO.updateAuctionStatus(itemId, "FINISHED");
+            if (statusUpdated) {
+                // =====================================================================
+                // FIX BUG ĐỒNG HỒ DASHBOARD: Ép thời gian kết thúc về đúng thời điểm bấm nút
+                // Để khi Client tải lại trang, thuật toán đếm ngược thấy hết giờ sẽ tự dừng.
+                // =====================================================================
+                String nowStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                itemDAO.updateEndTime(itemId, nowStr);
+
+                logger.info("[SERVER] Cập nhật CSDL: Chuyển item {} sang FINISHED và chốt giờ về {}", itemId, nowStr);
+
+                // Truy vấn thông tin người trả giá cao nhất tại thời điểm bấm nút để chốt người chiến thắng
+                com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
+                java.util.Map<String, Object> highestBid = bidDAO.getHighestBidder(itemId);
+
+                String winnerUsername = (String) highestBid.get("username");
+                double finalPrice = (double) highestBid.get("bidAmount");
+
+                // Nếu chưa có ai đặt giá, mức giá chốt sẽ quay về giá khởi điểm ban đầu
+                if (finalPrice == 0) {
+                    finalPrice = item.getStartingPrice();
+                }
+
+                // Phát tín hiệu Broadcast "AUCTION_FINISHED" cho toàn bộ Client đang kết nối thời gian thực
+                JsonObject finishBroadcast = new JsonObject();
+                finishBroadcast.addProperty("action", "AUCTION_FINISHED");
+                finishBroadcast.addProperty("itemId", itemId);
+                finishBroadcast.addProperty("winnerUsername", winnerUsername);
+                finishBroadcast.addProperty("finalPrice", finalPrice);
+
+                logger.info("[SERVER] Broadcast sự kiện kết thúc thầu sớm: Item={}, Winner={}, Price=${}", itemId, winnerUsername, finalPrice);
+                broadcast(finishBroadcast);
+            } else {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái kết thúc!");
+                this.writer.println(errorMsg.toString());
+            }
+        } catch (Exception e) {
+            logger.error("Error inside handleStopAuction: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Xử lý request lấy lịch sử đấu giá của một sản phẩm để đồng bộ (hydrate) UI khi Client vào lại phòng.
+     * @param request Đối tượng JSON chứa "itemId".
+     */
+    private void handleFetchBidHistory(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            
+            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
+            java.util.List<java.util.Map<String, Object>> history = bidDAO.getBidHistory(itemId);
+            
+            Gson gson = new Gson();
+            JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
+            
+            JsonObject response = new JsonObject();
+            response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("itemId", itemId);
+            response.add("history", arr);
+            
+            writer.println(response.toString());
+            logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
+            
+        } catch (Exception e) {
+            logger.error("Error handling FETCH_BID_HISTORY_REQUEST: {}", e.getMessage(), e);
         }
     }
 
