@@ -14,4 +14,9 @@ public class Session {
     public static String username;
     public static User user;
     public static int balance;
+    // --- Fields used to signal a recent win and remaining balance ---
+    public static boolean justWon = false;
+    public static double lastWonPrice = 0.0;
+    public static int lastWinRemainingBalance = 0;
+    public static String lastWinMessage = null;
 }

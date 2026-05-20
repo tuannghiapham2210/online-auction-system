@@ -20,6 +20,7 @@ import javafx.scene.image.ImageView;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 import javafx.scene.layout.HBox;
@@ -119,6 +120,62 @@ public class DashboardController {
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
+        });
+
+        // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo thành công và số dư còn lại
+        Platform.runLater(() -> {
+            try {
+                if (Session.justWon) {
+                    // Cập nhật số dư hiển thị chính
+                    if (lblBalance != null) {
+                        lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                    }
+
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+
+                    HBox box = new HBox(12);
+                    box.setStyle("-fx-background-color: #064e3b; -fx-background-radius: 12; -fx-padding: 14 18; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);");
+                    box.setMaxWidth(520);
+                    box.setMaxHeight(Region.USE_PREF_SIZE);
+                    box.setAlignment(Pos.CENTER_LEFT);
+                    box.setManaged(false);
+
+                    Label icon = new Label("✔");
+                    icon.setStyle("-fx-text-fill: #34D399; -fx-font-size: 20px; -fx-font-weight: bold;");
+
+                    VBox textBox = new VBox(3);
+                    textBox.setAlignment(Pos.CENTER_LEFT);
+
+                    Label main = new Label(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.");
+                    main.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 14px; -fx-font-weight: bold;");
+                    main.setWrapText(true);
+                    main.setMaxWidth(420);
+
+                    Label sub = new Label("Số dư ví còn lại: $" + NumberUtil.format(Session.lastWinRemainingBalance));
+                    sub.setStyle("-fx-text-fill: #bbf7d0; -fx-font-size: 12px;");
+
+                    textBox.getChildren().addAll(main, sub);
+                    box.getChildren().addAll(icon, textBox);
+
+                    StackPane.setAlignment(box, Pos.TOP_CENTER);
+                    StackPane.setMargin(box, new Insets(80, 0, 0, 0));
+
+                    rootPane.getChildren().add(box);
+
+                    // Tự ẩn sau 4 giây
+                    PauseTransition wait = new PauseTransition(Duration.seconds(4));
+                    FadeTransition fade = new FadeTransition(Duration.millis(300), box);
+                    fade.setFromValue(1.0);
+                    fade.setToValue(0.0);
+                    wait.setOnFinished(ev -> fade.play());
+                    fade.setOnFinished(ev -> rootPane.getChildren().remove(box));
+                    wait.play();
+
+                    // Reset flag
+                    Session.justWon = false;
+                    Session.lastWinMessage = null;
+                }
+            } catch (Exception ignored) {}
         });
     }
 
