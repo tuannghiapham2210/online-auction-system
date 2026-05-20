@@ -330,14 +330,55 @@ public class BidRoomController {
             try {
                 Image img = new Image(imageUrl, true);
                 if (heroImageRect != null && heroImageContainer != null) {
+                    // Bind rectangle to container size to act as a background
                     heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    heroImageRect.setFill(Color.web("#1A1D27"));
+                    heroImageRect.heightProperty().bind(heroImageContainer.heightProperty());
+                    heroImageRect.setFill(Color.web("#1A1D27")); // Placeholder color
+
+                    // When image is loaded, calculate the correct pattern to "cover" the area without stretching
                     img.progressProperty().addListener((obs, oldVal, newVal) -> {
                         if (newVal.doubleValue() == 1.0 && !img.isError()) {
-                            heroImageRect.setFill(new ImagePattern(img));
+
+                            // This logic will run once loaded and on every resize to keep the "cover" effect
+                            Runnable updateImagePattern = () -> {
+                                double containerW = heroImageContainer.getWidth();
+                                double containerH = heroImageContainer.getHeight();
+                                if (containerW <= 0 || containerH <= 0) return;
+
+                                double imgW = img.getWidth();
+                                double imgH = img.getHeight();
+                                if (imgW <= 0 || imgH <= 0) return;
+
+                                double containerAspect = containerW / containerH;
+                                double imgAspect = imgW / imgH;
+
+                                double patternW, patternH, patternX, patternY;
+
+                                if (imgAspect > containerAspect) { // Image is wider than container, so scale by height
+                                    patternH = containerH;
+                                    patternW = containerH * imgAspect;
+                                    patternX = (containerW - patternW) / 2;
+                                    patternY = 0;
+                                } else { // Image is taller or same aspect, so scale by width
+                                    patternW = containerW;
+                                    patternH = containerW / imgAspect;
+                                    patternX = 0;
+                                    patternY = (containerH - patternH) / 2;
+                                }
+                                
+                                heroImageRect.setFill(new ImagePattern(img, patternX, patternY, patternW, patternH, false));
+                            };
+
+                            // Add listeners to update on resize
+                            heroImageContainer.widthProperty().addListener(o -> updateImagePattern.run());
+                            heroImageContainer.heightProperty().addListener(o -> updateImagePattern.run());
+
+                            // Run once now
+                            updateImagePattern.run();
                         }
                     });
                     
+                    // Apply rounded corner clip
                     Rectangle clipRect = new Rectangle();
                     clipRect.widthProperty().bind(heroImageContainer.widthProperty());
                     clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
