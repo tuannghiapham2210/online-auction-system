@@ -398,12 +398,10 @@ public class DashboardController {
                 desc = "Đang mở đấu giá trực tiếp cho " + item.getName();
             }
 
-            ((BidRoomController) loader.getController()).setAuctionData(
-                    item.getId(), item.getName(), item.getCurrentPrice(), item.getStepPrice(),
-                    Session.userId, item.getEndTime(), item.getImageUrl(),
-                    item.getItemType(), desc, item.getSellerId(), item.getStatus(),
-                    item.getWinnerId(), item.getFinalPrice(), item.getWinnerUsername()
-            );
+            ((BidRoomController) loader.getController()).setAuctionData(item.getId(), item.getName(),
+                    item.getStartingPrice(), item.getCurrentPrice(), item.getStepPrice(), Session.userId,
+                    item.getEndTime(), item.getImageUrl(), item.getItemType(), desc, item.getSellerId(),
+                    item.getStatus(), item.getWinnerId(), item.getFinalPrice(), item.getWinnerUsername());
 
             Stage stage = (Stage) itemGrid.getScene().getWindow();
             itemGrid.getScene().setRoot(root);

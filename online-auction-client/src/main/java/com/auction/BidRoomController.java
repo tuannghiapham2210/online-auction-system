@@ -113,6 +113,7 @@ public class BidRoomController {
     private int currentItemId;
     private int currentUserId;
     private String currentEndTime;
+    private double currentStartingPrice;
     private String currentStatus;
     private double currentStepPrice;
     private int currentWinnerId = -1;
@@ -314,12 +315,13 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status, int winnerId, double finalPrice, String winnerUsername) {
+    public void setAuctionData(int itemId, String itemName, double startingPrice, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status, int winnerId, double finalPrice, String winnerUsername) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
         this.currentEndTime = endTime;
         this.currentStatus = status;
+        this.currentStartingPrice = startingPrice;
         this.currentStepPrice = stepPrice;
         this.currentSellerId = sellerId;
         this.currentWinnerId = winnerId;
@@ -1589,22 +1591,13 @@ private void hideNotification(HBox notification) {
                     cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
                 } catch (Exception e) {}
                 
-                String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-                XYChart.Data<String, Number> initialData = new XYChart.Data<>(timeStamp, cp);
+                XYChart.Data<String, Number> initialData = new XYChart.Data<>("Bắt đầu", cp);
 
-                StackPane customNode = new StackPane();
-                customNode.setStyle("-fx-background-color: transparent;");
-                Circle dot = new Circle(6);
-                dot.setFill(Color.web("#f9a825"));
-                dot.setStroke(Color.WHITE);
-                dot.setStrokeWidth(2);
-                Label priceLbl = new Label("$" + NumberUtil.format(cp));
-                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-                priceLbl.setTranslateY(-25);
-                customNode.getChildren().addAll(dot, priceLbl);
+                StackPane customNode = createChartNode(cp);
                 initialData.setNode(customNode);
                 
                 priceSeries.getData().add(initialData);
+                Circle dot = (Circle) customNode.getChildren().get(0);
                 applyPulseAnimation(dot, cp);
                 return;
             }
@@ -1649,42 +1642,55 @@ private void hideNotification(HBox notification) {
             yAxis.setUpperBound(newUpperBound);
             yAxis.setTickUnit(newUpperBound / 5);
 
-            // 2. Đổ dữ liệu vào biểu đồ (giữ tối đa 10 điểm)
+            // 2. Đổ dữ liệu vào biểu đồ: 1 điểm khởi đầu + tối đa 9 điểm lịch sử gần nhất
             priceSeries.getData().clear();
-            for (int i = 0; i < bidEvents.size(); i++) {
+
+            // 2.1. Thêm điểm giá khởi điểm
+            String initialTimestamp = "Bắt đầu";
+            XYChart.Data<String, Number> initialDataPoint = new XYChart.Data<>(initialTimestamp, this.currentStartingPrice);
+            StackPane initialNode = createChartNode(this.currentStartingPrice);
+            initialDataPoint.setNode(initialNode);
+            priceSeries.getData().add(initialDataPoint);
+
+            // 2.2. Thêm tối đa 9 điểm lịch sử gần nhất
+            int historySize = bidEvents.size();
+            int startIndex = Math.max(0, historySize - 9);
+
+            for (int i = startIndex; i < historySize; i++) {
                 BidEvent event = bidEvents.get(i);
                 XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
-
-                StackPane customNode = new StackPane();
-                customNode.setStyle("-fx-background-color: transparent;");
-                Circle dot = new Circle(6);
-                dot.setFill(Color.web("#f9a825"));
-                dot.setStroke(Color.WHITE);
-                dot.setStrokeWidth(2);
-                Label priceLbl = new Label("$" + NumberUtil.format(event.price));
-                priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-                priceLbl.setTranslateY(-25);
-                customNode.getChildren().addAll(dot, priceLbl);
+                StackPane customNode = createChartNode(event.price);
                 dataPoint.setNode(customNode);
-                
                 priceSeries.getData().add(dataPoint);
-                if (priceSeries.getData().size() > 10) {
-                    priceSeries.getData().remove(0);
-                }
-                
-                // --- THÊM HIỆU ỨNG NHẤP NHÁY VÀO ĐIỂM CUỐI CÙNG ---
-                if (i == bidEvents.size() - 1) {
+
+                // Thêm hiệu ứng nhấp nháy vào điểm cuối cùng
+                if (i == historySize - 1) {
+                    Circle dot = (Circle) customNode.getChildren().get(0);
                     applyPulseAnimation(dot, event.price);
                 }
             }
-            
+
             // 3. Đổ dữ liệu vào Log (mới nhất ở trên cùng)
             historyLogs.clear();
             for (BidEvent event : bidEvents) {
                 historyLogs.add(0, event);
             }
-            
+
             logger.info("Successfully hydrated UI with {} history records.", bidEvents.size());
         });
+    }
+
+    private StackPane createChartNode(double price) {
+        StackPane customNode = new StackPane();
+        customNode.setStyle("-fx-background-color: transparent;");
+        Circle dot = new Circle(6);
+        dot.setFill(Color.web("#f9a825"));
+        dot.setStroke(Color.WHITE);
+        dot.setStrokeWidth(2);
+        Label priceLbl = new Label("$" + NumberUtil.format(price));
+        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
+        priceLbl.setTranslateY(-25);
+        customNode.getChildren().addAll(dot, priceLbl);
+        return customNode;
     }
 }
