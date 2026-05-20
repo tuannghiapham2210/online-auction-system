@@ -81,6 +81,13 @@ public class ServerListener implements Runnable {
                         controller.forceEndAuctionRealtime(winnerUsername, finalPrice);
                     }
                 }
+                else if ("UPDATE_VIEWER_COUNT".equals(action)) {
+                    int itemId = json.get("itemId").getAsInt();
+                    int viewerCount = json.get("viewerCount").getAsInt();
+                    if (controller != null && controller.getItemId() == itemId) {
+                        controller.updateViewerCountRealtime(viewerCount);
+                    }
+                }
                 else if ("ERROR".equals(action)) {
                     String errorMessage = json.has("message") ? json.get("message").getAsString() : "Đã có lỗi xảy ra!";
                     controller.showErrorRealtime(errorMessage);

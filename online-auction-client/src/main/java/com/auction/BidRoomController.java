@@ -742,9 +742,25 @@ public class BidRoomController {
             bidHistoryList.getScene().setRoot(root);
             stage.setTitle("Đấu giá - Dashboard");
 
+            // 4. Đóng kết nối socket
+            if (socket != null && !socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (Exception e) {
+                    logger.warn("Failed to close socket: {}", e.getMessage());
+                }
+            }
         } catch (Exception e) {
             logger.error("Failed to leave room: {}", e.getMessage(), e);
         }
+    }
+
+    public void updateViewerCountRealtime(int viewerCount) {
+        Platform.runLater(() -> {
+            if (viewerCountLabel != null) {
+                viewerCountLabel.setText(viewerCount + " Online");
+            }
+        });
     }
     /**
      * Hiển thị thông báo đẹp mắt với vòng tròn đếm ngược.

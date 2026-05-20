@@ -63,4 +63,8 @@ public abstract class Item extends Entity implements Serializable {
 
     public String getWinnerUsername() { return winnerUsername; }
     public void setWinnerUsername(String winnerUsername) { this.winnerUsername = winnerUsername; }
+
+    protected int viewerCount = 0;
+    public int getViewerCount() { return viewerCount; }
+    public void setViewerCount(int viewerCount) { this.viewerCount = viewerCount; }
 }
