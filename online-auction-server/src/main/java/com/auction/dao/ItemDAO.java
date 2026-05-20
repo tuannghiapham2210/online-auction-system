@@ -26,8 +26,8 @@ public class ItemDAO {
      */
     public boolean insertItem(Item item) {
         boolean isSuccess = false;
-        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status, winner_id, final_price) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
@@ -44,6 +44,16 @@ public class ItemDAO {
             pstmt.setString(10, item.getExtraInfo());
             pstmt.setInt(11, item.getSellerId());
             pstmt.setString(12, item.getStatus() != null ? item.getStatus() : "PENDING");
+            if (item.getWinnerId() > 0) {
+                pstmt.setInt(13, item.getWinnerId());
+            } else {
+                pstmt.setNull(13, java.sql.Types.INTEGER);
+            }
+            if (item.getFinalPrice() > 0) {
+                pstmt.setDouble(14, item.getFinalPrice());
+            } else {
+                pstmt.setNull(14, java.sql.Types.REAL);
+            }
 
             // 2. Thực thi lệnh INSERT
             int rowsAffected = pstmt.executeUpdate();
@@ -62,7 +72,7 @@ public class ItemDAO {
      */
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
-        String sql = "SELECT * FROM items";
+        String sql = "SELECT i.*, u.username AS winner_username FROM items i LEFT JOIN users u ON i.winner_id = u.id";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
@@ -82,6 +92,9 @@ public class ItemDAO {
                 String imageUrl = rs.getString("image_url");
                 String description = rs.getString("description");
                 String status = rs.getString("status");
+                int winnerId = rs.getInt("winner_id");
+                double finalPrice = rs.getDouble("final_price");
+                String winnerUsername = rs.getString("winner_username");
 
                 // 2. Sử dụng ItemFactory để tạo đúng loại đối tượng Item
                 Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
@@ -92,6 +105,9 @@ public class ItemDAO {
                 item.setImageUrl(imageUrl);
                 item.setDescription(description);
                 item.setStatus(status != null ? status : "PENDING");
+                item.setWinnerId(winnerId);
+                item.setFinalPrice(finalPrice);
+                item.setWinnerUsername(winnerUsername);
 
                 itemList.add(item);
             }
@@ -107,7 +123,7 @@ public class ItemDAO {
      * @return Đối tượng Item nếu tìm thấy, ngược lại là null.
      */
     public Item getItemById(int itemId) {
-        String sql = "SELECT * FROM items WHERE id = ?";
+        String sql = "SELECT i.*, u.username AS winner_username FROM items i LEFT JOIN users u ON i.winner_id = u.id WHERE i.id = ?";
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, itemId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -124,6 +140,9 @@ public class ItemDAO {
                     String imageUrl = rs.getString("image_url");
                     String description = rs.getString("description");
                     String status = rs.getString("status");
+                    int winnerId = rs.getInt("winner_id");
+                    double finalPrice = rs.getDouble("final_price");
+                    String winnerUsername = rs.getString("winner_username");
 
                     Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
                     item.setId(itemId);
@@ -133,6 +152,9 @@ public class ItemDAO {
                     item.setImageUrl(imageUrl);
                     item.setDescription(description);
                     item.setStatus(status != null ? status : "PENDING");
+                    item.setWinnerId(winnerId);
+                    item.setFinalPrice(finalPrice);
+                    item.setWinnerUsername(winnerUsername);
                     return item;
                 }
             }
@@ -149,25 +171,35 @@ public class ItemDAO {
      * @param newPrice Giá đấu mới do người dùng đặt.
      * @return true nếu cập nhật thành công, ngược lại là false.
      */
-    public boolean updateCurrentPrice(int itemId, double newPrice) {
+    public boolean updateCurrentPrice(int itemId, double newPrice, int winnerId) {
         boolean isSuccess = false;
-        String sql = "UPDATE items SET current_price = ? WHERE id = ? AND current_price < ?";
+        String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price < ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setDouble(1, newPrice);
-            pstmt.setInt(2, itemId);
+            if (winnerId > 0) {
+                pstmt.setInt(2, winnerId);
+            } else {
+                pstmt.setNull(2, java.sql.Types.INTEGER);
+            }
             pstmt.setDouble(3, newPrice);
+            pstmt.setInt(4, itemId);
+            pstmt.setDouble(5, newPrice);
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
                 isSuccess = true;
-                logger.info("Successfully updated new price: ${} for Item ID: {}", newPrice, itemId);
+                logger.info("Successfully updated new price: ${} and winnerId={} for Item ID: {}", newPrice, winnerId, itemId);
             }
         } catch (Exception e) {
             logger.error("Error updating Item price: {}", e.getMessage(), e);
         }
         return isSuccess;
+    }
+
+    public boolean updateCurrentPrice(int itemId, double newPrice) {
+        return updateCurrentPrice(itemId, newPrice, -1);
     }
 
     /**

@@ -108,6 +108,9 @@ public class BidRoomController {
     private String currentEndTime;
     private String currentStatus;
     private double currentStepPrice;
+    private int currentWinnerId = -1;
+    private double currentFinalPrice = 0.0;
+    private String currentWinnerUsername;
     private boolean isNotificationShowing = false;
     private boolean auctionEndedShown = false;
 
@@ -289,13 +292,16 @@ public class BidRoomController {
      * @param sellerId ID của người bán.
      * @param status Trạng thái hiện tại của sản phẩm.
      */
-    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status) {
+    public void setAuctionData(int itemId, String itemName, double currentPrice, double stepPrice, int userId, String endTime, String imageUrl, String itemType, String description, int sellerId, String status, int winnerId, double finalPrice, String winnerUsername) {
         // 1. Lưu trữ ID trạng thái hiện tại
         this.currentItemId = itemId;
         this.currentUserId = userId;
         this.currentEndTime = endTime;
         this.currentStatus = status;
         this.currentStepPrice = stepPrice;
+        this.currentWinnerId = winnerId;
+        this.currentFinalPrice = finalPrice;
+        this.currentWinnerUsername = winnerUsername;
 
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
@@ -304,6 +310,9 @@ public class BidRoomController {
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
         if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
+        if (highestBidderLabel != null && winnerUsername != null && !winnerUsername.trim().isEmpty()) {
+            highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
+        }
 
         // 3. Tải và hiển thị ảnh sản phẩm
         if (imageUrl != null && !imageUrl.isEmpty()) {
@@ -401,29 +410,56 @@ public class BidRoomController {
                 }
             }
         } else {
-            // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
-            if (liveBadge != null) liveBadge.setVisible(true);
-            
-            if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
+            boolean auctionExpired = false;
+            try {
+                if (endTime != null && !endTime.isEmpty()) {
+                    LocalDateTime parsedEnd = LocalDateTime.parse(endTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    auctionExpired = !LocalDateTime.now().isBefore(parsedEnd);
                 }
-                if (bidAmountField != null) {
-                    bidAmountField.setDisable(false);
-                    bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
-                }
-                if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-            } else {
-                bidAmountField.setDisable(true);
-                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+            } catch (Exception ignored) {
+                auctionExpired = false;
+            }
+
+            // Nếu phiên đã kết thúc hoặc trạng thái CLOSED thì hiển thị overlay luôn
+            if ("CLOSED".equalsIgnoreCase(status) || auctionExpired) {
+                if (liveBadge != null) liveBadge.setVisible(false);
+                if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
+                if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
+                if (bidAmountField != null) bidAmountField.setDisable(true);
                 if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
                 if (autoBidPanel != null) {
                     autoBidPanel.setDisable(true);
                     autoBidPanel.setOpacity(0.4);
                 }
+                if (currentWinnerUsername != null && !currentWinnerUsername.trim().isEmpty()) {
+                    if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + currentWinnerUsername);
+                }
+                showWinnerOverlay(currentWinnerUsername, currentFinalPrice);
+            } else {
+                // Nếu đang ACTIVE thì bắt đầu đếm ngược ngay
+                if (liveBadge != null) liveBadge.setVisible(true);
+                
+                if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(false);
+                        autoBidPanel.setOpacity(1.0);
+                    }
+                    if (bidAmountField != null) {
+                        bidAmountField.setDisable(false);
+                        bidAmountField.setText(NumberUtil.format(currentPrice + currentStepPrice));
+                    }
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+                } else {
+                    bidAmountField.setDisable(true);
+                    bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+                    if (autoBidPanel != null) {
+                        autoBidPanel.setDisable(true);
+                        autoBidPanel.setOpacity(0.4);
+                    }
+                }
+                startCountdown(endTime);
             }
-            startCountdown(endTime);
         }
     }
 
