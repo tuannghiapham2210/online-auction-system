@@ -6,7 +6,7 @@
 
 <StackPane style="-fx-background-color: transparent;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.AddItemController">
     <children>
-        <VBox maxWidth="650.0" spacing="20.0" styleClass="modal-container">
+        <VBox maxWidth="650.0" maxHeight="-Infinity" spacing="20.0" styleClass="modal-container">
             <padding>
                 <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
             </padding>
