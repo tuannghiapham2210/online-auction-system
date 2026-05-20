@@ -101,6 +101,9 @@ public class ClientHandler implements Runnable {
                     case "REGISTER_AUTO_BID":
                         handleRegisterAutoBid(request);
                         break;
+                    case "FETCH_BID_HISTORY_REQUEST":
+                        handleFetchBidHistory(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -852,6 +855,34 @@ public class ClientHandler implements Runnable {
             }
         } catch (Exception e) {
             logger.error("Error inside handleStopAuction: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Xử lý request lấy lịch sử đấu giá của một sản phẩm để đồng bộ (hydrate) UI khi Client vào lại phòng.
+     * @param request Đối tượng JSON chứa "itemId".
+     */
+    private void handleFetchBidHistory(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            
+            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
+            java.util.List<java.util.Map<String, Object>> history = bidDAO.getBidHistory(itemId);
+            
+            Gson gson = new Gson();
+            JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
+            
+            JsonObject response = new JsonObject();
+            response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("itemId", itemId);
+            response.add("history", arr);
+            
+            writer.println(response.toString());
+            logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
+            
+        } catch (Exception e) {
+            logger.error("Error handling FETCH_BID_HISTORY_REQUEST: {}", e.getMessage(), e);
         }
     }
 

@@ -43,6 +43,41 @@ public class BidTransactionDAO {
         }
         return isSuccess;
     }
+
+    /**
+     * Lấy toàn bộ lịch sử đấu giá của một sản phẩm, sắp xếp từ cũ đến mới (chronologically).
+     * Phục vụ cho mục đích tái tạo lại giao diện phòng đấu giá khi client load lại.
+     * @param itemId ID của sản phẩm.
+     * @return Danh sách các giao dịch đặt giá dạng List Map.
+     */
+    public java.util.List<java.util.Map<String, Object>> getBidHistory(int itemId) {
+        java.util.List<java.util.Map<String, Object>> history = new java.util.ArrayList<>();
+        // Truy vấn kèm JOIN bảng users để lấy tên người dùng (username) đặt giá
+        String sql = "SELECT b.bid_time, b.bidder_id, b.bid_amount, u.username " +
+                     "FROM bids b JOIN users u ON b.bidder_id = u.id " +
+                     "WHERE b.item_id = ? ORDER BY b.bid_time ASC";
+
+        try (java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
+             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, itemId);
+
+            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> record = new java.util.HashMap<>();
+                    record.put("timestamp", rs.getString("bid_time"));
+                    record.put("bidderId", rs.getInt("bidder_id"));
+                    record.put("username", rs.getString("username"));
+                    record.put("price", rs.getDouble("bid_amount"));
+                    history.add(record);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to fetch bid history for itemId {}: {}", itemId, e.getMessage(), e);
+        }
+        return history;
+    }
+
     /**
      * Truy vấn thông tin người trả giá cao nhất hiện tại của một sản phẩm từ cơ sở dữ liệu.
      * Phục vụ cho tính năng dừng phiên đấu giá khẩn cấp để chốt người chiến thắng lập tức.
