@@ -14,6 +14,7 @@ public class AccountInfoController {
 
     @FXML private TextField tfUsername;
     @FXML private TextField tfEmail;
+    @FXML private TextField tfPhone;
     @FXML private TextField tfRole;
     @FXML private TextField tfBalance;
     @FXML private Label lblMessage;
@@ -28,6 +29,7 @@ public class AccountInfoController {
         try {
             tfUsername.setText(Session.username != null ? Session.username : "Chưa đăng nhập");
             tfEmail.setText(Session.email != null ? Session.email : "");
+            tfPhone.setText(Session.phone != null ? Session.phone : "");
             tfRole.setText(Session.role != null ? Session.role.toUpperCase() : "-");
             tfBalance.setText("$" + NumberUtil.format(Session.balance));
         } catch (Exception e) {
@@ -40,6 +42,7 @@ public class AccountInfoController {
         try {
             String newName = tfUsername.getText().trim();
             String newEmail = tfEmail.getText().trim();
+            String newPhone = tfPhone.getText().trim();
 
             if (newName.isEmpty()) {
                 showMessage("Tên người dùng không được để trống", true);
@@ -56,6 +59,7 @@ public class AccountInfoController {
 
             Session.username = newName;
             Session.email = newEmail;
+            Session.phone = newPhone;
             showMessage("Cập nhật thông tin thành công", false);
             if (onSaveCallback != null) {
                 onSaveCallback.run();
