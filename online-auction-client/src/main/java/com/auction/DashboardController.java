@@ -27,6 +27,8 @@ import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.event.EventHandler;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
@@ -88,6 +90,8 @@ public class DashboardController {
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
     private Map<Label, Label> liveBadgeMap = new HashMap<>();
+    private VBox profileDropdown;
+    private EventHandler<MouseEvent> profileDropdownCloser;    
     
     // Real-time listener socket connections
     private Socket listenerSocket;
@@ -130,6 +134,9 @@ public class DashboardController {
                 lblRole.getStyleClass().add("profile-role-badge-bidder");
             }
         }
+
+        lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
+        lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
@@ -203,6 +210,78 @@ public class DashboardController {
                 }
             } catch (Exception ignored) {}
         });
+    }
+
+    private void toggleProfileDropdown() {
+        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
+            closeProfileDropdown(rootPane);
+            return;
+        }
+
+        profileDropdown = new VBox(10);
+        profileDropdown.setStyle(
+            "-fx-background-color: #111827;" +
+            "-fx-border-color: rgba(255,255,255,0.12);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 12;" +
+            "-fx-background-radius: 12;" +
+            "-fx-padding: 14;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);"
+        );
+        profileDropdown.setMaxWidth(240);
+        profileDropdown.setMinWidth(220);
+
+        Label title = new Label("Thông tin tài khoản");
+        title.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 13px; -fx-font-weight: bold;");
+
+        Label usernameLabel = new Label("Tên: " + (Session.username != null ? Session.username : "Chưa đăng nhập"));
+        usernameLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 12px;");
+
+        Label roleLabel = new Label("Vai trò: " + (Session.role != null ? Session.role.toUpperCase() : "-") );
+        roleLabel.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 11px;");
+
+        Label balanceLabel = new Label("Ví: $" + NumberUtil.format(Session.balance));
+        balanceLabel.setStyle("-fx-text-fill: #34D399; -fx-font-size: 12px; -fx-font-weight: bold;");
+
+        profileDropdown.getChildren().addAll(title, usernameLabel, roleLabel, balanceLabel);
+        StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
+        StackPane.setMargin(profileDropdown, new Insets(70, 20, 0, 0));
+
+        profileDropdown.setTranslateY(-8);
+        rootPane.getChildren().add(profileDropdown);
+
+        TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
+        slide.setFromY(-8);
+        slide.setToY(0);
+        slide.play();
+
+        profileDropdownCloser = event -> {
+            if (isClickInsideNode(event, profileDropdown) || isClickInsideNode(event, lblAvatar)) {
+                return;
+            }
+            closeProfileDropdown(rootPane);
+        };
+        rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+    }
+
+    private void closeProfileDropdown(StackPane rootPane) {
+        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
+            rootPane.getChildren().remove(profileDropdown);
+        }
+        if (profileDropdownCloser != null) {
+            rootPane.removeEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+            profileDropdownCloser = null;
+        }
+        profileDropdown = null;
+    }
+
+    private boolean isClickInsideNode(MouseEvent event, javafx.scene.Node node) {
+        if (node == null) {
+            return false;
+        }
+        javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
+        return bounds.contains(event.getSceneX(), event.getSceneY());
     }
 
     private boolean isFinished(Item item) {
