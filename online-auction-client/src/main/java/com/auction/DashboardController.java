@@ -235,12 +235,14 @@ public class DashboardController {
             "-fx-border-width: 1;" +
             "-fx-border-radius: 18;" +
             "-fx-background-radius: 18;" +
-            "-fx-padding: 16;" +
+            "-fx-padding: 10;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 16, 0, 0, 6);"
         );
         profileDropdown.setPrefWidth(190);
         profileDropdown.setMaxWidth(190);
         profileDropdown.setMinWidth(190);
+        profileDropdown.setMaxHeight(Region.USE_PREF_SIZE);
+        profileDropdown.setMinHeight(Region.USE_PREF_SIZE);
 
         Button btnProfileInfo = new Button("Thông tin cá nhân");
         btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
@@ -250,7 +252,7 @@ public class DashboardController {
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 12 16;" +
+            "-fx-padding: 10 14;" +
             "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(255,255,255,0.14);" +
             "-fx-border-width: 1;" +
@@ -263,7 +265,7 @@ public class DashboardController {
             "-fx-text-fill: #F59E0B;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 12 16;" +
+            "-fx-padding: 10 14;" +
             "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(245,159,11,0.4);" +
             "-fx-border-width: 1;" +
@@ -276,7 +278,7 @@ public class DashboardController {
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 12 16;" +
+            "-fx-padding: 10 14;" +
             "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(255,255,255,0.14);" +
             "-fx-border-width: 1;" +
@@ -291,9 +293,9 @@ public class DashboardController {
 
         profileDropdown.getChildren().add(btnProfileInfo);
         StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
-        StackPane.setMargin(profileDropdown, new Insets(68, 20, 0, 0));
+        StackPane.setMargin(profileDropdown, new Insets(56, 8, 0, 0));
 
-        profileDropdown.setTranslateY(-8);
+        profileDropdown.setTranslateY(-6);
         rootPane.getChildren().add(profileDropdown);
 
         TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
