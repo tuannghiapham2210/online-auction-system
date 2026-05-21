@@ -183,6 +183,20 @@ public class UserDAO {
         }
     }
 
+    public boolean changePassword(int userId, String oldPassword, String newPassword) {
+        String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, newPassword);
+            ps.setInt(2, userId);
+            ps.setString(3, oldPassword);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            logger.error("Failed to change password: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     public boolean depositBalance(
                 String username,
                 int amount
