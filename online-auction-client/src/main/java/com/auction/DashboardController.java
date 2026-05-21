@@ -203,7 +203,20 @@ public class DashboardController {
     }
 
     private boolean isFinished(Item item) {
-        return "FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus());
+        if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            return true;
+        }
+        if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus()))
+                && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+            try {
+                LocalDateTime end = LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                if (!LocalDateTime.now().isBefore(end)) {
+                    item.setStatus("FINISHED");
+                    return true;
+                }
+            } catch (Exception ignored) {}
+        }
+        return false;
     }
 
     private Button getActiveFilterButton() {
