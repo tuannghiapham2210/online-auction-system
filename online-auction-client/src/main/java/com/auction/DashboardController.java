@@ -229,53 +229,48 @@ public class DashboardController {
             "-fx-padding: 14;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);"
         );
-        profileDropdown.setMaxWidth(240);
-        profileDropdown.setMinWidth(220);
-
-        Label title = new Label("Thông tin tài khoản");
-        title.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 13px; -fx-font-weight: bold;");
-
-        Label usernameLabel = new Label("Tên: " + (Session.username != null ? Session.username : "Chưa đăng nhập"));
-        usernameLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 12px;");
-
-        Label roleLabel = new Label("Vai trò: " + (Session.role != null ? Session.role.toUpperCase() : "-") );
-        roleLabel.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 11px;");
-
-        Label balanceLabel = new Label("Ví: $" + NumberUtil.format(Session.balance));
-        balanceLabel.setStyle("-fx-text-fill: #34D399; -fx-font-size: 12px; -fx-font-weight: bold;");
+        profileDropdown.setPrefWidth(186);
+        profileDropdown.setMaxWidth(186);
+        profileDropdown.setMinWidth(186);
 
         Button btnProfileInfo = new Button("Thông tin cá nhân");
         btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
         btnProfileInfo.setStyle(
-            "-fx-background-color: transparent;" +
+            "-fx-background-color: #111827;" +
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 12;" +
-            "-fx-background-radius: 10;"
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;"
         );
         btnProfileInfo.setOnMouseEntered(e -> btnProfileInfo.setStyle(
             "-fx-background-color: rgba(245,159,11,0.16);" +
             "-fx-text-fill: #F59E0B;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 12;" +
-            "-fx-background-radius: 10;"
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: rgba(245,159,11,0.4);" +
+            "-fx-border-width: 1;"
         ));
         btnProfileInfo.setOnMouseExited(e -> btnProfileInfo.setStyle(
-            "-fx-background-color: transparent;" +
+            "-fx-background-color: #111827;" +
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 12;" +
-            "-fx-background-radius: 10;"
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;"
         ));
         btnProfileInfo.setOnAction(e -> {
             closeProfileDropdown(rootPane);
             openAccountInfoPopup();
         });
 
-        profileDropdown.getChildren().addAll(title, usernameLabel, roleLabel, balanceLabel, btnProfileInfo);
+        profileDropdown.getChildren().add(btnProfileInfo);
         StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
         StackPane.setMargin(profileDropdown, new Insets(68, 20, 0, 0));
 
