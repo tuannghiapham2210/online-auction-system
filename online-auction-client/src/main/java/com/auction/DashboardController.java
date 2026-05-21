@@ -122,7 +122,10 @@ public class DashboardController {
         }
         if (Session.role != null) {
             lblRole.setText(Session.role.toUpperCase());
-            if (Session.role.equalsIgnoreCase("bidder")) {
+            if (Session.role.equalsIgnoreCase("admin")) {
+                lblRole.getStyleClass().remove("profile-role-badge");
+                lblRole.getStyleClass().add("profile-role-badge-admin");
+            } else if (Session.role.equalsIgnoreCase("bidder")) {
                 lblRole.getStyleClass().remove("profile-role-badge");
                 lblRole.getStyleClass().add("profile-role-badge-bidder");
             }
@@ -744,8 +747,8 @@ public class DashboardController {
         HBox.setHgrow(btnEnter, Priority.ALWAYS);
         actionRow.getChildren().add(btnEnter);
 
-        // KIỂM TRA PHÂN QUYỀN: Nếu là ADMIN hoặc chính SELLER đăng bán lô hàng này
-        if ("ADMIN".equalsIgnoreCase(Session.role) || item.getSellerId() == Session.userId) {
+        // KIỂM TRA PHÂN QUYỀN: Chỉ ADMIN mới có nút Gỡ
+        if ("ADMIN".equalsIgnoreCase(Session.role)) {
             Button btnDelete = new Button("🗑 Gỡ");
             btnDelete.setPrefWidth(75);
             btnDelete.setPrefHeight(38); // Cân bằng tỉ lệ chiều cao với nút btn-orange
