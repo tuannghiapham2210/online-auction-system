@@ -138,6 +138,19 @@ public class DashboardController {
         lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
         lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
 
+        // show border on hover matching user's role color
+        final String avatarBaseStyle = lblAvatar.getStyle();
+        lblAvatar.setOnMouseEntered(e -> {
+            String borderColor = "#F59E0B"; // default seller/gold
+            if (Session.role != null) {
+                if (Session.role.equalsIgnoreCase("admin")) borderColor = "#EF4444"; // red
+                else if (Session.role.equalsIgnoreCase("bidder")) borderColor = "#3B82F6"; // blue
+                else if (Session.role.equalsIgnoreCase("seller")) borderColor = "#F59E0B"; // amber
+            }
+            lblAvatar.setStyle(avatarBaseStyle + "-fx-border-color: " + borderColor + "; -fx-border-width: 2; -fx-border-radius: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);");
+        });
+        lblAvatar.setOnMouseExited(e -> lblAvatar.setStyle(avatarBaseStyle));
+
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
         });
