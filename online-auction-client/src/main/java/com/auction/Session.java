@@ -19,4 +19,6 @@ public class Session {
     public static double lastWonPrice = 0.0;
     public static int lastWinRemainingBalance = 0;
     public static String lastWinMessage = null;
+    // Track which itemIds have already had their payment processed for this session
+    public static java.util.Set<Integer> processedPayments = new java.util.HashSet<>();
 }

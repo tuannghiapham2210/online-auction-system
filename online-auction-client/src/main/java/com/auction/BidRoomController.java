@@ -1475,6 +1475,14 @@ private void hideNotification(HBox notification) {
         };
 
         if (isWinner) {
+            // Avoid deducting payment multiple times for the same item.
+            try {
+                if (Session.processedPayments.contains(this.currentItemId)) {
+                    Platform.runLater(showOverlayRunnable);
+                    return;
+                }
+            } catch (Exception ignored) {}
+
             // Deduct payment on server in background thread, update Session, then show overlay
             new Thread(() -> {
                 try (Socket sock = new Socket("localhost", 8080);
@@ -1502,21 +1510,25 @@ private void hideNotification(HBox notification) {
                                 Session.lastWonPrice = finalPrice;
                                 Session.lastWinRemainingBalance = newBal;
                                 Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                                try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
                             } else {
                                 // Fallback: still mark as won but do not change balance
                                 Session.justWon = true;
                                 Session.lastWonPrice = finalPrice;
                                 Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                                try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
                             }
                         } catch (Exception ex) {
                             Session.justWon = true;
                             Session.lastWonPrice = finalPrice;
                             Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                            try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
                         }
                     } else {
                         Session.justWon = true;
                         Session.lastWonPrice = finalPrice;
                         Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                        try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
                     }
 
                 } catch (Exception ex) {
@@ -1532,9 +1544,7 @@ private void hideNotification(HBox notification) {
             Platform.runLater(showOverlayRunnable);
         }
     }
-    /**
-     * Xử lý sự kiện khi Admin/Seller nhấn nút dừng khẩn cấp (Đã thiết kế lại UI Popup).
-     */
+
     @FXML
     private void handleStopAuction() {
         Alert alert = new Alert(Alert.AlertType.NONE, "", ButtonType.YES, ButtonType.NO);
@@ -1543,7 +1553,6 @@ private void hideNotification(HBox notification) {
         alert.setGraphic(null);
 
         DialogPane dialogPane = alert.getDialogPane();
-
         // =========================================================
         // CẮT BỎ NỀN TRẮNG HỆ THỐNG VÀ THANH TIÊU ĐỀ
         // =========================================================
