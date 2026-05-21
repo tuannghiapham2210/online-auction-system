@@ -143,6 +143,15 @@ public class DashboardController {
         });
 
         // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo thành công và số dư còn lại
+
+        lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
+        lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterItems(newValue);
+        });
+
+        // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo thành công và số dư còn lại
         Platform.runLater(() -> {
             try {
                 if (Session.justWon) {
@@ -317,6 +326,8 @@ public class DashboardController {
             darkOverlay.setId("dark-overlay-account");
             darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
+            darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
             darkOverlay.setOnMouseClicked(e -> controller.handleClose());
 
             controller.setOnCloseCallback(() -> {
@@ -324,10 +335,27 @@ public class DashboardController {
                 rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
             });
 
+            controller.setOnSaveCallback(() -> {
+                refreshUserProfile();
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+            });
+
+            StackPane.setAlignment(darkOverlay, Pos.CENTER);
             StackPane.setAlignment(accountInfoGroup, Pos.CENTER);
             rootPane.getChildren().addAll(darkOverlay, accountInfoGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
+        }
+    }
+
+    private void refreshUserProfile() {
+        if (Session.username != null && !Session.username.isEmpty()) {
+            lblUsername.setText(Session.username);
+            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
+        }
+        if (Session.role != null) {
+            lblRole.setText(Session.role.toUpperCase());
         }
     }
 

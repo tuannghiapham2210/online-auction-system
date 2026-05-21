@@ -21,6 +21,7 @@ public class AccountInfoController {
     @FXML private Button btnSave;
 
     private Runnable onCloseCallback;
+    private Runnable onSaveCallback;
 
     @FXML
     public void initialize() {
@@ -56,10 +57,17 @@ public class AccountInfoController {
             Session.username = newName;
             Session.email = newEmail;
             showMessage("Cập nhật thông tin thành công", false);
+            if (onSaveCallback != null) {
+                onSaveCallback.run();
+            }
         } catch (Exception e) {
             logger.error("Lỗi khi cập nhật thông tin: {}", e.getMessage());
             showMessage("Đã có lỗi, thử lại sau", true);
         }
+    }
+
+    public void setOnSaveCallback(Runnable callback) {
+        this.onSaveCallback = callback;
     }
 
     private void showMessage(String message, boolean isError) {
