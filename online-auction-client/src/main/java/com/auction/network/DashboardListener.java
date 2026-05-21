@@ -85,6 +85,14 @@ public class DashboardListener implements Runnable {
                         controller.updateItemPriceRealtime(itemId, newPrice);
                     }
                 }
+                // 8. Xử lý sự kiện cập nhật số lượng người xem
+                else if ("UPDATE_VIEWER_COUNT".equals(action)) {
+                    int itemId = json.get("itemId").getAsInt();
+                    int viewerCount = json.get("viewerCount").getAsInt();
+                    if (controller != null) {
+                        controller.updateViewerCountRealtime(itemId, viewerCount);
+                    }
+                }
             }
         } catch (Exception e) {
             logger.warn("Dashboard Listener disconnected: {}", e.getMessage(), e);

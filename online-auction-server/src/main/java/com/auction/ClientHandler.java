@@ -966,17 +966,8 @@ public class ClientHandler implements Runnable {
         msg.addProperty("itemId", itemId);
         msg.addProperty("viewerCount", viewerCount);
         
-        synchronized (activeClients) {
-            for (ClientHandler client : activeClients) {
-                if (client.currentItemId == itemId && client.writer != null) {
-                    try {
-                        client.writer.println(msg.toString());
-                    } catch (Exception e) {
-                        logger.error("Failed to send viewer count update to client: {}", e.getMessage());
-                    }
-                }
-            }
-        }
+        // Phát cho tất cả Client đang online (bao gồm cả màn hình Dashboard)
+        broadcast(msg);
     }
 
     /**

@@ -1042,4 +1042,27 @@ public class DashboardController {
             }
         });
     }
+
+    /**
+     * Gọi bởi DashboardListener khi số lượng người xem trong phòng thay đổi.
+     * Cập nhật số lượt xem và làm mới giao diện ngay lập tức.
+     */
+    public void updateViewerCountRealtime(int itemId, int viewerCount) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setViewerCount(viewerCount);
+                        
+                        // Cập nhật lại giao diện
+                        filterItems(searchField.getText());
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error updating viewer count: {}", e.getMessage(), e);
+            }
+        });
+    }
 }
