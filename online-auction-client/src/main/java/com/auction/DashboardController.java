@@ -339,6 +339,28 @@ public class DashboardController {
         // 3. Khởi động luồng đếm ngược thời gian thực cho các thẻ mới
         dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             LocalDateTime now = LocalDateTime.now();
+            boolean needRefresh = false;
+            
+            // Kiểm tra xem có sản phẩm nào vừa hết hạn tự nhiên không
+            for (Item item : itemsToDisplay) {
+                if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) 
+                        && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+                    try {
+                        LocalDateTime end = LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        if (!now.isBefore(end)) {
+                            item.setStatus("FINISHED");
+                            needRefresh = true;
+                        }
+                    } catch (Exception ex) { }
+                }
+            }
+            
+            // Nếu có thẻ vừa hết hạn, vẽ lại giao diện để tự động cập nhật nút và màu sắc "ĐÃ KẾT THÚC"
+            if (needRefresh) {
+                filterItems(searchField.getText());
+                return;
+            }
+
             for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
                 Label lbl = entry.getKey();
                 LocalDateTime end = entry.getValue();
@@ -471,6 +493,7 @@ public class DashboardController {
     private void openBidRoom(Item item) {
         try {
             if (dashboardTimeline != null) dashboardTimeline.stop();
+            closeListener(); // Đóng kết nối socket cũ trước khi chuyển trang
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
@@ -517,6 +540,10 @@ public class DashboardController {
             badge.setText("⏳ SẮP DIỄN RA");
             badge.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
             priceLabelText = "GIÁ CAO NHẤT";
+        } else if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            badge.setText("ĐÃ KẾT THÚC");
+            badge.setStyle("-fx-background-color: #6B7280; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
+            priceLabelText = "GIÁ CHỐT";
         } else {
             badge.setText("LIVE");
             badge.getStyleClass().add("badge-live");
@@ -571,6 +598,9 @@ public class DashboardController {
         if ("PENDING".equalsIgnoreCase(item.getStatus())) {
             // Nếu chưa mở phiên, hiển thị tĩnh thời gian gốc và không đưa vào luồng đếm ngược
             timerLabel.setText(String.format("⏳ %02d:00:00", item.getDurationHours()));
+        } else if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            timerLabel.setText("ĐÃ KẾT THÚC");
+            timerLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
         } else {
             // Nếu ACTIVE, đưa vào timerMap để Timeline chạy mỗi giây
             if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
@@ -645,7 +675,12 @@ public class DashboardController {
         // Nút Vào Phòng mặc định (Cố định kéo giãn theo chiều ngang để cân đối layout)
         Button btnEnter = new Button("Vào Phòng");
         btnEnter.setMaxWidth(Double.MAX_VALUE);
-        btnEnter.getStyleClass().add("btn-orange");
+        if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            btnEnter.setText("Xem Kết Quả");
+            btnEnter.setStyle("-fx-background-color: #4B5563; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 13px;");
+        } else {
+            btnEnter.getStyleClass().add("btn-orange");
+        }
         btnEnter.setOnAction(e -> openBidRoom(item));
         HBox.setHgrow(btnEnter, Priority.ALWAYS);
         actionRow.getChildren().add(btnEnter);
@@ -747,6 +782,7 @@ public class DashboardController {
     public void handleLogout() {
         try {
             if (dashboardTimeline != null) dashboardTimeline.stop();
+            closeListener(); // Đóng kết nối socket khi đăng xuất
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("login.fxml")));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
@@ -857,6 +893,19 @@ public class DashboardController {
     }
     
     /**
+     * Đóng kết nối socket của Dashboard để giải phóng tài nguyên (tránh rò rỉ bộ nhớ).
+     */
+    private void closeListener() {
+        try {
+            if (listenerSocket != null && !listenerSocket.isClosed()) {
+                listenerSocket.close();
+            }
+        } catch (IOException e) {
+            logger.error("Lỗi khi đóng Dashboard Listener socket: {}", e.getMessage());
+        }
+    }
+
+    /**
      * Gọi bởi DashboardListener khi có item mới được tạo.
      * Thêm item vào danh sách allItems và cập nhật giao diện.
      */
@@ -887,7 +936,7 @@ public class DashboardController {
                 logger.info("New item added to dashboard: {} (ID: {})", name, id);
 
                 // Cập nhật giao diện
-                displayItems(allItems);
+                filterItems(searchField.getText());
             } catch (Exception e) {
                 logger.error("Error adding new item: {}", e.getMessage(), e);
             }
@@ -910,7 +959,7 @@ public class DashboardController {
                         logger.info("Auction started for item: {} at {}", itemId, endTime);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
@@ -927,17 +976,13 @@ public class DashboardController {
     public void auctionCancelledRealtime(int itemId) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setStatus("CANCELLED");
-                        
-                        logger.info("Auction cancelled for item: {}", itemId);
-                        
-                        // Cập nhật lại giao diện
-                        displayItems(allItems);
-                        return;
-                    }
+                // Xóa hoàn toàn sản phẩm khỏi bộ nhớ đệm
+                boolean removed = allItems.removeIf(item -> item.getId() == itemId);
+                if (removed) {
+                    logger.info("Auction cancelled and removed from dashboard: {}", itemId);
+                    
+                    // Cập nhật lại giao diện (áp dụng bộ lọc tìm kiếm hiện tại)
+                    filterItems(searchField.getText());
                 }
             } catch (Exception e) {
                 logger.error("Error cancelling auction: {}", e.getMessage(), e);
@@ -957,12 +1002,13 @@ public class DashboardController {
                     if (item.getId() == itemId) {
                         item.setStatus("FINISHED");
                         item.setFinalPrice(finalPrice);
+                        item.setCurrentPrice(finalPrice);
                         item.setWinnerUsername(winnerUsername);
                         
                         logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId, winnerUsername, finalPrice);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
@@ -987,12 +1033,35 @@ public class DashboardController {
                         logger.info("Item price updated: {} -> ${}", itemId, newPrice);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
             } catch (Exception e) {
                 logger.error("Error updating item price: {}", e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Gọi bởi DashboardListener khi số lượng người xem trong phòng thay đổi.
+     * Cập nhật số lượt xem và làm mới giao diện ngay lập tức.
+     */
+    public void updateViewerCountRealtime(int itemId, int viewerCount) {
+        Platform.runLater(() -> {
+            try {
+                // Tìm item theo ID
+                for (Item item : allItems) {
+                    if (item.getId() == itemId) {
+                        item.setViewerCount(viewerCount);
+                        
+                        // Cập nhật lại giao diện
+                        filterItems(searchField.getText());
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error updating viewer count: {}", e.getMessage(), e);
             }
         });
     }
