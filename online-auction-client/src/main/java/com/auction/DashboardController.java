@@ -230,49 +230,59 @@ public class DashboardController {
 
         profileDropdown = new VBox(10);
         profileDropdown.setStyle(
-            "-fx-background-color: #111827;" +
-            "-fx-border-color: rgba(255,255,255,0.12);" +
+            "-fx-background-color: #212936;" +
+            "-fx-border-color: #2A3441;" +
             "-fx-border-width: 1;" +
-            "-fx-border-radius: 12;" +
-            "-fx-background-radius: 12;" +
-            "-fx-padding: 14;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 10, 0, 0, 4);"
+            "-fx-border-radius: 18;" +
+            "-fx-background-radius: 18;" +
+            "-fx-padding: 16;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 16, 0, 0, 6);"
         );
-        profileDropdown.setPrefWidth(186);
-        profileDropdown.setMaxWidth(186);
-        profileDropdown.setMinWidth(186);
+        profileDropdown.setPrefWidth(190);
+        profileDropdown.setMaxWidth(190);
+        profileDropdown.setMinWidth(190);
 
         Button btnProfileInfo = new Button("Thông tin cá nhân");
         btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
+        btnProfileInfo.setFocusTraversable(false);
         btnProfileInfo.setStyle(
-            "-fx-background-color: #111827;" +
+            "-fx-background-color: transparent;" +
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 14;" +
-            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(255,255,255,0.14);" +
-            "-fx-border-width: 1;"
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
         );
         btnProfileInfo.setOnMouseEntered(e -> btnProfileInfo.setStyle(
-            "-fx-background-color: rgba(245,159,11,0.16);" +
+            "-fx-background-color: rgba(245,159,11,0.12);" +
             "-fx-text-fill: #F59E0B;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 14;" +
-            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(245,159,11,0.4);" +
-            "-fx-border-width: 1;"
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
         ));
         btnProfileInfo.setOnMouseExited(e -> btnProfileInfo.setStyle(
-            "-fx-background-color: #111827;" +
+            "-fx-background-color: transparent;" +
             "-fx-text-fill: #E2E8F0;" +
             "-fx-font-size: 13px;" +
             "-fx-alignment: CENTER_LEFT;" +
-            "-fx-padding: 10 14;" +
-            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
             "-fx-border-color: rgba(255,255,255,0.14);" +
-            "-fx-border-width: 1;"
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
         ));
         btnProfileInfo.setOnAction(e -> {
             closeProfileDropdown(rootPane);
