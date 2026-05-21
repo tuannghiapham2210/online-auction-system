@@ -744,8 +744,8 @@ public class DashboardController {
         HBox.setHgrow(btnEnter, Priority.ALWAYS);
         actionRow.getChildren().add(btnEnter);
 
-        // KIỂM TRA PHÂN QUYỀN: Nếu là ADMIN hoặc chính SELLER đăng bán lô hàng này
-        if ("ADMIN".equalsIgnoreCase(Session.role) || item.getSellerId() == Session.userId) {
+        // KIỂM TRA PHÂN QUYỀN: Chỉ ADMIN mới có nút Gỡ
+        if ("ADMIN".equalsIgnoreCase(Session.role)) {
             Button btnDelete = new Button("🗑 Gỡ");
             btnDelete.setPrefWidth(75);
             btnDelete.setPrefHeight(38); // Cân bằng tỉ lệ chiều cao với nút btn-orange
