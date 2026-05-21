@@ -293,9 +293,11 @@ public class DashboardController {
 
         profileDropdown.getChildren().add(btnProfileInfo);
         StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
-        StackPane.setMargin(profileDropdown, new Insets(56, 8, 0, 0));
+        // move the dropdown down so it sits just below the avatar/role card
+        StackPane.setMargin(profileDropdown, new Insets(96, 8, 0, 0));
 
-        profileDropdown.setTranslateY(-6);
+        // ensure no upward translation (place flush with margin)
+        profileDropdown.setTranslateY(0);
         rootPane.getChildren().add(profileDropdown);
 
         TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
