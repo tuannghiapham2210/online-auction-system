@@ -902,7 +902,7 @@ public class DashboardController {
                 logger.info("New item added to dashboard: {} (ID: {})", name, id);
 
                 // Cập nhật giao diện
-                displayItems(allItems);
+                filterItems(searchField.getText());
             } catch (Exception e) {
                 logger.error("Error adding new item: {}", e.getMessage(), e);
             }
@@ -925,7 +925,7 @@ public class DashboardController {
                         logger.info("Auction started for item: {} at {}", itemId, endTime);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
@@ -942,17 +942,13 @@ public class DashboardController {
     public void auctionCancelledRealtime(int itemId) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setStatus("CANCELLED");
-                        
-                        logger.info("Auction cancelled for item: {}", itemId);
-                        
-                        // Cập nhật lại giao diện
-                        displayItems(allItems);
-                        return;
-                    }
+                // Xóa hoàn toàn sản phẩm khỏi bộ nhớ đệm
+                boolean removed = allItems.removeIf(item -> item.getId() == itemId);
+                if (removed) {
+                    logger.info("Auction cancelled and removed from dashboard: {}", itemId);
+                    
+                    // Cập nhật lại giao diện (áp dụng bộ lọc tìm kiếm hiện tại)
+                    filterItems(searchField.getText());
                 }
             } catch (Exception e) {
                 logger.error("Error cancelling auction: {}", e.getMessage(), e);
@@ -977,7 +973,7 @@ public class DashboardController {
                         logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId, winnerUsername, finalPrice);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
@@ -1002,7 +998,7 @@ public class DashboardController {
                         logger.info("Item price updated: {} -> ${}", itemId, newPrice);
                         
                         // Cập nhật lại giao diện
-                        displayItems(allItems);
+                        filterItems(searchField.getText());
                         return;
                     }
                 }
