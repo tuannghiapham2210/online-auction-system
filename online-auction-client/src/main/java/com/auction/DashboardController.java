@@ -518,6 +518,10 @@ public class DashboardController {
             badge.setText("⏳ SẮP DIỄN RA");
             badge.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
             priceLabelText = "GIÁ CAO NHẤT";
+        } else if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            badge.setText("ĐÃ KẾT THÚC");
+            badge.setStyle("-fx-background-color: #6B7280; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
+            priceLabelText = "GIÁ CHỐT";
         } else {
             badge.setText("LIVE");
             badge.getStyleClass().add("badge-live");
@@ -572,6 +576,9 @@ public class DashboardController {
         if ("PENDING".equalsIgnoreCase(item.getStatus())) {
             // Nếu chưa mở phiên, hiển thị tĩnh thời gian gốc và không đưa vào luồng đếm ngược
             timerLabel.setText(String.format("⏳ %02d:00:00", item.getDurationHours()));
+        } else if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            timerLabel.setText("ĐÃ KẾT THÚC");
+            timerLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
         } else {
             // Nếu ACTIVE, đưa vào timerMap để Timeline chạy mỗi giây
             if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
@@ -646,7 +653,12 @@ public class DashboardController {
         // Nút Vào Phòng mặc định (Cố định kéo giãn theo chiều ngang để cân đối layout)
         Button btnEnter = new Button("Vào Phòng");
         btnEnter.setMaxWidth(Double.MAX_VALUE);
-        btnEnter.getStyleClass().add("btn-orange");
+        if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            btnEnter.setText("Xem Kết Quả");
+            btnEnter.setStyle("-fx-background-color: #4B5563; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 13px;");
+        } else {
+            btnEnter.getStyleClass().add("btn-orange");
+        }
         btnEnter.setOnAction(e -> openBidRoom(item));
         HBox.setHgrow(btnEnter, Priority.ALWAYS);
         actionRow.getChildren().add(btnEnter);
@@ -968,6 +980,7 @@ public class DashboardController {
                     if (item.getId() == itemId) {
                         item.setStatus("FINISHED");
                         item.setFinalPrice(finalPrice);
+                        item.setCurrentPrice(finalPrice);
                         item.setWinnerUsername(winnerUsername);
                         
                         logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId, winnerUsername, finalPrice);

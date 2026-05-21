@@ -475,7 +475,7 @@ public class BidRoomController {
             }
 
             // Nếu phiên đã kết thúc (CLOSED) hoặc thời gian đã hết thì hiển thị overlay chiến thắng luôn
-            if ("CLOSED".equalsIgnoreCase(status) || auctionExpired) {
+            if ("CLOSED".equalsIgnoreCase(status) || "FINISHED".equalsIgnoreCase(status) || auctionExpired) {
                 if (liveBadge != null) liveBadge.setVisible(false);
                 if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
