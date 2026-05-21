@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
 
 import java.io.IOException;
 
@@ -31,6 +32,15 @@ public class App extends Application {
 
         // 3. Cấu hình Stage và hiển thị
         stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
+        try (java.io.InputStream is = App.class.getResourceAsStream("logo.png")) {
+            if (is != null) {
+                stage.getIcons().add(new Image(is));
+            } else {
+                System.err.println("Không tìm thấy logo ứng dụng: logo.png");
+            }
+        } catch (Exception e) {
+            System.err.println("Không thể tải logo ứng dụng: " + e.getMessage());
+        }
         stage.setScene(scene);
         stage.setMaximized(true);
         stage.show();
