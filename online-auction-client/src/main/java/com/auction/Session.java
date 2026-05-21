@@ -13,6 +13,7 @@ public class Session {
     public static String role;
     public static String username;
     public static String email;
+    public static String phone;
     public static User user;
     public static int balance;
     // --- Fields used to signal a recent win and remaining balance ---
