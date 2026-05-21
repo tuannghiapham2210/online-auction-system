@@ -83,6 +83,7 @@ public class DashboardController {
     @FXML private Button btnFilterArt;
     @FXML private Button btnFilterVehicle;
     @FXML private Button btnFilterElectronics;
+    @FXML private Button btnFilterFinished;
 
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
@@ -201,15 +202,68 @@ public class DashboardController {
         });
     }
 
+    private boolean isFinished(Item item) {
+        if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
+            return true;
+        }
+        if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus()))
+                && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+            try {
+                LocalDateTime end = LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                if (!LocalDateTime.now().isBefore(end)) {
+                    item.setStatus("FINISHED");
+                    return true;
+                }
+            } catch (Exception ignored) {}
+        }
+        return false;
+    }
+
+    private Button getActiveFilterButton() {
+        if (btnFilterAll.getStyleClass().contains("menu-item-active")) return btnFilterAll;
+        if (btnFilterArt.getStyleClass().contains("menu-item-active")) return btnFilterArt;
+        if (btnFilterVehicle.getStyleClass().contains("menu-item-active")) return btnFilterVehicle;
+        if (btnFilterElectronics.getStyleClass().contains("menu-item-active")) return btnFilterElectronics;
+        if (btnFilterFinished != null && btnFilterFinished.getStyleClass().contains("menu-item-active")) return btnFilterFinished;
+        return btnFilterAll;
+    }
+
+    private List<Item> getFilteredItemsByActiveCategory() {
+        Button activeBtn = getActiveFilterButton();
+        if (activeBtn == btnFilterArt) {
+            return allItems.stream()
+                    .filter(i -> "ART".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
+                    .collect(Collectors.toList());
+        } else if (activeBtn == btnFilterVehicle) {
+            return allItems.stream()
+                    .filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
+                    .collect(Collectors.toList());
+        } else if (activeBtn == btnFilterElectronics) {
+            return allItems.stream()
+                    .filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
+                    .collect(Collectors.toList());
+        } else if (activeBtn == btnFilterFinished) {
+            return allItems.stream()
+                    .filter(this::isFinished)
+                    .collect(Collectors.toList());
+        } else {
+            // Mặc định: Tất cả (không bao gồm các phiên đã hoàn thành/đóng)
+            return allItems.stream()
+                    .filter(i -> !isFinished(i))
+                    .collect(Collectors.toList());
+        }
+    }
+
     private void filterItems(String searchText) {
+        List<Item> targetList = getFilteredItemsByActiveCategory();
         if (searchText == null || searchText.isEmpty()) {
-            displayItems(allItems);
+            displayItems(targetList);
             return;
         }
 
         String lowerCaseFilter = searchText.toLowerCase();
 
-        List<Item> filteredList = allItems.stream()
+        List<Item> filteredList = targetList.stream()
                 .filter(item -> item.getName().toLowerCase().contains(lowerCaseFilter))
                 .collect(Collectors.toList());
 
@@ -305,7 +359,7 @@ public class DashboardController {
 
                         // Lưu trữ vào kho dữ liệu và hiển thị lên UI
                         this.allItems = items;
-                        Platform.runLater(() -> displayItems(this.allItems));
+                        Platform.runLater(() -> filterItems(searchField.getText()));
                     }
                 }
             } catch (IOException e) {
@@ -383,7 +437,7 @@ public class DashboardController {
     }
 
     private void updateFilterButtonsStyle(Button activeButton) {
-        Button[] filterButtons = {btnFilterAll, btnFilterArt, btnFilterVehicle, btnFilterElectronics};
+        Button[] filterButtons = {btnFilterAll, btnFilterArt, btnFilterVehicle, btnFilterElectronics, btnFilterFinished};
         for (Button btn : filterButtons) {
             if (btn != null) {
                 btn.getStyleClass().remove("menu-item-active");
@@ -402,22 +456,27 @@ public class DashboardController {
 
     @FXML private void filterAll() {
         updateFilterButtonsStyle(btnFilterAll);
-        displayItems(allItems);
+        filterItems(searchField.getText());
     }
 
     @FXML private void filterArt() {
         updateFilterButtonsStyle(btnFilterArt);
-        displayItems(allItems.stream().filter(i -> "ART".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
+        filterItems(searchField.getText());
     }
 
     @FXML private void filterVehicle() {
         updateFilterButtonsStyle(btnFilterVehicle);
-        displayItems(allItems.stream().filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
+        filterItems(searchField.getText());
     }
 
     @FXML private void filterElectronics() {
         updateFilterButtonsStyle(btnFilterElectronics);
-        displayItems(allItems.stream().filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType())).collect(Collectors.toList()));
+        filterItems(searchField.getText());
+    }
+
+    @FXML private void filterFinished() {
+        updateFilterButtonsStyle(btnFilterFinished);
+        filterItems(searchField.getText());
     }
 
     /**
