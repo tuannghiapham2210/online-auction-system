@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.2" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.auction.AccountInfoController"
+      alignment="TOP_CENTER"
+      spacing="18"
+      style="-fx-background-color: #0F172A; -fx-background-radius: 18; -fx-padding: 24; -fx-border-color: #334155; -fx-border-width: 1; -fx-border-radius: 18;"
+      maxWidth="420"
+      minWidth="420">
+
+    <Label text="Thông tin cá nhân"
+           style="-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;" />
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Tên đăng nhập" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfUsername" editable="false" style="-fx-background-color: #111827; -fx-text-fill: #E2E8F0; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Vai trò" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfRole" editable="false" style="-fx-background-color: #111827; -fx-text-fill: #E2E8F0; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Số dư ví" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfBalance" editable="false" style="-fx-background-color: #111827; -fx-text-fill: #34D399; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <Region VBox.vgrow="ALWAYS" />
+
+    <HBox spacing="12" alignment="CENTER_RIGHT">
+        <Button fx:id="btnClose" text="Đóng"
+                style="-fx-background-color: #334155; -fx-text-fill: #E2E8F0; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 10 20; -fx-cursor: hand;"
+                onAction="#handleClose" />
+    </HBox>
+
+</VBox>

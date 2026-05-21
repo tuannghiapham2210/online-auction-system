@@ -244,9 +244,40 @@ public class DashboardController {
         Label balanceLabel = new Label("Ví: $" + NumberUtil.format(Session.balance));
         balanceLabel.setStyle("-fx-text-fill: #34D399; -fx-font-size: 12px; -fx-font-weight: bold;");
 
-        profileDropdown.getChildren().addAll(title, usernameLabel, roleLabel, balanceLabel);
+        Button btnProfileInfo = new Button("Thông tin cá nhân");
+        btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
+        btnProfileInfo.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 12;" +
+            "-fx-background-radius: 10;"
+        );
+        btnProfileInfo.setOnMouseEntered(e -> btnProfileInfo.setStyle(
+            "-fx-background-color: rgba(245,159,11,0.16);" +
+            "-fx-text-fill: #F59E0B;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 12;" +
+            "-fx-background-radius: 10;"
+        ));
+        btnProfileInfo.setOnMouseExited(e -> btnProfileInfo.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 12;" +
+            "-fx-background-radius: 10;"
+        ));
+        btnProfileInfo.setOnAction(e -> {
+            closeProfileDropdown(rootPane);
+            openAccountInfoPopup();
+        });
+
+        profileDropdown.getChildren().addAll(title, usernameLabel, roleLabel, balanceLabel, btnProfileInfo);
         StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
-        StackPane.setMargin(profileDropdown, new Insets(70, 20, 0, 0));
+        StackPane.setMargin(profileDropdown, new Insets(68, 20, 0, 0));
 
         profileDropdown.setTranslateY(-8);
         rootPane.getChildren().add(profileDropdown);
@@ -274,6 +305,35 @@ public class DashboardController {
             profileDropdownCloser = null;
         }
         profileDropdown = null;
+    }
+
+    private void openAccountInfoPopup() {
+        try {
+            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+            Node mainContent = rootPane.getChildren().get(0);
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("account_info.fxml"));
+            Parent accountInfoGroup = loader.load();
+            AccountInfoController controller = loader.getController();
+
+            mainContent.setEffect(new GaussianBlur(15));
+
+            Region darkOverlay = new Region();
+            darkOverlay.setId("dark-overlay-account");
+            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+
+            controller.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+            });
+
+            StackPane.setAlignment(accountInfoGroup, Pos.CENTER);
+            rootPane.getChildren().addAll(darkOverlay, accountInfoGroup);
+        } catch (Exception e) {
+            logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
+        }
     }
 
     private boolean isClickInsideNode(MouseEvent event, javafx.scene.Node node) {
