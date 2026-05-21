@@ -122,7 +122,10 @@ public class DashboardController {
         }
         if (Session.role != null) {
             lblRole.setText(Session.role.toUpperCase());
-            if (Session.role.equalsIgnoreCase("bidder")) {
+            if (Session.role.equalsIgnoreCase("admin")) {
+                lblRole.getStyleClass().remove("profile-role-badge");
+                lblRole.getStyleClass().add("profile-role-badge-admin");
+            } else if (Session.role.equalsIgnoreCase("bidder")) {
                 lblRole.getStyleClass().remove("profile-role-badge");
                 lblRole.getStyleClass().add("profile-role-badge-bidder");
             }
