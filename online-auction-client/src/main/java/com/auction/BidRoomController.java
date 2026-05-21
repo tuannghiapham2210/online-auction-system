@@ -1221,70 +1221,93 @@ private void hideNotification(HBox notification) {
      */
     private void initAutoBidPanel() {
         autoBidPanel = new VBox(20);
-        autoBidPanel.setStyle("-fx-background-color: #1A1D27; -fx-background-radius: 12; -fx-padding: 20;");
+        autoBidPanel.setStyle("-fx-background-color: #111827; -fx-border-color: #1E293B; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 25; -fx-border-width: 1.5;");
         autoBidPanel.setMaxWidth(Double.MAX_VALUE);
 
         // --- THE HEADER ---
         HBox headerBox = new HBox(10);
         headerBox.setAlignment(Pos.CENTER_LEFT);
         
-        SVGPath trendIcon = new SVGPath();
-        trendIcon.setContent("M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z");
-        trendIcon.setFill(Color.web("#F59E0B"));
+        SVGPath lightningIcon = new SVGPath();
+        lightningIcon.setContent("M11.5 2L3 13h7v9l8.5-11h-7z");
+        lightningIcon.setFill(Color.web("#F59E0B"));
 
-        Label titleLabel = new Label("THIẾT LẬP ĐẤU GIÁ TỰ ĐỘNG (AUTO-BID)");
+        Label titleLabel = new Label("CÔNG CỤ ĐẤU GIÁ & AUTO-BID");
         titleLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        headerBox.getChildren().addAll(trendIcon, titleLabel);
+        headerBox.getChildren().addAll(lightningIcon, titleLabel);
 
-        // --- THE INPUT SECTION ---
+        // --- THE INPUT SECTION (HBox with 2 input groups and button) ---
         HBox inputSectionBox = new HBox(20);
+        inputSectionBox.setAlignment(Pos.BOTTOM_LEFT);
+        inputSectionBox.setMaxWidth(Double.MAX_VALUE);
         
-        // Left Side (Inputs)
-        VBox leftSideBox = new VBox(15);
-        leftSideBox.setMinWidth(250); // FIX: Bảo vệ inputs khỏi bị ép dẹp theo chiều ngang
-        leftSideBox.setPrefWidth(300);
-
+        // Group 1: BƯỚC NHẠY AUTO-BID
         VBox group1 = new VBox(8);
-        Label maxBidLbl = new Label("GIÁ TỐI ĐA (MAX BID)");
-        maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
-        TextField maxBidField = new TextField();
-        maxBidField.setPromptText("$");
-        maxBidField.setStyle("-fx-background-color: #151A22; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 10;");
-        group1.getChildren().addAll(maxBidLbl, maxBidField);
-
-        VBox group2 = new VBox(8);
-        Label incLbl = new Label("BƯỚC GIÁ (INCREMENT)");
+        group1.setMinWidth(150);
+        group1.setPrefWidth(280);
+        Label incLbl = new Label("BƯỚC NHẠY AUTO-BID");
         incLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
         TextField incField = new TextField();
-        incField.setPromptText("$");
-        incField.setStyle("-fx-background-color: #151A22; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 10;");
-        group2.getChildren().addAll(incLbl, incField);
+        incField.setPromptText("$ 500");
+        incField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
+        group1.getChildren().addAll(incLbl, incField);
 
-        Button btnRegister = new Button("Đăng ký Auto-Bid");
-        btnRegister.setStyle("-fx-background-color: #F59E0B; -fx-text-fill: #111827; -fx-font-weight: bold; -fx-padding: 12; -fx-background-radius: 8; -fx-cursor: hand;");
-        btnRegister.setMaxWidth(Double.MAX_VALUE);
+        // Group 2: NGÂN SÁCH TỐI ĐA
+        VBox group2 = new VBox(8);
+        group2.setMinWidth(150);
+        group2.setPrefWidth(280);
+        Label maxBidLbl = new Label("NGÂN SÁCH TỐI ĐA");
+        maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        TextField maxBidField = new TextField();
+        maxBidField.setPromptText("$ 25500");
+        maxBidField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
+        group2.getChildren().addAll(maxBidLbl, maxBidField);
+
+        // Button: KÍCH HOẠT AUTO-BID
+        Button btnRegister = new Button("▷ KÍCH HOẠT AUTO-BID");
+        btnRegister.setStyle("-fx-background-color: #10B981; -fx-text-fill: #111827; -fx-font-weight: bold; -fx-padding: 12 25; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 13px;");
+        btnRegister.setPrefHeight(45);
         btnRegister.setOnAction(e -> handleRegisterAutoBid(maxBidField.getText(), incField.getText()));
 
-        leftSideBox.getChildren().addAll(group1, group2, btnRegister);
+        // Make button grow or align to the right
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Right Side (Info Box)
-        HBox rightSideBox = new HBox(15);
-        rightSideBox.setStyle("-fx-background-color: transparent; -fx-border-color: #303645; -fx-border-radius: 8; -fx-padding: 20;");
-        rightSideBox.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(rightSideBox, Priority.ALWAYS);
+        inputSectionBox.getChildren().addAll(group1, group2, spacer, btnRegister);
 
-        SVGPath robotIcon = new SVGPath();
-        robotIcon.setContent("M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a3 3 0 0 1 3 3v2h2v2h-2v4a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-4H3v-2h2v-2a3 3 0 0 1 3-3h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM8 9a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H8zm1 2h2v2H9v-2zm4 0h2v2h-2v-2z");
-        robotIcon.setFill(Color.web("#9CA3AF"));
+        // --- THE DISCLAIMER SECTION (Info Box) ---
+        HBox disclaimerBox = new HBox(15);
+        disclaimerBox.setStyle("-fx-background-color: transparent; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-padding: 15 20; -fx-border-width: 1;");
+        disclaimerBox.setAlignment(Pos.CENTER_LEFT);
+        disclaimerBox.setMaxWidth(Double.MAX_VALUE);
 
-        Label infoLabel = new Label("Hệ thống sẽ tự động trả giá thay bạn khi có đối thủ cạnh tranh. Đảm bảo không vượt quá Giá tối đa bạn thiết lập và ưu tiên người đăng ký trước nếu có xung đột.");
-        infoLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 13px; -fx-line-spacing: 5px;");
-        infoLabel.setWrapText(true);
+        SVGPath infoIcon = new SVGPath();
+        infoIcon.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z");
+        infoIcon.setFill(Color.web("#4E586E"));
+        infoIcon.setScaleX(1.2);
+        infoIcon.setScaleY(1.2);
 
-        rightSideBox.getChildren().addAll(robotIcon, infoLabel);
-        inputSectionBox.getChildren().addAll(leftSideBox, rightSideBox);
-        autoBidPanel.getChildren().addAll(headerBox, inputSectionBox);
+        javafx.scene.text.TextFlow textFlow = new javafx.scene.text.TextFlow();
+        HBox.setHgrow(textFlow, Priority.ALWAYS);
+        
+        javafx.scene.text.Text t1 = new javafx.scene.text.Text("Khi kích hoạt, hệ thống sẽ tự động theo dõi và đặt giá thay bạn mỗi khi có đối thủ vượt mặt ");
+        t1.setFill(Color.web("#9CA3AF"));
+        t1.setStyle("-fx-font-size: 13px;");
+        
+        javafx.scene.text.Text t2 = new javafx.scene.text.Text("(Giá đặt = Giá hiện tại + Bước nhảy Auto-Bid)");
+        t2.setFill(Color.web("#D1D5DB"));
+        t2.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;");
+        
+        javafx.scene.text.Text t3 = new javafx.scene.text.Text(", cho đến khi chạm mốc Ngân sách tối đa hoặc Ví hết tiền.");
+        t3.setFill(Color.web("#9CA3AF"));
+        t3.setStyle("-fx-font-size: 13px;");
+
+        textFlow.getChildren().addAll(t1, t2, t3);
+
+        disclaimerBox.getChildren().addAll(infoIcon, textFlow);
+        
+        autoBidPanel.getChildren().addAll(headerBox, inputSectionBox, disclaimerBox);
 
         // Inject into layout gracefully
         Platform.runLater(() -> {
