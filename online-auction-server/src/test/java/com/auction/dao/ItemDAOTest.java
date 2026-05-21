@@ -76,15 +76,19 @@ class ItemDAOTest {
     @DisplayName("Test: Cập nhật giá (Thành công & Thất bại)")
     void testUpdatePrice() {
         Item testItem = ItemFactory.createItem("ART", TEST_ITEM_NAME, 500.0, "2026-12-31", testSellerId, "Artist");
+        testItem.setStepPrice(50.0);
         itemDAO.insertItem(testItem);
         int itemId = getTestItemId();
 
         boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, 600.0, 9999);
-        assertTrue(updateSuccess, "Đặt giá CAO HƠN phải thành công");
+        assertTrue(updateSuccess, "Đặt giá >= currentPrice + stepPrice phải thành công");
         assertEquals(600.0, itemDAO.getItemById(itemId).getCurrentPrice());
 
-        boolean updateFail = itemDAO.updateCurrentPrice(itemId, 550.0, 9999);
-        assertFalse(updateFail, "Đặt giá THẤP HƠN giá hiện tại phải thất bại");
+        boolean updateFailStep = itemDAO.updateCurrentPrice(itemId, 640.0, 9999);
+        assertFalse(updateFailStep, "Đặt giá tăng ít hơn bước giá phải thất bại");
+
+        boolean updateFailLower = itemDAO.updateCurrentPrice(itemId, 550.0, 9999);
+        assertFalse(updateFailLower, "Đặt giá thấp hơn giá hiện tại phải thất bại");
     }
 
     @Test

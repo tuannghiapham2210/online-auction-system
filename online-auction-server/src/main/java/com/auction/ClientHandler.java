@@ -374,11 +374,29 @@ public class ClientHandler implements Runnable {
 
             // --- SECURITY GUARD CLAUSE ---
             Item item = itemDAO.getItemById(itemId);
-            if (item != null && "PENDING".equalsIgnoreCase(item.getStatus())) {
+            if (item == null) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            if ("PENDING".equalsIgnoreCase(item.getStatus())) {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("action", "ERROR");
                 errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
                 logger.warn("Rejected bid for PENDING item: {}", itemId);
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            
+            // Enforce minimum bid step price
+            double minBid = item.getCurrentPrice() + item.getStepPrice();
+            if (bidAmount < minBid) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("action", "ERROR");
+                errorMsg.addProperty("message", "Giá đặt tối thiểu phải là: $" + minBid);
+                logger.warn("Rejected bid for item {}: amount ${} is less than minimum bid ${}", itemId, bidAmount, minBid);
                 this.writer.println(errorMsg.toString());
                 return;
             }
@@ -445,12 +463,36 @@ public class ClientHandler implements Runnable {
             // --- SECURITY GUARD CLAUSE ---
             com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
             Item item = itemDAO.getItemById(itemId);
-            if (item != null && ("PENDING".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus()))) {
+            if (item == null) {
+                JsonObject errorMsg = new JsonObject();
+                errorMsg.addProperty("status", "ERROR");
+                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
+                this.writer.println(errorMsg.toString());
+                return;
+            }
+            if ("PENDING".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
                 JsonObject errorMsg = new JsonObject();
                 errorMsg.addProperty("status", "ERROR");
                 errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently " + item.getStatus() + ".");
                 logger.warn("Rejected Auto-Bid for {} item: {}", item.getStatus(), itemId);
                 this.writer.println(errorMsg.toString());
+                return;
+            }
+            
+            // Enforce auto-bid increment and maxBid
+            if (increment < item.getStepPrice()) {
+                JsonObject response = new JsonObject();
+                response.addProperty("status", "ERROR");
+                response.addProperty("message", "Bước giá tự động phải lớn hơn hoặc bằng bước giá của sản phẩm ($" + item.getStepPrice() + ")!");
+                writer.println(response.toString());
+                return;
+            }
+            double minMaxBid = item.getCurrentPrice() + item.getStepPrice();
+            if (maxBid < minMaxBid) {
+                JsonObject response = new JsonObject();
+                response.addProperty("status", "ERROR");
+                response.addProperty("message", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + minMaxBid + ")!");
+                writer.println(response.toString());
                 return;
             }
             // -----------------------------
@@ -533,8 +575,9 @@ public class ClientHandler implements Runnable {
                             double nextBid = currentPrice + increment;
                             if (nextBid > maxBid) nextBid = maxBid; // Chạm ngướng giá trần
                             
-                            // Nếu họ có thể vượt lên mức giá hiện tại hợp lệ
-                            if (nextBid > currentPrice && maxBid > currentPrice) {
+                            double minNextBid = currentPrice + item.getStepPrice();
+                            // Nếu họ có thể vượt lên mức giá hiện tại hợp lệ và đáp ứng bước giá tối thiểu
+                            if (nextBid >= minNextBid && maxBid >= minNextBid) {
                                 boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, nextBid, botUserId);
                                 boolean logSuccess = bidDAO.insertBidTransaction(itemId, botUserId, nextBid);
                                 

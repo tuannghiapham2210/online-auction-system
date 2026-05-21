@@ -631,6 +631,22 @@ public class BidRoomController {
             // 1. Đóng gói request dạng JSON
             double bidAmount = NumberUtil.parse(bidText).doubleValue();
 
+            // CHECK KHÔNG ĐƯỢC THẤP HƠN GIÁ TỐI THIỂU
+            double currentPrice = 0.0;
+            try {
+                currentPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+            } catch (Exception ex) {
+                logger.warn("Could not parse current price for validation", ex);
+            }
+            double minBid = currentPrice + currentStepPrice;
+            if (bidAmount < minBid) {
+                showNotification(
+                    "Giá thầu không hợp lệ!",
+                    "Giá đặt tối thiểu phải là $" + NumberUtil.format(minBid)
+                );
+                return;
+            }
+
             // CHECK KHÔNG ĐƯỢC VƯỢT QUÁ SỐ DƯ
             if (bidAmount > Session.balance) {
 
@@ -1307,13 +1323,15 @@ private void hideNotification(HBox notification) {
                 logger.warn("Could not parse current price for validation", ex);
             }
 
-            // Đảm bảo bot không tự đăng ký với mức giá đã bị vượt qua
-            if (maxBid <= currentPrice) {
-                showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn mức giá hiện tại của sản phẩm ($" + NumberUtil.format(currentPrice) + ")!");
+            // Đảm bảo giá tối đa tự động đạt ít nhất giá tối thiểu tiếp theo (currentPrice + currentStepPrice)
+            double minMaxBid = currentPrice + currentStepPrice;
+            if (maxBid < minMaxBid) {
+                showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + NumberUtil.format(minMaxBid) + ")!");
                 return;
             }
-            if (inc <= 0) {
-                showNotification("Bước giá không hợp lệ", "Bước giá (Increment) phải lớn hơn 0!");
+            // Đảm bảo bước giá tự động tối thiểu bằng bước giá sản phẩm
+            if (inc < currentStepPrice) {
+                showNotification("Bước giá không hợp lệ", "Bước giá tự động phải ít nhất bằng bước giá của sản phẩm ($" + NumberUtil.format(currentStepPrice) + ")!");
                 return;
             }
 

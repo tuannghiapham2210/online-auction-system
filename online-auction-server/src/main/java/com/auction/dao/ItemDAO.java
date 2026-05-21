@@ -173,7 +173,7 @@ public class ItemDAO {
      */
     public boolean updateCurrentPrice(int itemId, double newPrice, int winnerId) {
         boolean isSuccess = false;
-        String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price < ?";
+        String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price + step_price <= ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
