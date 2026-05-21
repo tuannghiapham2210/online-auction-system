@@ -471,6 +471,7 @@ public class DashboardController {
     private void openBidRoom(Item item) {
         try {
             if (dashboardTimeline != null) dashboardTimeline.stop();
+            closeListener(); // Đóng kết nối socket cũ trước khi chuyển trang
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
             Parent root = loader.load();
@@ -747,6 +748,7 @@ public class DashboardController {
     public void handleLogout() {
         try {
             if (dashboardTimeline != null) dashboardTimeline.stop();
+            closeListener(); // Đóng kết nối socket khi đăng xuất
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("login.fxml")));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
@@ -856,6 +858,19 @@ public class DashboardController {
         }).start();
     }
     
+    /**
+     * Đóng kết nối socket của Dashboard để giải phóng tài nguyên (tránh rò rỉ bộ nhớ).
+     */
+    private void closeListener() {
+        try {
+            if (listenerSocket != null && !listenerSocket.isClosed()) {
+                listenerSocket.close();
+            }
+        } catch (IOException e) {
+            logger.error("Lỗi khi đóng Dashboard Listener socket: {}", e.getMessage());
+        }
+    }
+
     /**
      * Gọi bởi DashboardListener khi có item mới được tạo.
      * Thêm item vào danh sách allItems và cập nhật giao diện.
