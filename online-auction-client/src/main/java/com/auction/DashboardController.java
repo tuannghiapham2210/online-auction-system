@@ -27,6 +27,8 @@ import javafx.util.Duration;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.event.EventHandler;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
@@ -88,6 +90,8 @@ public class DashboardController {
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
     private Map<Label, Label> liveBadgeMap = new HashMap<>();
+    private VBox profileDropdown;
+    private EventHandler<MouseEvent> profileDropdownCloser;    
     
     // Real-time listener socket connections
     private Socket listenerSocket;
@@ -130,6 +134,18 @@ public class DashboardController {
                 lblRole.getStyleClass().add("profile-role-badge-bidder");
             }
         }
+
+        lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
+        lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
+
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filterItems(newValue);
+        });
+
+        // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo thành công và số dư còn lại
+
+        lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
+        lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
@@ -203,6 +219,162 @@ public class DashboardController {
                 }
             } catch (Exception ignored) {}
         });
+    }
+
+    private void toggleProfileDropdown() {
+        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
+            closeProfileDropdown(rootPane);
+            return;
+        }
+
+        profileDropdown = new VBox(10);
+        profileDropdown.setStyle(
+            "-fx-background-color: #212936;" +
+            "-fx-border-color: #2A3441;" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 18;" +
+            "-fx-background-radius: 18;" +
+            "-fx-padding: 16;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 16, 0, 0, 6);"
+        );
+        profileDropdown.setPrefWidth(190);
+        profileDropdown.setMaxWidth(190);
+        profileDropdown.setMinWidth(190);
+
+        Button btnProfileInfo = new Button("Thông tin cá nhân");
+        btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
+        btnProfileInfo.setFocusTraversable(false);
+        btnProfileInfo.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        );
+        btnProfileInfo.setOnMouseEntered(e -> btnProfileInfo.setStyle(
+            "-fx-background-color: rgba(245,159,11,0.12);" +
+            "-fx-text-fill: #F59E0B;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(245,159,11,0.4);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        ));
+        btnProfileInfo.setOnMouseExited(e -> btnProfileInfo.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 12 16;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        ));
+        btnProfileInfo.setOnAction(e -> {
+            closeProfileDropdown(rootPane);
+            openAccountInfoPopup();
+        });
+
+        profileDropdown.getChildren().add(btnProfileInfo);
+        StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
+        StackPane.setMargin(profileDropdown, new Insets(68, 20, 0, 0));
+
+        profileDropdown.setTranslateY(-8);
+        rootPane.getChildren().add(profileDropdown);
+
+        TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
+        slide.setFromY(-8);
+        slide.setToY(0);
+        slide.play();
+
+        profileDropdownCloser = event -> {
+            if (isClickInsideNode(event, profileDropdown) || isClickInsideNode(event, lblAvatar)) {
+                return;
+            }
+            closeProfileDropdown(rootPane);
+        };
+        rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+    }
+
+    private void closeProfileDropdown(StackPane rootPane) {
+        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
+            rootPane.getChildren().remove(profileDropdown);
+        }
+        if (profileDropdownCloser != null) {
+            rootPane.removeEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+            profileDropdownCloser = null;
+        }
+        profileDropdown = null;
+    }
+
+    private void openAccountInfoPopup() {
+        try {
+            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+            Node mainContent = rootPane.getChildren().get(0);
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("account_info.fxml"));
+            Parent accountInfoGroup = loader.load();
+            AccountInfoController controller = loader.getController();
+
+            mainContent.setEffect(new GaussianBlur(15));
+
+            Region darkOverlay = new Region();
+            darkOverlay.setId("dark-overlay-account");
+            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
+            darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
+            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+
+            controller.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+            });
+
+            controller.setOnSaveCallback(() -> {
+                refreshUserProfile();
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+            });
+
+            StackPane.setAlignment(darkOverlay, Pos.CENTER);
+            StackPane.setAlignment(accountInfoGroup, Pos.CENTER);
+            rootPane.getChildren().addAll(darkOverlay, accountInfoGroup);
+        } catch (Exception e) {
+            logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
+        }
+    }
+
+    private void refreshUserProfile() {
+        if (Session.username != null && !Session.username.isEmpty()) {
+            lblUsername.setText(Session.username);
+            lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
+        }
+        if (Session.role != null) {
+            lblRole.setText(Session.role.toUpperCase());
+        }
+    }
+
+    private boolean isClickInsideNode(MouseEvent event, javafx.scene.Node node) {
+        if (node == null) {
+            return false;
+        }
+        javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
+        return bounds.contains(event.getSceneX(), event.getSceneY());
     }
 
     private boolean isFinished(Item item) {

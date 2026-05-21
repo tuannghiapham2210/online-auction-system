@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.2" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.auction.AccountInfoController"
+      stylesheets="@style.css"
+      alignment="CENTER"
+      spacing="18"
+      styleClass="modal-container"
+      style="-fx-padding: 24;"
+      prefWidth="340"
+      maxWidth="340"
+      minWidth="340"
+      maxHeight="520">
+
+    <Label text="Thông tin cá nhân"
+           style="-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;" />
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Tên đăng nhập" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfUsername" style="-fx-background-color: #111827; -fx-text-fill: #E2E8F0; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Email" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfEmail" promptText="Email của bạn" style="-fx-background-color: #111827; -fx-text-fill: #E2E8F0; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Vai trò" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfRole" editable="false" style="-fx-background-color: #111827; -fx-text-fill: #E2E8F0; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <VBox spacing="12" maxWidth="Infinity">
+        <Label text="Số dư ví" style="-fx-text-fill: #94A3B8; -fx-font-size: 12px;" />
+        <TextField fx:id="tfBalance" editable="false" style="-fx-background-color: #111827; -fx-text-fill: #34D399; -fx-border-color: #334155; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;" />
+    </VBox>
+
+    <Label fx:id="lblMessage" text="" wrapText="true"
+           style="-fx-text-fill: #34D399; -fx-font-size: 12px;"
+           visible="false" maxWidth="Infinity" />
+
+    <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-background-color: transparent;">
+        <Button fx:id="btnCancel" text="Hủy"
+                style="-fx-background-color: #334155; -fx-text-fill: #E2E8F0; -fx-font-weight: bold; -fx-background-radius: 16; -fx-border-radius: 16; -fx-padding: 10 20; -fx-cursor: hand; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;"
+                onAction="#handleClose" />
+        <Button fx:id="btnSave" text="Cập nhật"
+                style="-fx-background-color: #F59E0B; -fx-text-fill: black; -fx-font-weight: bold; -fx-background-radius: 16; -fx-border-radius: 16; -fx-padding: 10 20; -fx-cursor: hand; -fx-focus-color: transparent; -fx-faint-focus-color: transparent;"
+                onAction="#handleSave" />
+    </HBox>
+
+</VBox>
