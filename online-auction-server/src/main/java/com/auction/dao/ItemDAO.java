@@ -96,6 +96,11 @@ public class ItemDAO {
                 double finalPrice = rs.getDouble("final_price");
                 String winnerUsername = rs.getString("winner_username");
 
+                // Đảm bảo chuỗi item_type đồng bộ dạng chữ viết hoa trước khi truyền vào Factory
+                if (itemType != null) {
+                    itemType = itemType.toUpperCase();
+                }
+
                 // 2. Sử dụng ItemFactory để tạo đúng loại đối tượng Item
                 Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
                 item.setId(id);
@@ -143,6 +148,10 @@ public class ItemDAO {
                     int winnerId = rs.getInt("winner_id");
                     double finalPrice = rs.getDouble("final_price");
                     String winnerUsername = rs.getString("winner_username");
+
+                    if (itemType != null) {
+                        itemType = itemType.toUpperCase();
+                    }
 
                     Item item = ItemFactory.createItem(itemType, name, startingPrice, endTime, sellerId, extraInfo);
                     item.setId(itemId);
