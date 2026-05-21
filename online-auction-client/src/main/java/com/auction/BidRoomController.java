@@ -1163,6 +1163,8 @@ private void hideNotification(HBox notification) {
             }
 
             if (bidAmountField != null) bidAmountField.setDisable(true);
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (btnStopAuction != null) btnStopAuction.setVisible(false);
             
             if (autoBidPanel != null) {
                 autoBidPanel.setDisable(true);

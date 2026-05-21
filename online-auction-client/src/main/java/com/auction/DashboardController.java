@@ -339,6 +339,28 @@ public class DashboardController {
         // 3. Khởi động luồng đếm ngược thời gian thực cho các thẻ mới
         dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             LocalDateTime now = LocalDateTime.now();
+            boolean needRefresh = false;
+            
+            // Kiểm tra xem có sản phẩm nào vừa hết hạn tự nhiên không
+            for (Item item : itemsToDisplay) {
+                if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) 
+                        && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+                    try {
+                        LocalDateTime end = LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        if (!now.isBefore(end)) {
+                            item.setStatus("FINISHED");
+                            needRefresh = true;
+                        }
+                    } catch (Exception ex) { }
+                }
+            }
+            
+            // Nếu có thẻ vừa hết hạn, vẽ lại giao diện để tự động cập nhật nút và màu sắc "ĐÃ KẾT THÚC"
+            if (needRefresh) {
+                filterItems(searchField.getText());
+                return;
+            }
+
             for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
                 Label lbl = entry.getKey();
                 LocalDateTime end = entry.getValue();
