@@ -1,9 +1,6 @@
 package com.auction.factory;
 
-import com.auction.model.Art;
-import com.auction.model.Electronics;
-import com.auction.model.Item;
-import com.auction.model.Vehicle;
+import com.auction.model.*;
 
 /**
  * Factory class chịu trách nhiệm khởi tạo các đối tượng Item.
@@ -40,6 +37,9 @@ public class ItemFactory {
             case "VEHICLE":
                 // 3. Xử lý cho phương tiện (extraInfo là loại động cơ)
                 return new Vehicle(name, startingPrice, endTime, sellerId, extraInfo);
+
+            case "OTHER":
+                return new Other(name, startingPrice, endTime, sellerId, extraInfo);
 
             default:
                 throw new IllegalArgumentException("Loại sản phẩm không được hệ thống hỗ trợ: " + type);

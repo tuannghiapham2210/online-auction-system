@@ -44,7 +44,7 @@ public class AddItemController {
     @FXML
     public void initialize() {
         // 1. Khởi tạo các lựa chọn loại sản phẩm và xóa thông báo rác
-        typeComboBox.getItems().addAll("ELECTRONICS", "ART", "VEHICLE");
+        typeComboBox.getItems().addAll("ELECTRONICS", "ART", "VEHICLE", "OTHER");
         messageLabel.setText("");
 
         durationField.setText("00:00:00");
