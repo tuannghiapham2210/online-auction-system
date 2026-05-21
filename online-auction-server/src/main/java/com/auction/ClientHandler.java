@@ -105,6 +105,9 @@ public class ClientHandler implements Runnable {
                     case "FETCH_BID_HISTORY_REQUEST":
                         handleFetchBidHistory(request);
                         break;
+                    case "UPDATE_PROFILE":
+                        handleUpdateProfile(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -151,15 +154,59 @@ public class ClientHandler implements Runnable {
             String role = dao.getUserRole(user, pass);
             int userId = dao.getUserId(user, pass);
             int balance = dao.getBalanceByUsername(user);
+            String email = dao.getUserEmail(user, pass);
+            String phone = dao.getUserPhone(user, pass);
 
             response.addProperty("status", "SUCCESS");
             response.addProperty("message", "Đăng nhập thành công!");
             response.addProperty("role", role);
             response.addProperty("userId", userId);
+            response.addProperty("username", user);
             response.addProperty("balance", balance);
+            response.addProperty("email", email != null ? email : "");
+            response.addProperty("phone", phone != null ? phone : "");
         } else {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
+        }
+
+        writer.println(response.toString());
+    }
+
+    private void handleUpdateProfile(JsonObject request) {
+        int userId = request.get("userId").getAsInt();
+        String newUsername = request.has("username") ? request.get("username").getAsString().trim() : "";
+        String email = request.has("email") ? request.get("email").getAsString().trim() : "";
+        String phone = request.has("phone") ? request.get("phone").getAsString().trim() : "";
+
+        JsonObject response = new JsonObject();
+
+        if (newUsername.isEmpty()) {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Tên người dùng không được để trống.");
+            writer.println(response.toString());
+            return;
+        }
+
+        UserDAO userDAO = new UserDAO();
+        if (userDAO.isUsernameTakenByOther(userId, newUsername)) {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.");
+            writer.println(response.toString());
+            return;
+        }
+
+        boolean success = userDAO.updateUserProfile(userId, newUsername, email, phone);
+
+        if (success) {
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("message", "Cập nhật thông tin thành công.");
+            response.addProperty("username", newUsername);
+            response.addProperty("email", email != null ? email : "");
+            response.addProperty("phone", phone != null ? phone : "");
+        } else {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Không thể cập nhật hồ sơ. Vui lòng thử lại sau.");
         }
 
         writer.println(response.toString());
