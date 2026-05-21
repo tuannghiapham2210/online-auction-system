@@ -1,10 +1,12 @@
 package com.auction;
 
 import com.auction.util.NumberUtil;
+import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,11 +50,7 @@ public class AccountInfoController {
                 showMessage("Tên người dùng không được để trống", true);
                 return;
             }
-            if (newEmail.isEmpty()) {
-                showMessage("Email không được để trống", true);
-                return;
-            }
-            if (!newEmail.contains("@")) {
+            if (!newEmail.isEmpty() && !newEmail.contains("@")) {
                 showMessage("Email không hợp lệ", true);
                 return;
             }
@@ -61,8 +59,11 @@ public class AccountInfoController {
             Session.email = newEmail;
             Session.phone = newPhone;
             showMessage("Cập nhật thông tin thành công", false);
+
             if (onSaveCallback != null) {
-                onSaveCallback.run();
+                PauseTransition pause = new PauseTransition(Duration.seconds(1));
+                pause.setOnFinished(event -> onSaveCallback.run());
+                pause.play();
             }
         } catch (Exception e) {
             logger.error("Lỗi khi cập nhật thông tin: {}", e.getMessage());
