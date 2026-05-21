@@ -91,6 +91,8 @@ public class DatabaseConnection {
                 + "username TEXT UNIQUE NOT NULL,"
                 + "password TEXT NOT NULL,"
                 + "role TEXT NOT NULL,"
+                + "email TEXT,"
+                + "phone TEXT,"
                 + "balance INTEGER DEFAULT 0"
                 + ");";
 
@@ -149,6 +151,7 @@ public class DatabaseConnection {
         }
 
         ensureItemWinnerColumns();
+        ensureUserEmailPhoneColumns();
     }
 
     private void ensureItemWinnerColumns() {
@@ -169,6 +172,27 @@ public class DatabaseConnection {
             }
         } catch (java.sql.SQLException e) {
             logger.error("Error applying schema update for winner fields: {}", e.getMessage(), e);
+        }
+    }
+
+    private void ensureUserEmailPhoneColumns() {
+        try (java.sql.Statement stmt = connection.createStatement()) {
+            java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(users);");
+            java.util.Set<String> columns = new java.util.HashSet<>();
+            while (rs.next()) {
+                columns.add(rs.getString("name"));
+            }
+
+            if (!columns.contains("email")) {
+                stmt.execute("ALTER TABLE users ADD COLUMN email TEXT;");
+                logger.info("Added missing column email to users table.");
+            }
+            if (!columns.contains("phone")) {
+                stmt.execute("ALTER TABLE users ADD COLUMN phone TEXT;");
+                logger.info("Added missing column phone to users table.");
+            }
+        } catch (java.sql.SQLException e) {
+            logger.error("Error applying schema update for user profile fields: {}", e.getMessage(), e);
         }
     }
 

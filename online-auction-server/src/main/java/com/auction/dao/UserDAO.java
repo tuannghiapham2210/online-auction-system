@@ -119,6 +119,70 @@ public class UserDAO {
         }
         return 0;
     }
+
+    public String getUserEmail(String username, String password) {
+        String sql = "SELECT email FROM users WHERE username=? AND password=?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to get user email: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public String getUserPhone(String username, String password) {
+        String sql = "SELECT phone FROM users WHERE username=? AND password=?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, password);
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getString("phone");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to get user phone: {}", e.getMessage(), e);
+        }
+        return null;
+    }
+
+    public boolean isUsernameTakenByOther(int userId, String username) {
+        String sql = "SELECT id FROM users WHERE username = ? AND id <> ?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setInt(2, userId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (Exception e) {
+            logger.error("Failed to check duplicate username: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    public boolean updateUserProfile(int userId, String username, String email, String phone) {
+        String sql = "UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?";
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, email != null ? email : "");
+            ps.setString(3, phone != null ? phone : "");
+            ps.setInt(4, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            logger.error("Failed to update user profile: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     public boolean depositBalance(
                 String username,
                 int amount

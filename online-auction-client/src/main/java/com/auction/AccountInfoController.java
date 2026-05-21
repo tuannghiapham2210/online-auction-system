@@ -1,7 +1,10 @@
 package com.auction;
 
 import com.auction.util.NumberUtil;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -9,6 +12,12 @@ import javafx.scene.control.TextField;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 public class AccountInfoController {
 
@@ -55,19 +64,58 @@ public class AccountInfoController {
                 return;
             }
 
-            Session.username = newName;
-            Session.email = newEmail;
-            Session.phone = newPhone;
-            showMessage("Cập nhật thông tin thành công", false);
+            showMessage("Đang lưu thông tin...", false);
 
-            if (onSaveCallback != null) {
-                PauseTransition pause = new PauseTransition(Duration.seconds(1));
-                pause.setOnFinished(event -> onSaveCallback.run());
-                pause.play();
-            }
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "UPDATE_PROFILE");
+            request.addProperty("userId", Session.userId);
+            request.addProperty("username", newName);
+            request.addProperty("email", newEmail);
+            request.addProperty("phone", newPhone);
+
+            new Thread(() -> sendProfileUpdateRequest(request.toString(), newName, newEmail, newPhone)).start();
         } catch (Exception e) {
             logger.error("Lỗi khi cập nhật thông tin: {}", e.getMessage());
             showMessage("Đã có lỗi, thử lại sau", true);
+        }
+    }
+
+    private void sendProfileUpdateRequest(String requestJson, String newName, String newEmail, String newPhone) {
+        try (Socket socket = new Socket("127.0.0.1", 8080);
+             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
+
+            out.println(requestJson);
+            String responseLine = in.readLine();
+            if (responseLine == null) {
+                throw new IllegalStateException("Không nhận được phản hồi từ server");
+            }
+
+            JsonObject response = JsonParser.parseString(responseLine).getAsJsonObject();
+            Platform.runLater(() -> {
+                if (response.has("status") && "SUCCESS".equals(response.get("status").getAsString())) {
+                    String updatedUsername = response.has("username") ? response.get("username").getAsString() : newName;
+                    String updatedEmail = response.has("email") ? response.get("email").getAsString() : newEmail;
+                    String updatedPhone = response.has("phone") ? response.get("phone").getAsString() : newPhone;
+
+                    Session.username = updatedUsername;
+                    Session.email = updatedEmail;
+                    Session.phone = updatedPhone;
+                    showMessage("Cập nhật thông tin thành công", false);
+
+                    if (onSaveCallback != null) {
+                        PauseTransition pause = new PauseTransition(Duration.seconds(1));
+                        pause.setOnFinished(event -> onSaveCallback.run());
+                        pause.play();
+                    }
+                } else {
+                    String error = response.has("message") ? response.get("message").getAsString() : "Lỗi khi cập nhật thông tin";
+                    showMessage(error, true);
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Lỗi khi gửi yêu cầu cập nhật hồ sơ: {}", e.getMessage(), e);
+            Platform.runLater(() -> showMessage("Mất kết nối tới Server!", true));
         }
     }
 
