@@ -37,7 +37,7 @@ public class PasswordChangeController {
             String confirmPassword = tfConfirmPassword.getText().trim();
 
             if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                showMessage("Vui lòng nhập đầy đủ các trường.", true);
+                showMessage("Vui lòng nhập đầy đủ thông tin.", true);
                 return;
             }
             if (!newPassword.equals(confirmPassword)) {
