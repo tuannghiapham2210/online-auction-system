@@ -1249,7 +1249,7 @@ private void hideNotification(HBox notification) {
         Label incLbl = new Label("BƯỚC NHẠY AUTO-BID");
         incLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
         TextField incField = new TextField();
-        incField.setPromptText("$ 500");
+        incField.setPromptText("$");
         incField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
         group1.getChildren().addAll(incLbl, incField);
 
@@ -1260,7 +1260,7 @@ private void hideNotification(HBox notification) {
         Label maxBidLbl = new Label("NGÂN SÁCH TỐI ĐA");
         maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
         TextField maxBidField = new TextField();
-        maxBidField.setPromptText("$ 25500");
+        maxBidField.setPromptText("$");
         maxBidField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
         group2.getChildren().addAll(maxBidLbl, maxBidField);
 
