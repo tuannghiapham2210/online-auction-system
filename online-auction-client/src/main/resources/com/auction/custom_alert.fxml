@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="alertRoot" alignment="CENTER" spacing="15.0" style="-fx-background-color: #1E293B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.CustomAlertController">
+   <padding>
+      <Insets bottom="20.0" left="25.0" right="25.0" top="25.0" />
+   </padding>
+   <children>
+      <Label fx:id="iconLabel" style="-fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;" />
+      <Label fx:id="titleLabel" style="-fx-font-size: 18px; -fx-font-weight: bold;" />
+      <Label fx:id="msgLabel" style="-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;" />
+      <HBox alignment="CENTER" spacing="15.0">
+         <children>
+            <Button fx:id="btnConfirm" onAction="#handleConfirm" style="-fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;" />
+            <Button fx:id="btnCancel" onAction="#handleCancel" style="-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;" text="Hủy" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

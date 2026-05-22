@@ -707,6 +707,12 @@ public class BidRoomController {
 
             // 2. Thêm điểm dữ liệu mới vào biểu đồ (giữ tối đa 10 điểm để tránh rối mắt)
             String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+            
+            // Xử lý chống trùng lặp nhãn trục X (tránh đồ thị bị dựng đứng khi Auto-Bid nổ quá nhanh)
+            while (isCategoryExists(timeStamp)) {
+                timeStamp += " ";
+            }
+
             XYChart.Data<String, Number> newData = new XYChart.Data<>(timeStamp, newPrice);
 
             StackPane customNode = new StackPane();
@@ -1760,7 +1766,13 @@ private void hideNotification(HBox notification) {
 
             for (int i = startIndex; i < historySize; i++) {
                 BidEvent event = bidEvents.get(i);
-                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
+                
+                String uniqueTimeStamp = event.timestamp;
+                while (isCategoryExists(uniqueTimeStamp)) {
+                    uniqueTimeStamp += " ";
+                }
+
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(uniqueTimeStamp, event.price);
                 StackPane customNode = createChartNode(event.price);
                 dataPoint.setNode(customNode);
                 priceSeries.getData().add(dataPoint);
@@ -1794,5 +1806,15 @@ private void hideNotification(HBox notification) {
         priceLbl.setTranslateY(-25);
         customNode.getChildren().addAll(dot, priceLbl);
         return customNode;
+    }
+
+    private boolean isCategoryExists(String category) {
+        if (priceSeries == null || priceSeries.getData() == null) return false;
+        for (XYChart.Data<String, Number> data : priceSeries.getData()) {
+            if (category.equals(data.getXValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
