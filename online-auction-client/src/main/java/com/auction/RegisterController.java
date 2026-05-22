@@ -33,6 +33,8 @@ public class RegisterController {
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> roleBox;
     @FXML private Label messageLabel;
+    @FXML private javafx.scene.layout.VBox cardVBox;
+    @FXML private javafx.scene.layout.HBox titleHBox;
 
     /**
      * Hàm tự động chạy khi giao diện được tải lên.
@@ -40,6 +42,7 @@ public class RegisterController {
      */
     @FXML
     public void initialize() {
+        cardVBox.maxWidthProperty().bind(titleHBox.widthProperty());
         roleBox.getItems().addAll("Bidder", "Seller");
 
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
