@@ -228,12 +228,6 @@ public class ClientHandler implements Runnable {
             writer.println(response.toString());
             return;
         }
-        if (newPassword.length() < 6) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Mật khẩu mới phải có ít nhất 6 ký tự.");
-            writer.println(response.toString());
-            return;
-        }
 
         UserDAO userDAO = new UserDAO();
         boolean success = userDAO.changePassword(userId, oldPassword, newPassword);

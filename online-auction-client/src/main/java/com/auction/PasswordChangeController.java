@@ -44,10 +44,6 @@ public class PasswordChangeController {
                 showMessage("Mật khẩu mới và xác nhận phải giống nhau.", true);
                 return;
             }
-            if (newPassword.length() < 6) {
-                showMessage("Mật khẩu mới phải có ít nhất 6 ký tự.", true);
-                return;
-            }
 
             showMessage("Đang đổi mật khẩu...", false);
             JsonObject request = new JsonObject();
