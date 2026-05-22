@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="overlayRoot" opacity="0.0" style="-fx-background-color: rgba(15,15,15,0.92);" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.WinnerOverlayController">
+   <children>
+      <VBox alignment="CENTER" spacing="22.0">
+         <children>
+            <Label fx:id="trophyLabel" style="-fx-font-size: 90px;" text="🏆" />
+            <Label style="-fx-text-fill: white; -fx-font-size: 52px; -fx-font-weight: 900;" text="PHIÊN ĐẤU GIÁ KẾT THÚC" />
+            <Label fx:id="subLabel" />
+            <Label fx:id="winnerLabel" />
+            <HBox fx:id="priceBox" alignment="CENTER" maxWidth="820.0" spacing="15.0" style="-fx-background-color: rgba(30,41,59,0.9); -fx-background-radius: 999; -fx-border-color: rgba(59,130,246,0.25); -fx-border-radius: 999; -fx-border-width: 1.5;">
+               <padding>
+                  <Insets bottom="24.0" left="40.0" right="40.0" top="24.0" />
+               </padding>
+               <children>
+                  <Label style="-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;" text="✔" />
+                  <Label fx:id="priceTextLabel" style="-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</StackPane>
