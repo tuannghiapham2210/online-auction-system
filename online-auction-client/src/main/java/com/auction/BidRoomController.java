@@ -418,11 +418,8 @@ public class BidRoomController {
         priceSeries.getData().clear();
         historyLogs.clear();
         NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-        yAxis.setAutoRanging(false);
-        yAxis.setLowerBound(0);
-        double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
-        yAxis.setUpperBound(initialUpperBound);
-        yAxis.setTickUnit(initialUpperBound / 5);
+        yAxis.setAutoRanging(true);
+        yAxis.setForceZeroInRange(false); // Zoom sát vào khoảng giá hiện tại thay vì neo ở 0
  
         // 5. Mở kết nối mạng và yêu cầu lịch sử đấu giá
         connectToServer();
@@ -702,12 +699,6 @@ public class BidRoomController {
             if ("BIDDER".equalsIgnoreCase(Session.role) && bidAmountField != null) {
                 bidAmountField.setText(NumberUtil.format(newPrice + currentStepPrice));
             }
-
-            // Cập nhật lại Y-Axis khi có giá mới
-            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-            double newUpperBound = newPrice * 1.15;
-            yAxis.setUpperBound(newUpperBound);
-            yAxis.setTickUnit(newUpperBound / 5);
 
             // 2. Thêm điểm dữ liệu mới vào biểu đồ (giữ tối đa 10 điểm để tránh rối mắt)
             String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -1739,20 +1730,6 @@ private void hideNotification(HBox notification) {
                     maxPrice = price;
                 }
             }
-
-            // 1. Cập nhật trục Y của biểu đồ dựa trên giá cao nhất trong lịch sử
-            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-            double newUpperBound = maxPrice * 1.15;
-            if (newUpperBound == 0) {
-                try {
-                    double initialPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-                    newUpperBound = initialPrice > 0 ? initialPrice * 1.15 : 100;
-                } catch (Exception e) {
-                    newUpperBound = 100;
-                }
-            }
-            yAxis.setUpperBound(newUpperBound);
-            yAxis.setTickUnit(newUpperBound / 5);
 
             // 2. Đổ dữ liệu vào biểu đồ: 1 điểm khởi đầu + tối đa 9 điểm lịch sử gần nhất
             priceSeries.getData().clear();
