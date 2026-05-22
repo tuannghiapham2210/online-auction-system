@@ -52,7 +52,21 @@
         </HBox>
 
             <!-- ROLE -->
-            <ComboBox fx:id="roleBox" maxWidth="Infinity" promptText="Chọn vai trò" styleClass="combo-box" />
+        <fx:define>
+            <ToggleGroup fx:id="roleToggleGroup"/>
+        </fx:define>
+        <HBox spacing="15" maxWidth="Infinity">
+            <ToggleButton fx:id="btnBidder" text="Người mua (Bidder)" toggleGroup="$roleToggleGroup" styleClass="role-card" HBox.hgrow="ALWAYS" maxWidth="Infinity" contentDisplay="TOP">
+                <graphic>
+                    <Label text="🛒" style="-fx-font-size: 24px;" />
+                </graphic>
+            </ToggleButton>
+            <ToggleButton fx:id="btnSeller" text="Người bán (Seller)" toggleGroup="$roleToggleGroup" styleClass="role-card" HBox.hgrow="ALWAYS" maxWidth="Infinity" contentDisplay="TOP">
+                <graphic>
+                    <Label text="🏪" style="-fx-font-size: 24px;" />
+                </graphic>
+            </ToggleButton>
+        </HBox>
 
             <!-- BUTTON -->
             <Button fx:id="registerButton" defaultButton="true" maxWidth="Infinity" onAction="#handleRegister" styleClass="main-btn" text="Tham gia ngay" />

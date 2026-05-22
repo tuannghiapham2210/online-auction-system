@@ -1111,3 +1111,27 @@
     -fx-shape: " ";
     -fx-padding: 0;
 }
+
+/* ================= ROLE SELECTION CARDS ================= */
+.role-card {
+    -fx-background-color: #151A22;
+    -fx-text-fill: #9CA3AF;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: #2A3441;
+    -fx-border-width: 2;
+    -fx-padding: 15;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.role-card:hover {
+    -fx-background-color: #1E293B;
+}
+
+.role-card:selected {
+    -fx-background-color: rgba(59, 130, 246, 0.1);
+    -fx-border-color: #3b82f6;
+    -fx-text-fill: white;
+}
