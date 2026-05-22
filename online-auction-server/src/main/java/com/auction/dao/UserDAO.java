@@ -198,18 +198,23 @@ public class UserDAO {
     }
 
     /**
-     * Đặt lại mật khẩu dựa trên thông tin xác thực.
+     * Đặt lại mật khẩu dựa trên thông tin xác thực (email hoặc phone).
      * @param username Tên đăng nhập.
-     * @param phone Số điện thoại đã đăng ký.
+     * @param contactInfo Email hoặc Số điện thoại đã đăng ký.
      * @param newPassword Mật khẩu mới.
      * @return true nếu thông tin khớp và cập nhật thành công, ngược lại false.
      */
-    public boolean resetPassword(String username, String phone, String newPassword) {
-        String sql = "UPDATE users SET password = ? WHERE username = ? AND phone = ?";
+    public boolean resetPassword(String username, String contactInfo, String newPassword) {
+        if (contactInfo == null || contactInfo.trim().isEmpty()) {
+            return false;
+        }
+        
+        String sql = "UPDATE users SET password = ? WHERE username = ? AND (email = ? OR phone = ?)";
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, newPassword);
             ps.setString(2, username);
-            ps.setString(3, phone);
+            ps.setString(3, contactInfo);
+            ps.setString(4, contactInfo);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             logger.error("Failed to reset password: {}", e.getMessage(), e);

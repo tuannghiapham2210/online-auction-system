@@ -248,11 +248,11 @@ public class ClientHandler implements Runnable {
 
     private void handleResetPassword(JsonObject request) {
         String username = request.get("username").getAsString();
-        String phone = request.has("phone") ? request.get("phone").getAsString() : "";
+        String contactInfo = request.has("contactInfo") ? request.get("contactInfo").getAsString() : "";
         String newPassword = request.get("newPassword").getAsString();
 
         UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.resetPassword(username, phone, newPassword);
+        boolean success = userDAO.resetPassword(username, contactInfo, newPassword);
 
         JsonObject response = new JsonObject();
         if (success) {
@@ -260,7 +260,7 @@ public class ClientHandler implements Runnable {
             response.addProperty("message", "Khôi phục mật khẩu thành công!");
         } else {
             response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc số điện thoại xác thực!");
+            response.addProperty("message", "Sai tài khoản hoặc thông tin xác thực!");
         }
         writer.println(response.toString());
     }

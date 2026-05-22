@@ -23,7 +23,7 @@ public class ForgotPasswordController {
     private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordController.class);
 
     @FXML private TextField tfUsername;
-    @FXML private TextField tfPhone;
+    @FXML private TextField tfContactInfo;
     @FXML private PasswordField tfNewPassword;
     @FXML private PasswordField tfConfirmPassword;
     @FXML private Label lblMessage;
@@ -34,11 +34,11 @@ public class ForgotPasswordController {
     public void handleReset() {
         try {
             String username = tfUsername.getText().trim();
-            String phone = tfPhone.getText().trim();
+            String contactInfo = tfContactInfo.getText().trim();
             String newPassword = tfNewPassword.getText().trim();
             String confirmPassword = tfConfirmPassword.getText().trim();
 
-            if (username.isEmpty() || phone.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+            if (username.isEmpty() || contactInfo.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
                 showMessage("Vui lòng nhập đầy đủ thông tin.", true);
                 return;
             }
@@ -51,7 +51,7 @@ public class ForgotPasswordController {
             JsonObject request = new JsonObject();
             request.addProperty("action", "RESET_PASSWORD");
             request.addProperty("username", username);
-            request.addProperty("phone", phone);
+            request.addProperty("contactInfo", contactInfo);
             request.addProperty("newPassword", newPassword);
 
             new Thread(() -> sendResetRequest(request.toString())).start();
