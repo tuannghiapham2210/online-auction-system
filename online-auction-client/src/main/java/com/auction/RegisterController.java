@@ -3,6 +3,7 @@ package com.auction;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.animation.*;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -10,6 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.css.PseudoClass;
+import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
 import java.io.*;
@@ -33,6 +35,7 @@ public class RegisterController {
     @FXML private PasswordField passwordField;
     @FXML private ComboBox<String> roleBox;
     @FXML private Label messageLabel;
+    @FXML private StackPane rootPane;
     @FXML private javafx.scene.layout.VBox cardVBox;
     @FXML private javafx.scene.layout.HBox titleHBox;
 
@@ -42,7 +45,12 @@ public class RegisterController {
      */
     @FXML
     public void initialize() {
-        cardVBox.maxWidthProperty().bind(titleHBox.widthProperty());
+        cardVBox.setMinWidth(420);
+        cardVBox.maxWidthProperty().bind(Bindings.min(
+                Bindings.max(titleHBox.widthProperty().add(60), 420),
+                rootPane.widthProperty().multiply(0.8)
+        ));
+        cardVBox.prefWidthProperty().bind(cardVBox.maxWidthProperty());
         roleBox.getItems().addAll("Bidder", "Seller");
 
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
