@@ -83,6 +83,7 @@ public class BidRoomController {
     @FXML private Label lblBalance;
     @FXML private Label viewerCountLabel;
     @FXML private TextField bidAmountField;
+    @FXML private Text lblMinStepPrice;
     @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
     @FXML private AreaChart<String, Number> priceChart;
@@ -332,6 +333,10 @@ public class BidRoomController {
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + NumberUtil.format(currentPrice));
+        
+        if (lblMinStepPrice != null) {
+            lblMinStepPrice.setText("$" + NumberUtil.format(stepPrice));
+        }
         
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
