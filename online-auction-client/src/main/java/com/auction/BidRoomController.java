@@ -1248,10 +1248,21 @@ private void hideNotification(HBox notification) {
         group1.setPrefWidth(280);
         Label incLbl = new Label("BƯỚC NHẠY AUTO-BID");
         incLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        
+        HBox incWrapper = new HBox(5);
+        incWrapper.setAlignment(Pos.CENTER_LEFT);
+        incWrapper.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 0 15;");
+        
+        Label incDollarSign = new Label("$");
+        incDollarSign.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px; -fx-font-weight: bold;");
+        
         TextField incField = new TextField();
-        incField.setPromptText("$");
-        incField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
-        group1.getChildren().addAll(incLbl, incField);
+        incField.setPromptText("");
+        incField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 12 5; -fx-font-size: 14px;");
+        HBox.setHgrow(incField, Priority.ALWAYS);
+        
+        incWrapper.getChildren().addAll(incDollarSign, incField);
+        group1.getChildren().addAll(incLbl, incWrapper);
 
         // Group 2: NGÂN SÁCH TỐI ĐA
         VBox group2 = new VBox(8);
@@ -1259,10 +1270,25 @@ private void hideNotification(HBox notification) {
         group2.setPrefWidth(280);
         Label maxBidLbl = new Label("NGÂN SÁCH TỐI ĐA");
         maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        
+        HBox maxBidWrapper = new HBox(5);
+        maxBidWrapper.setAlignment(Pos.CENTER_LEFT);
+        maxBidWrapper.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 0 15;");
+        
+        Label maxBidDollarSign = new Label("$");
+        maxBidDollarSign.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px; -fx-font-weight: bold;");
+        
         TextField maxBidField = new TextField();
-        maxBidField.setPromptText("$");
-        maxBidField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
-        group2.getChildren().addAll(maxBidLbl, maxBidField);
+        maxBidField.setPromptText("");
+        maxBidField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 12 5; -fx-font-size: 14px;");
+        HBox.setHgrow(maxBidField, Priority.ALWAYS);
+        
+        maxBidWrapper.getChildren().addAll(maxBidDollarSign, maxBidField);
+        group2.getChildren().addAll(maxBidLbl, maxBidWrapper);
+
+        // Định dạng số tự động theo NumberUtil
+        addFormattingListener(incField);
+        addFormattingListener(maxBidField);
 
         // Button: KÍCH HOẠT AUTO-BID
         Button btnRegister = new Button("▷ KÍCH HOẠT AUTO-BID");
@@ -1324,6 +1350,30 @@ private void hideNotification(HBox notification) {
                 }
             } catch (Exception e) {
                 logger.error("Could not inject auto-bid panel", e);
+            }
+        });
+    }
+
+    private void addFormattingListener(TextField textField) {
+        textField.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) return;
+            // Chỉ cho phép chữ số và dấu phẩy
+            if (!newValue.matches("[\\d,]*")) {
+                textField.setText(oldValue);
+            }
+        });
+
+        textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused) { // Khi mất focus, tự động định dạng
+                try {
+                    String text = textField.getText().replaceAll(",", "");
+                    if (!text.isEmpty()) {
+                        Number parsed = NumberUtil.parse(text);
+                        textField.setText(NumberUtil.format(parsed));
+                    }
+                } catch (Exception e) {
+                    textField.setText("0");
+                }
             }
         });
     }
