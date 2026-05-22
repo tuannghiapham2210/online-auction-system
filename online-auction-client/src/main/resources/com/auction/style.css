@@ -1135,3 +1135,43 @@
     -fx-border-color: #3b82f6;
     -fx-text-fill: white;
 }
+
+/* ================= PROFILE DROPDOWN ================= */
+.profile-dropdown {
+    -fx-background-color: #212936;
+    -fx-border-color: #2A3441;
+    -fx-border-width: 1;
+    -fx-border-radius: 18;
+    -fx-background-radius: 18;
+    -fx-padding: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 16, 0, 0, 6);
+}
+
+.dropdown-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E2E8F0;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 14;
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(255,255,255,0.14);
+    -fx-border-width: 1;
+    -fx-border-radius: 16;
+}
+
+.dropdown-btn:hover {
+    -fx-background-color: rgba(245,159,11,0.12);
+    -fx-text-fill: #F59E0B;
+    -fx-border-color: rgba(245,159,11,0.4);
+}
+
+/* ================= WIN NOTIFICATION ================= */
+.win-notification {
+    -fx-background-color: rgba(15, 23, 42, 0.96);
+    -fx-background-radius: 18;
+    -fx-border-color: #22c55e;
+    -fx-border-radius: 18;
+    -fx-border-width: 1.5;
+    -fx-padding: 0 18;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 12, 0, 0, 4);
+}

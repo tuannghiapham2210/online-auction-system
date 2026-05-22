@@ -12,9 +12,9 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
+<StackPane stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.DashboardController">
 
-    <BorderPane styleClass="dashboard-root" stylesheets="@style.css">
+    <BorderPane styleClass="dashboard-root">
 
         <top>
             <HBox alignment="CENTER_LEFT" spacing="20" styleClass="sidebar-premium">
