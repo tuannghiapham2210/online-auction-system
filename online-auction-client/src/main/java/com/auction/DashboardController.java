@@ -85,6 +85,7 @@ public class DashboardController {
     @FXML private Button btnFilterArt;
     @FXML private Button btnFilterVehicle;
     @FXML private Button btnFilterElectronics;
+    @FXML private Button btnFilterOther;
     @FXML private Button btnFilterFinished;
 
     private Timeline dashboardTimeline;
@@ -495,6 +496,7 @@ public class DashboardController {
         if (btnFilterArt.getStyleClass().contains("menu-item-active")) return btnFilterArt;
         if (btnFilterVehicle.getStyleClass().contains("menu-item-active")) return btnFilterVehicle;
         if (btnFilterElectronics.getStyleClass().contains("menu-item-active")) return btnFilterElectronics;
+        if (btnFilterOther != null && btnFilterOther.getStyleClass().contains("menu-item-active")) return btnFilterOther;
         if (btnFilterFinished != null && btnFilterFinished.getStyleClass().contains("menu-item-active")) return btnFilterFinished;
         return btnFilterAll;
     }
@@ -512,6 +514,10 @@ public class DashboardController {
         } else if (activeBtn == btnFilterElectronics) {
             return allItems.stream()
                     .filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
+                    .collect(Collectors.toList());
+        } else if (activeBtn == btnFilterOther) {
+            return allItems.stream()
+                    .filter(i -> "OTHER".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
                     .collect(Collectors.toList());
         } else if (activeBtn == btnFilterFinished) {
             return allItems.stream()
@@ -708,7 +714,7 @@ public class DashboardController {
     }
 
     private void updateFilterButtonsStyle(Button activeButton) {
-        Button[] filterButtons = {btnFilterAll, btnFilterArt, btnFilterVehicle, btnFilterElectronics, btnFilterFinished};
+        Button[] filterButtons = {btnFilterAll, btnFilterArt, btnFilterVehicle, btnFilterElectronics, btnFilterOther, btnFilterFinished};
         for (Button btn : filterButtons) {
             if (btn != null) {
                 btn.getStyleClass().remove("menu-item-active");
@@ -742,6 +748,11 @@ public class DashboardController {
 
     @FXML private void filterElectronics() {
         updateFilterButtonsStyle(btnFilterElectronics);
+        filterItems(searchField.getText());
+    }
+
+    @FXML private void filterOther() {
+        updateFilterButtonsStyle(btnFilterOther);
         filterItems(searchField.getText());
     }
 

@@ -84,6 +84,7 @@
                             <Button fx:id="btnFilterArt" onAction="#filterArt" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F3A8;   Art" />
                             <Button fx:id="btnFilterVehicle" onAction="#filterVehicle" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F697;   Vehicle" />
                             <Button fx:id="btnFilterElectronics" onAction="#filterElectronics" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F4BB;   Electronics" />
+                            <Button fx:id="btnFilterOther" onAction="#filterOther" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F4A1;   Other" />
                             <Button fx:id="btnFilterFinished" onAction="#filterFinished" alignment="BASELINE_LEFT" maxWidth="Infinity" styleClass="menu-item-inactive" text="&#x1F3C1;   Đã hoàn thành" />
                         </VBox>
 
