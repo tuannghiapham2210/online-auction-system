@@ -122,6 +122,8 @@ public class BidRoomController {
     private String currentWinnerUsername;
     private boolean isNotificationShowing = false;
     private boolean auctionEndedShown = false;
+    private String lastTickTimeStamp = "";
+    private int tickSpaceCounter = 0;
 
     public static class BidEvent {
         public String timestamp;
@@ -180,6 +182,8 @@ public class BidRoomController {
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
+        // Bật lại Animation cho biểu đồ vì backend đã xử lý O(1) chống spam sự kiện
+        priceChart.setAnimated(true);
         priceChart.getData().add(priceSeries);
 
         startBlinkingAnimation(liveBadge);
@@ -414,11 +418,8 @@ public class BidRoomController {
         priceSeries.getData().clear();
         historyLogs.clear();
         NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-        yAxis.setAutoRanging(false);
-        yAxis.setLowerBound(0);
-        double initialUpperBound = currentPrice == 0 ? 100 : currentPrice * 1.15;
-        yAxis.setUpperBound(initialUpperBound);
-        yAxis.setTickUnit(initialUpperBound / 5);
+        yAxis.setAutoRanging(true);
+        yAxis.setForceZeroInRange(false); // Zoom sát vào khoảng giá hiện tại thay vì neo ở 0
  
         // 5. Mở kết nối mạng và yêu cầu lịch sử đấu giá
         connectToServer();
@@ -699,15 +700,11 @@ public class BidRoomController {
                 bidAmountField.setText(NumberUtil.format(newPrice + currentStepPrice));
             }
 
-            // Cập nhật lại Y-Axis khi có giá mới
-            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-            double newUpperBound = newPrice * 1.15;
-            yAxis.setUpperBound(newUpperBound);
-            yAxis.setTickUnit(newUpperBound / 5);
-
             // 2. Thêm điểm dữ liệu mới vào biểu đồ (giữ tối đa 10 điểm để tránh rối mắt)
             String timeStamp = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
-            XYChart.Data<String, Number> newData = new XYChart.Data<>(timeStamp, newPrice);
+            String uniqueTimeStamp = generateUniqueTimeStamp(timeStamp);
+
+            XYChart.Data<String, Number> newData = new XYChart.Data<>(uniqueTimeStamp, newPrice);
 
             StackPane customNode = new StackPane();
             customNode.setStyle("-fx-background-color: transparent;");
@@ -722,7 +719,11 @@ public class BidRoomController {
             newData.setNode(customNode);
             
             priceSeries.getData().add(newData);
-            if (priceSeries.getData().size() > 10) priceSeries.getData().remove(0);
+            
+            // Đảm bảo chỉ giữ tối đa 10 node
+            while (priceSeries.getData().size() > 10) {
+                priceSeries.getData().remove(0);
+            }
 
             // 3. Thêm log vào danh sách lịch sử (đẩy lên vị trí đầu tiên index = 0)
             historyLogs.add(0, new BidEvent(timeStamp, bidderId, username, newPrice));
@@ -1730,20 +1731,6 @@ private void hideNotification(HBox notification) {
                 }
             }
 
-            // 1. Cập nhật trục Y của biểu đồ dựa trên giá cao nhất trong lịch sử
-            NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-            double newUpperBound = maxPrice * 1.15;
-            if (newUpperBound == 0) {
-                try {
-                    double initialPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-                    newUpperBound = initialPrice > 0 ? initialPrice * 1.15 : 100;
-                } catch (Exception e) {
-                    newUpperBound = 100;
-                }
-            }
-            yAxis.setUpperBound(newUpperBound);
-            yAxis.setTickUnit(newUpperBound / 5);
-
             // 2. Đổ dữ liệu vào biểu đồ: 1 điểm khởi đầu + tối đa 9 điểm lịch sử gần nhất
             priceSeries.getData().clear();
 
@@ -1760,7 +1747,10 @@ private void hideNotification(HBox notification) {
 
             for (int i = startIndex; i < historySize; i++) {
                 BidEvent event = bidEvents.get(i);
-                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(event.timestamp, event.price);
+                
+                String uniqueTimeStamp = generateUniqueTimeStamp(event.timestamp);
+
+                XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(uniqueTimeStamp, event.price);
                 StackPane customNode = createChartNode(event.price);
                 dataPoint.setNode(customNode);
                 priceSeries.getData().add(dataPoint);
@@ -1794,5 +1784,19 @@ private void hideNotification(HBox notification) {
         priceLbl.setTranslateY(-25);
         customNode.getChildren().addAll(dot, priceLbl);
         return customNode;
+    }
+
+    private String generateUniqueTimeStamp(String timeStamp) {
+        if (timeStamp.equals(lastTickTimeStamp)) {
+            tickSpaceCounter++;
+        } else {
+            lastTickTimeStamp = timeStamp;
+            tickSpaceCounter = 0;
+        }
+        StringBuilder unique = new StringBuilder(timeStamp);
+        for (int i = 0; i < tickSpaceCounter; i++) {
+            unique.append(" ");
+        }
+        return unique.toString();
     }
 }
