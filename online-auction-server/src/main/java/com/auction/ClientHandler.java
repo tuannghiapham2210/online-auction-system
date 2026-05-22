@@ -573,6 +573,17 @@ public class ClientHandler implements Runnable {
                 writer.println(response.toString());
                 return;
             }
+
+            // Enforce that maxBid does not exceed user balance
+            UserDAO dbUserDAO = new UserDAO();
+            int userBalance = dbUserDAO.getBalanceByUsername(username);
+            if (maxBid > userBalance) {
+                JsonObject response = new JsonObject();
+                response.addProperty("status", "ERROR");
+                response.addProperty("message", "Không đủ số dư: Ngân sách tối đa không được vượt quá số dư tài khoản ($" + userBalance + ")!");
+                writer.println(response.toString());
+                return;
+            }
             // -----------------------------
 
             logger.info("Received REGISTER_AUTO_BID: user={}, item={}, max={}, inc={}", username, itemId, maxBid, increment);

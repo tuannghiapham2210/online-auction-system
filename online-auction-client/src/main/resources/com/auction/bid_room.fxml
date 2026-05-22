@@ -15,6 +15,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 <?import javafx.scene.shape.Rectangle?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 
 <StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
    <children>
@@ -82,10 +84,22 @@
 
                               <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-padding: 15 0 0 0;">
                                  <children>
-                                    <TextField fx:id="bidAmountField" promptText="\$ Nhập giá thầu..." style="-fx-background-color: #0B101A; -fx-text-fill: white; -fx-background-radius: 8; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-padding: 12 15; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
+                                     <HBox alignment="CENTER_LEFT" spacing="5.0" style="-fx-background-color: #0B101A; -fx-background-radius: 8; -fx-border-color: #2A3441; -fx-border-radius: 8; -fx-padding: 0 15;" HBox.hgrow="ALWAYS">
+                                        <children>
+                                           <Label style="-fx-text-fill: #94A3B8; -fx-font-size: 16px; -fx-font-weight: bold;" text="\$" />
+                                           <TextField fx:id="bidAmountField" promptText="Nhập giá thầu..." style="-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 12 5; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
+                                        </children>
+                                     </HBox>
                                     <Button fx:id="btnPlaceBid" defaultButton="true" onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="180.0" style="-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 16px; -fx-background-radius: 8; -fx-cursor: hand;" text="⚡ PHÁT GIÁ" />
                                  </children>
                               </HBox>
+                              <TextFlow style="-fx-padding: 8 0 0 5;">
+                                 <children>
+                                    <Text text="Bước giá tối thiểu (Seller quy định): " style="-fx-fill: #8B949E; -fx-font-size: 12px;" />
+                                    <Text fx:id="lblMinStepPrice" text="\$0" style="-fx-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 12px;" />
+                                    <Text text="." style="-fx-fill: #8B949E; -fx-font-size: 12px;" />
+                                 </children>
+                              </TextFlow>
                            </children>
                         </VBox>
                      </children>

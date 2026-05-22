@@ -83,6 +83,7 @@ public class BidRoomController {
     @FXML private Label lblBalance;
     @FXML private Label viewerCountLabel;
     @FXML private TextField bidAmountField;
+    @FXML private Text lblMinStepPrice;
     @FXML private ListView<BidEvent> bidHistoryList;
     @FXML private StackPane rootPane;
     @FXML private AreaChart<String, Number> priceChart;
@@ -332,6 +333,10 @@ public class BidRoomController {
         // 2. Hiển thị thông tin cơ bản
         itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + NumberUtil.format(currentPrice));
+        
+        if (lblMinStepPrice != null) {
+            lblMinStepPrice.setText("$" + NumberUtil.format(stepPrice));
+        }
         
         if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
         if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
@@ -1248,10 +1253,21 @@ private void hideNotification(HBox notification) {
         group1.setPrefWidth(280);
         Label incLbl = new Label("BƯỚC NHẠY AUTO-BID");
         incLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        
+        HBox incWrapper = new HBox(5);
+        incWrapper.setAlignment(Pos.CENTER_LEFT);
+        incWrapper.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 0 15;");
+        
+        Label incDollarSign = new Label("$");
+        incDollarSign.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px; -fx-font-weight: bold;");
+        
         TextField incField = new TextField();
-        incField.setPromptText("$ 500");
-        incField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
-        group1.getChildren().addAll(incLbl, incField);
+        incField.setPromptText("");
+        incField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 12 5; -fx-font-size: 14px;");
+        HBox.setHgrow(incField, Priority.ALWAYS);
+        
+        incWrapper.getChildren().addAll(incDollarSign, incField);
+        group1.getChildren().addAll(incLbl, incWrapper);
 
         // Group 2: NGÂN SÁCH TỐI ĐA
         VBox group2 = new VBox(8);
@@ -1259,10 +1275,25 @@ private void hideNotification(HBox notification) {
         group2.setPrefWidth(280);
         Label maxBidLbl = new Label("NGÂN SÁCH TỐI ĐA");
         maxBidLbl.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 11px; -fx-font-weight: bold;");
+        
+        HBox maxBidWrapper = new HBox(5);
+        maxBidWrapper.setAlignment(Pos.CENTER_LEFT);
+        maxBidWrapper.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 0 15;");
+        
+        Label maxBidDollarSign = new Label("$");
+        maxBidDollarSign.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px; -fx-font-weight: bold;");
+        
         TextField maxBidField = new TextField();
-        maxBidField.setPromptText("$ 25500");
-        maxBidField.setStyle("-fx-background-color: #0B101A; -fx-border-color: #1E293B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: white; -fx-padding: 12 15; -fx-font-size: 14px;");
-        group2.getChildren().addAll(maxBidLbl, maxBidField);
+        maxBidField.setPromptText("");
+        maxBidField.setStyle("-fx-background-color: transparent; -fx-text-fill: white; -fx-padding: 12 5; -fx-font-size: 14px;");
+        HBox.setHgrow(maxBidField, Priority.ALWAYS);
+        
+        maxBidWrapper.getChildren().addAll(maxBidDollarSign, maxBidField);
+        group2.getChildren().addAll(maxBidLbl, maxBidWrapper);
+
+        // Định dạng số tự động theo NumberUtil
+        addFormattingListener(incField);
+        addFormattingListener(maxBidField);
 
         // Button: KÍCH HOẠT AUTO-BID
         Button btnRegister = new Button("▷ KÍCH HOẠT AUTO-BID");
@@ -1328,6 +1359,30 @@ private void hideNotification(HBox notification) {
         });
     }
 
+    private void addFormattingListener(TextField textField) {
+        textField.textProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue == null || newValue.isEmpty()) return;
+            // Chỉ cho phép chữ số và dấu phẩy
+            if (!newValue.matches("[\\d,]*")) {
+                textField.setText(oldValue);
+            }
+        });
+
+        textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused) { // Khi mất focus, tự động định dạng
+                try {
+                    String text = textField.getText().replaceAll(",", "");
+                    if (!text.isEmpty()) {
+                        Number parsed = NumberUtil.parse(text);
+                        textField.setText(NumberUtil.format(parsed));
+                    }
+                } catch (Exception e) {
+                    textField.setText("0");
+                }
+            }
+        });
+    }
+
     private void handleRegisterAutoBid(String maxBidStr, String incStr) {
         if (maxBidStr.isEmpty() || incStr.isEmpty()) {
             showNotification("Thiếu thông tin", "Vui lòng nhập đầy đủ Giá tối đa và Bước giá!");
@@ -1350,6 +1405,12 @@ private void hideNotification(HBox notification) {
             double minMaxBid = currentPrice + currentStepPrice;
             if (maxBid < minMaxBid) {
                 showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + NumberUtil.format(minMaxBid) + ")!");
+                return;
+            }
+
+            // Đảm bảo ngân sách tối đa không vượt quá số dư tài khoản
+            if (maxBid > Session.balance) {
+                showNotification("Không đủ số dư", "Ngân sách tối đa không được vượt quá số dư tài khoản ($" + NumberUtil.format(Session.balance) + ")!");
                 return;
             }
             // Đảm bảo bước giá tự động tối thiểu bằng bước giá sản phẩm
