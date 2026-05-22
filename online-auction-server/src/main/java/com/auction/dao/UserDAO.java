@@ -197,6 +197,26 @@ public class UserDAO {
         }
     }
 
+    /**
+     * Đặt lại mật khẩu dựa trên thông tin xác thực.
+     * @param username Tên đăng nhập.
+     * @param phone Số điện thoại đã đăng ký.
+     * @param newPassword Mật khẩu mới.
+     * @return true nếu thông tin khớp và cập nhật thành công, ngược lại false.
+     */
+    public boolean resetPassword(String username, String phone, String newPassword) {
+        String sql = "UPDATE users SET password = ? WHERE username = ? AND phone = ?";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, newPassword);
+            ps.setString(2, username);
+            ps.setString(3, phone);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            logger.error("Failed to reset password: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
     public boolean depositBalance(
                 String username,
                 int amount

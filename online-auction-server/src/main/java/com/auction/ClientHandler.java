@@ -111,6 +111,9 @@ public class ClientHandler implements Runnable {
                     case "CHANGE_PASSWORD":
                         handleChangePassword(request);
                         break;
+                    case "RESET_PASSWORD":
+                        handleResetPassword(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -240,6 +243,25 @@ public class ClientHandler implements Runnable {
             response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
         }
 
+        writer.println(response.toString());
+    }
+
+    private void handleResetPassword(JsonObject request) {
+        String username = request.get("username").getAsString();
+        String phone = request.has("phone") ? request.get("phone").getAsString() : "";
+        String newPassword = request.get("newPassword").getAsString();
+
+        UserDAO userDAO = new UserDAO();
+        boolean success = userDAO.resetPassword(username, phone, newPassword);
+
+        JsonObject response = new JsonObject();
+        if (success) {
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("message", "Khôi phục mật khẩu thành công!");
+        } else {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Sai tài khoản hoặc số điện thoại xác thực!");
+        }
         writer.println(response.toString());
     }
 
