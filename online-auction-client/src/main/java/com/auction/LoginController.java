@@ -33,9 +33,12 @@ public class LoginController {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
+    @FXML private javafx.scene.layout.VBox cardVBox;
+    @FXML private javafx.scene.layout.HBox titleHBox;
 
     @FXML
     public void initialize() {
+        cardVBox.maxWidthProperty().bind(titleHBox.widthProperty());
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
         // Lắng nghe sự kiện ngay khi nút được thêm vào Scene (Hiển thị lên màn hình)
