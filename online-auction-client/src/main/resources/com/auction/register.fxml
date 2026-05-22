@@ -5,7 +5,7 @@
 
 <StackPane styleClass="background" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.auction.RegisterController">
 
-    <VBox alignment="CENTER" spacing="30">
+    <VBox alignment="CENTER" scaleX="0.8" scaleY="0.8" spacing="30">
 
         <!-- HEADER -->
         <VBox alignment="CENTER" spacing="5">
