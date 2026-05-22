@@ -41,7 +41,7 @@
 
          <!-- CHANGE PASSWORD LINK -->
          <HBox alignment="CENTER" maxWidth="Infinity">
-            <Label onMouseClicked="#openChangePassword" style="-fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: bold;" text="Đổi mật khẩu?" />
+            <Label onMouseClicked="#openChangePassword" style="-fx-text-fill: #94a3b8; -fx-cursor: hand; -fx-font-size: 13px; -fx-font-weight: bold;" text="Quên mật khẩu?" />
          </HBox>
 
          <!-- BUTTON -->

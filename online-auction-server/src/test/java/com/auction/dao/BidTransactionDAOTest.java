@@ -32,7 +32,7 @@ class BidTransactionDAOTest {
         cleanupData();
 
         // 1. Tạo User
-        userDAO.registerUser(TEST_USER, "123", "BIDDER");
+        userDAO.registerUser(TEST_USER, "123", "BIDDER", "", "");
         testUserId = userDAO.getUserId(TEST_USER, "123");
 
         // 2. Tạo Item (Dùng luôn testUserId làm người bán cho lẹ)

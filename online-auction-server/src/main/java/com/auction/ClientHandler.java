@@ -274,9 +274,11 @@ public class ClientHandler implements Runnable {
             String username = request.get("username").getAsString();
             String password = request.get("password").getAsString();
             String role = request.get("role").getAsString();
+            String email = request.has("email") ? request.get("email").getAsString() : "";
+            String phone = request.has("phone") ? request.get("phone").getAsString() : "";
 
             UserDAO userDAO = new UserDAO();
-            boolean isSuccess = userDAO.registerUser(username, password, role);
+            boolean isSuccess = userDAO.registerUser(username, password, role, email, phone);
 
             JsonObject response = new JsonObject();
 

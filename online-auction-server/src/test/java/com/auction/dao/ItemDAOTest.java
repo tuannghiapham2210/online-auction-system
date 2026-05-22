@@ -29,7 +29,7 @@ class ItemDAOTest {
         cleanupData();
 
         // Tạo 1 Seller giả để thỏa mãn khóa ngoại seller_id của bảng items
-        userDAO.registerUser(TEST_SELLER, "123", "SELLER");
+        userDAO.registerUser(TEST_SELLER, "123", "SELLER", "", "");
         testSellerId = userDAO.getUserId(TEST_SELLER, "123");
     }
 

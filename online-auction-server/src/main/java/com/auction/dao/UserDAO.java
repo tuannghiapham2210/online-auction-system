@@ -24,11 +24,13 @@ public class UserDAO {
      * @param username Tên đăng nhập mong muốn.
      * @param password Mật khẩu.
      * @param role Vai trò của người dùng (VD: ADMIN, BIDDER, SELLER).
+     * @param email Email người dùng (tùy chọn).
+     * @param phone Số điện thoại người dùng (tùy chọn).
      * @return true nếu đăng ký thành công, false nếu tài khoản đã tồn tại hoặc có lỗi.
      */
-    public boolean registerUser(String username, String password, String role) {
+    public boolean registerUser(String username, String password, String role, String email, String phone) {
         String checkSql = "SELECT * FROM users WHERE username=?";
-        String insertSql = "INSERT INTO users(username, password, role) VALUES (?, ?, ?)";
+        String insertSql = "INSERT INTO users(username, password, role, email, phone) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement check = getConnection().prepareStatement(checkSql)) {
             // 1. Kiểm tra sự tồn tại của username
@@ -41,6 +43,8 @@ public class UserDAO {
                 ps.setString(1, username);
                 ps.setString(2, password);
                 ps.setString(3, role);
+                ps.setString(4, email);
+                ps.setString(5, phone);
                 return ps.executeUpdate() > 0;
             }
 

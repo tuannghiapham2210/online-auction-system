@@ -33,6 +33,8 @@ public class RegisterController {
     @FXML private Button registerButton;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
+    @FXML private TextField emailField;
+    @FXML private TextField phoneField;
     @FXML private ComboBox<String> roleBox;
     @FXML private Label messageLabel;
     @FXML private StackPane rootPane;
@@ -81,6 +83,8 @@ public class RegisterController {
 
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
+        String email = emailField != null ? emailField.getText().trim() : "";
+        String phone = phoneField != null ? phoneField.getText().trim() : "";
         String roleValue = roleBox.getValue();
 
         // 1. Kiểm tra validation cơ bản
@@ -115,6 +119,8 @@ public class RegisterController {
                 req.addProperty("username", username);
                 req.addProperty("password", password);
                 req.addProperty("role", role);
+                req.addProperty("email", email);
+                req.addProperty("phone", phone);
 
                 writer.println(req.toString());
 
