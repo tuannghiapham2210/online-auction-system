@@ -2,11 +2,13 @@ package com.auction;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +46,6 @@ public class PasswordChangeController {
                 showMessage("Mật khẩu mới và xác nhận phải giống nhau.", true);
                 return;
             }
-            if (newPassword.length() < 6) {
-                showMessage("Mật khẩu mới phải có ít nhất 6 ký tự.", true);
-                return;
-            }
 
             showMessage("Đang đổi mật khẩu...", false);
             JsonObject request = new JsonObject();
@@ -80,9 +78,13 @@ public class PasswordChangeController {
                 String message = response.has("message") ? response.get("message").getAsString() : "Lỗi đổi mật khẩu.";
                 if ("SUCCESS".equals(status)) {
                     showMessage(message, false);
-                    if (onCloseCallback != null) {
-                        onCloseCallback.run();
-                    }
+                    PauseTransition delay = new PauseTransition(Duration.seconds(1));
+                    delay.setOnFinished(event -> {
+                        if (onCloseCallback != null) {
+                            onCloseCallback.run();
+                        }
+                    });
+                    delay.play();
                 } else {
                     showMessage(message, true);
                 }
