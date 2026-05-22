@@ -111,6 +111,9 @@ public class ClientHandler implements Runnable {
                     case "CHANGE_PASSWORD":
                         handleChangePassword(request);
                         break;
+                    case "RESET_PASSWORD":
+                        handleResetPassword(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -243,6 +246,25 @@ public class ClientHandler implements Runnable {
         writer.println(response.toString());
     }
 
+    private void handleResetPassword(JsonObject request) {
+        String username = request.get("username").getAsString();
+        String contactInfo = request.has("contactInfo") ? request.get("contactInfo").getAsString() : "";
+        String newPassword = request.get("newPassword").getAsString();
+
+        UserDAO userDAO = new UserDAO();
+        boolean success = userDAO.resetPassword(username, contactInfo, newPassword);
+
+        JsonObject response = new JsonObject();
+        if (success) {
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("message", "Khôi phục mật khẩu thành công!");
+        } else {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Sai tài khoản hoặc thông tin xác thực!");
+        }
+        writer.println(response.toString());
+    }
+
     /**
      * Xử lý đăng ký người dùng mới.
      * @param request Đối tượng JSON chứa "username", "password", và "role".
@@ -252,9 +274,11 @@ public class ClientHandler implements Runnable {
             String username = request.get("username").getAsString();
             String password = request.get("password").getAsString();
             String role = request.get("role").getAsString();
+            String email = request.has("email") ? request.get("email").getAsString() : "";
+            String phone = request.has("phone") ? request.get("phone").getAsString() : "";
 
             UserDAO userDAO = new UserDAO();
-            boolean isSuccess = userDAO.registerUser(username, password, role);
+            boolean isSuccess = userDAO.registerUser(username, password, role, email, phone);
 
             JsonObject response = new JsonObject();
 

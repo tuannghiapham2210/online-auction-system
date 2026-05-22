@@ -33,7 +33,9 @@ public class RegisterController {
     @FXML private Button registerButton;
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
-    @FXML private ComboBox<String> roleBox;
+    @FXML private TextField emailField;
+    @FXML private TextField phoneField;
+    @FXML private ToggleGroup roleToggleGroup;
     @FXML private Label messageLabel;
     @FXML private StackPane rootPane;
     @FXML private javafx.scene.layout.VBox cardVBox;
@@ -51,7 +53,6 @@ public class RegisterController {
                 rootPane.widthProperty().multiply(0.8)
         ));
         cardVBox.prefWidthProperty().bind(cardVBox.maxWidthProperty());
-        roleBox.getItems().addAll("Bidder", "Seller");
 
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
@@ -81,7 +82,10 @@ public class RegisterController {
 
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
-        String roleValue = roleBox.getValue();
+        String email = emailField != null ? emailField.getText().trim() : "";
+        String phone = phoneField != null ? phoneField.getText().trim() : "";
+        Toggle selectedRole = roleToggleGroup.getSelectedToggle();
+        String roleValue = selectedRole != null ? ((ToggleButton) selectedRole).getId() : null;
 
         // 1. Kiểm tra validation cơ bản
         if (username.isEmpty() || password.isEmpty() || roleValue == null) {
@@ -92,7 +96,7 @@ public class RegisterController {
 
         // 2. Tạo biến FINAL cho vai trò để sử dụng an toàn trong biểu thức Lambda
         final String role;
-        if (roleValue.equalsIgnoreCase("Bidder")) {
+        if ("btnBidder".equals(roleValue)) {
             role = "BIDDER";
         } else {
             role = "SELLER";
@@ -115,6 +119,8 @@ public class RegisterController {
                 req.addProperty("username", username);
                 req.addProperty("password", password);
                 req.addProperty("role", role);
+                req.addProperty("email", email);
+                req.addProperty("phone", phone);
 
                 writer.println(req.toString());
 

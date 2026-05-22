@@ -47,11 +47,11 @@ class UserDAOTest {
     @DisplayName("Test: Đăng ký, Đăng nhập và Lấy thông tin User")
     void testRegisterAndLogin() {
         // 1. Đăng ký
-        boolean isRegistered = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
+        boolean isRegistered = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER", "", "");
         assertTrue(isRegistered, "Đăng ký User mới phải thành công");
 
         // 2. Đăng ký trùng lặp (Phải thất bại)
-        boolean isDup = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
+        boolean isDup = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER", "", "");
         assertFalse(isDup, "Đăng ký trùng username phải bị từ chối");
 
         // 3. Đăng nhập
@@ -69,7 +69,7 @@ class UserDAOTest {
     @Test
     @DisplayName("Test: Nạp tiền và Kiểm tra số dư")
     void testDepositAndBalance() {
-        userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER");
+        userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER", "", "");
 
         // Kiểm tra số dư ban đầu
         assertEquals(0, userDAO.getBalanceByUsername(TEST_USER), "Số dư ban đầu phải là 0");

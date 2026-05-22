@@ -24,11 +24,13 @@ public class UserDAO {
      * @param username Tên đăng nhập mong muốn.
      * @param password Mật khẩu.
      * @param role Vai trò của người dùng (VD: ADMIN, BIDDER, SELLER).
+     * @param email Email người dùng (tùy chọn).
+     * @param phone Số điện thoại người dùng (tùy chọn).
      * @return true nếu đăng ký thành công, false nếu tài khoản đã tồn tại hoặc có lỗi.
      */
-    public boolean registerUser(String username, String password, String role) {
+    public boolean registerUser(String username, String password, String role, String email, String phone) {
         String checkSql = "SELECT * FROM users WHERE username=?";
-        String insertSql = "INSERT INTO users(username, password, role) VALUES (?, ?, ?)";
+        String insertSql = "INSERT INTO users(username, password, role, email, phone) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement check = getConnection().prepareStatement(checkSql)) {
             // 1. Kiểm tra sự tồn tại của username
@@ -41,6 +43,8 @@ public class UserDAO {
                 ps.setString(1, username);
                 ps.setString(2, password);
                 ps.setString(3, role);
+                ps.setString(4, email);
+                ps.setString(5, phone);
                 return ps.executeUpdate() > 0;
             }
 
@@ -193,6 +197,31 @@ public class UserDAO {
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
             logger.error("Failed to change password: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Đặt lại mật khẩu dựa trên thông tin xác thực (email hoặc phone).
+     * @param username Tên đăng nhập.
+     * @param contactInfo Email hoặc Số điện thoại đã đăng ký.
+     * @param newPassword Mật khẩu mới.
+     * @return true nếu thông tin khớp và cập nhật thành công, ngược lại false.
+     */
+    public boolean resetPassword(String username, String contactInfo, String newPassword) {
+        if (contactInfo == null || contactInfo.trim().isEmpty()) {
+            return false;
+        }
+        
+        String sql = "UPDATE users SET password = ? WHERE username = ? AND (email = ? OR phone = ?)";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
+            ps.setString(1, newPassword);
+            ps.setString(2, username);
+            ps.setString(3, contactInfo);
+            ps.setString(4, contactInfo);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            logger.error("Failed to reset password: {}", e.getMessage(), e);
             return false;
         }
     }

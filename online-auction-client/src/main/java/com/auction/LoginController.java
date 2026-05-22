@@ -191,4 +191,38 @@ public class LoginController {
             logger.error("Failed to navigate to register screen: {}", e.getMessage(), e);
         }
     }
+
+    /**
+     * Xử lý sự kiện khi người dùng nhấn vào nút "Đổi mật khẩu?".
+     */
+    @FXML
+    private void openChangePassword() {
+        try {
+            javafx.scene.Node mainContent = rootPane.getChildren().get(0);
+            if (rootPane.lookup("#dark-overlay-forgot") != null) return;
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("forgot_password.fxml"));
+            Parent forgotGroup = loader.load();
+            ForgotPasswordController controller = loader.getController();
+
+            mainContent.setEffect(new javafx.scene.effect.GaussianBlur(15));
+
+            javafx.scene.layout.Region darkOverlay = new javafx.scene.layout.Region();
+            darkOverlay.setId("dark-overlay-forgot");
+            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+
+            controller.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, forgotGroup);
+            });
+
+            rootPane.getChildren().addAll(darkOverlay, forgotGroup);
+        } catch (Exception e) {
+            logger.error("Lỗi khi mở cửa sổ quên mật khẩu: {}", e.getMessage(), e);
+            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+            messageLabel.setText("Lỗi hiển thị giao diện khôi phục mật khẩu.");
+        }
+    }
 }
