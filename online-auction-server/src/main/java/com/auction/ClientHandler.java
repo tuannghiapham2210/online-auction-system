@@ -108,6 +108,9 @@ public class ClientHandler implements Runnable {
                     case "UPDATE_PROFILE":
                         handleUpdateProfile(request);
                         break;
+                    case "CHANGE_PASSWORD":
+                        handleChangePassword(request);
+                        break;
 
                     default:
                         JsonObject res = new JsonObject();
@@ -207,6 +210,40 @@ public class ClientHandler implements Runnable {
         } else {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Không thể cập nhật hồ sơ. Vui lòng thử lại sau.");
+        }
+
+        writer.println(response.toString());
+    }
+
+    private void handleChangePassword(JsonObject request) {
+        int userId = request.get("userId").getAsInt();
+        String oldPassword = request.has("oldPassword") ? request.get("oldPassword").getAsString() : "";
+        String newPassword = request.has("newPassword") ? request.get("newPassword").getAsString() : "";
+
+        JsonObject response = new JsonObject();
+
+        if (oldPassword.isEmpty() || newPassword.isEmpty()) {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
+            writer.println(response.toString());
+            return;
+        }
+        if (newPassword.length() < 6) {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Mật khẩu mới phải có ít nhất 6 ký tự.");
+            writer.println(response.toString());
+            return;
+        }
+
+        UserDAO userDAO = new UserDAO();
+        boolean success = userDAO.changePassword(userId, oldPassword, newPassword);
+
+        if (success) {
+            response.addProperty("status", "SUCCESS");
+            response.addProperty("message", "Đổi mật khẩu thành công.");
+        } else {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
         }
 
         writer.println(response.toString());

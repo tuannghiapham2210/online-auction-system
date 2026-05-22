@@ -304,7 +304,54 @@ public class DashboardController {
             openAccountInfoPopup();
         });
 
-        profileDropdown.getChildren().add(btnProfileInfo);
+        Button btnChangePassword = new Button("Đổi mật khẩu");
+        btnChangePassword.setMaxWidth(Double.MAX_VALUE);
+        btnChangePassword.setFocusTraversable(false);
+        btnChangePassword.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        );
+        btnChangePassword.setOnMouseEntered(e -> btnChangePassword.setStyle(
+            "-fx-background-color: rgba(245,159,11,0.12);" +
+            "-fx-text-fill: #F59E0B;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(245,159,11,0.4);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        ));
+        btnChangePassword.setOnMouseExited(e -> btnChangePassword.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: #E2E8F0;" +
+            "-fx-font-size: 13px;" +
+            "-fx-alignment: CENTER_LEFT;" +
+            "-fx-padding: 10 14;" +
+            "-fx-background-radius: 16;" +
+            "-fx-border-color: rgba(255,255,255,0.14);" +
+            "-fx-border-width: 1;" +
+            "-fx-border-radius: 16;" +
+            "-fx-focus-color: transparent;" +
+            "-fx-faint-focus-color: transparent;"
+        ));
+        btnChangePassword.setOnAction(e -> {
+            closeProfileDropdown(rootPane);
+            openChangePasswordPopup();
+        });
+
+        profileDropdown.getChildren().addAll(btnProfileInfo, btnChangePassword);
         StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
         // move the dropdown down so it sits just below the avatar/role card
         StackPane.setMargin(profileDropdown, new Insets(96, 8, 0, 0));
@@ -373,6 +420,38 @@ public class DashboardController {
             rootPane.getChildren().addAll(darkOverlay, accountInfoGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
+        }
+    }
+
+    private void openChangePasswordPopup() {
+        try {
+            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+            Node mainContent = rootPane.getChildren().get(0);
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("password_change.fxml"));
+            Parent passwordChangeGroup = loader.load();
+            PasswordChangeController controller = loader.getController();
+
+            mainContent.setEffect(new GaussianBlur(15));
+
+            Region darkOverlay = new Region();
+            darkOverlay.setId("dark-overlay-password");
+            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+            darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
+            darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
+            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+
+            controller.setOnCloseCallback(() -> {
+                mainContent.setEffect(null);
+                rootPane.getChildren().removeAll(darkOverlay, passwordChangeGroup);
+            });
+
+            StackPane.setAlignment(darkOverlay, Pos.CENTER);
+            StackPane.setAlignment(passwordChangeGroup, Pos.CENTER);
+            rootPane.getChildren().addAll(darkOverlay, passwordChangeGroup);
+        } catch (Exception e) {
+            logger.error("Lỗi khi mở popup đổi mật khẩu: {}", e.getMessage());
         }
     }
 
