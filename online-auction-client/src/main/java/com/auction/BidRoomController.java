@@ -1407,6 +1407,12 @@ private void hideNotification(HBox notification) {
                 showNotification("Mức giá không hợp lệ", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + NumberUtil.format(minMaxBid) + ")!");
                 return;
             }
+
+            // Đảm bảo ngân sách tối đa không vượt quá số dư tài khoản
+            if (maxBid > Session.balance) {
+                showNotification("Không đủ số dư", "Ngân sách tối đa không được vượt quá số dư tài khoản ($" + NumberUtil.format(Session.balance) + ")!");
+                return;
+            }
             // Đảm bảo bước giá tự động tối thiểu bằng bước giá sản phẩm
             if (inc < currentStepPrice) {
                 showNotification("Bước giá không hợp lệ", "Bước giá tự động phải ít nhất bằng bước giá của sản phẩm ($" + NumberUtil.format(currentStepPrice) + ")!");
