@@ -3,9 +3,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<StackPane styleClass="background" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.auction.LoginController">
+<StackPane fx:id="rootPane" styleClass="background" stylesheets="@style.css" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/17.0.12" fx:controller="com.auction.LoginController">
 
-   <VBox alignment="CENTER" scaleX="0.8" scaleY="0.8" spacing="30">
+   <VBox alignment="CENTER" spacing="30">
 
       <!-- HEADER -->
       <VBox alignment="CENTER" spacing="5">
@@ -30,13 +30,13 @@
          <!-- USERNAME -->
          <HBox maxWidth="Infinity" styleClass="input-box">
             <Label styleClass="input-icon" text="👤" />
-            <TextField fx:id="usernameField" maxWidth="Infinity" prefHeight="43.0" prefWidth="382.0" promptText="Nhập tài khoản" />
+            <TextField fx:id="usernameField" maxWidth="Infinity" prefHeight="43.0" HBox.hgrow="ALWAYS" promptText="Nhập tài khoản" />
          </HBox>
 
          <!-- PASSWORD -->
          <HBox maxWidth="Infinity" styleClass="input-box">
             <Label styleClass="input-icon" text="🔒" />
-            <PasswordField fx:id="passwordField" maxWidth="Infinity" prefHeight="43.0" prefWidth="384.0" promptText="Nhập mật khẩu" />
+            <PasswordField fx:id="passwordField" maxWidth="Infinity" prefHeight="43.0" HBox.hgrow="ALWAYS" promptText="Nhập mật khẩu" />
          </HBox>
 
          <!-- BUTTON -->
