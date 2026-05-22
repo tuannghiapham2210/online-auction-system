@@ -574,10 +574,11 @@ public class DashboardController {
                         typeMap.put("warrantyMonths", "ELECTRONICS");
                         typeMap.put("engineType", "VEHICLE");
                         typeMap.put("artistName", "ART");
+                        typeMap.put("generalInfo", "OTHER");
 
                         for (int i = 0; i < dataArray.size(); i++) {
                             JsonObject obj = dataArray.get(i).getAsJsonObject();
-                            String type = "ART";
+                            String type = "OTHER";
                             String extraInfo = "N/A";
 
                             for (Map.Entry<String, String> entry : typeMap.entrySet()) {
