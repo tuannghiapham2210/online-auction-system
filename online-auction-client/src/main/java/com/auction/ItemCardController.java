@@ -56,19 +56,22 @@ public class ItemCardController {
         // 1. Cấu hình trạng thái (Badge, Text, Color)
         if ("PENDING".equalsIgnoreCase(item.getStatus())) {
             badgeLabel.setText("⏳ SẮP DIỄN RA");
-            badgeLabel.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
+            badgeLabel.getStyleClass().setAll("label", "badge-pending");
             priceTitleLabel.setText("GIÁ CAO NHẤT");
             timerLabel.setText(String.format("⏳ %02d:00:00", (int) item.getDurationHours()));
+            timerLabel.getStyleClass().setAll("label", "item-card-timer-active");
         } else if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
             badgeLabel.setText("ĐÃ KẾT THÚC");
-            badgeLabel.setStyle("-fx-background-color: #6B7280; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 4 8; -fx-background-radius: 4; -fx-font-size: 11px;");
+            badgeLabel.getStyleClass().setAll("label", "badge-finished");
             priceTitleLabel.setText("GIÁ CHỐT");
             timerLabel.setText("ĐÃ KẾT THÚC");
-            timerLabel.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
+            timerLabel.getStyleClass().setAll("label", "timer-finished");
         } else {
             badgeLabel.setText("LIVE");
-            badgeLabel.getStyleClass().add("badge-live");
+            badgeLabel.getStyleClass().setAll("label", "badge-live");
             priceTitleLabel.setText("GIÁ HIỆN TẠI");
+            timerLabel.getStyleClass().setAll("label", "item-card-timer-active");
+            
             FadeTransition ft = new FadeTransition(Duration.seconds(1.2), badgeLabel);
             ft.setFromValue(1.0); ft.setToValue(0.3);
             ft.setCycleCount(Animation.INDEFINITE); ft.setAutoReverse(true);
@@ -97,10 +100,10 @@ public class ItemCardController {
         // 4. Cấu hình Nút "Vào Phòng"
         if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
             btnEnter.setText("Xem Kết Quả");
-            btnEnter.setStyle("-fx-background-color: #4B5563; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand; -fx-font-size: 13px;");
+            btnEnter.getStyleClass().setAll("button", "btn-enter-results");
         } else {
             btnEnter.setText("Vào Phòng");
-            btnEnter.getStyleClass().add("btn-orange");
+            btnEnter.getStyleClass().setAll("button", "btn-orange");
         }
         btnEnter.setOnAction(e -> onEnterRoom.run());
 

@@ -108,7 +108,7 @@ public class PasswordChangeController {
 
     private void showMessage(String message, boolean isError) {
         lblMessage.setText(message);
-        lblMessage.setStyle(isError ? "-fx-text-fill: #EF4444;" : "-fx-text-fill: #34D399;");
+        lblMessage.getStyleClass().setAll("label", "password-change-msg", isError ? "msg-error" : "msg-success");
         lblMessage.setVisible(true);
     }
 }

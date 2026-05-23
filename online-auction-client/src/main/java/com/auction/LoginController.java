@@ -80,12 +80,12 @@ public class LoginController {
 
         // 1. Kiểm tra validation cơ bản (chặn bỏ trống)
         if (username.isEmpty() || password.isEmpty()) {
-            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+            messageLabel.getStyleClass().setAll("label", "msg-error");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
 
-        messageLabel.setStyle("-fx-text-fill: #f59e0b;");
+        messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng nhập...");
 
         // 2. Tạo Thread mới để giao tiếp với Server (tránh làm đóng băng UI)
@@ -135,7 +135,7 @@ public class LoginController {
                         Session.balance = balance;
 
                         // 8. Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
-                        messageLabel.setStyle("-fx-text-fill: #00ff99;");
+                        messageLabel.getStyleClass().setAll("label", "msg-success");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
 
                         Timeline dots = new Timeline(
@@ -166,7 +166,7 @@ public class LoginController {
                         delay.play();
 
                     } else {
-                        messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+                        messageLabel.getStyleClass().setAll("label", "msg-error");
                         messageLabel.setText(message);
                     }
                 });
@@ -209,7 +209,7 @@ public class LoginController {
 
             javafx.scene.layout.Region darkOverlay = new javafx.scene.layout.Region();
             darkOverlay.setId("dark-overlay-forgot");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+            darkOverlay.getStyleClass().add("forgot-overlay");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.setOnMouseClicked(e -> controller.handleClose());
 
@@ -221,7 +221,7 @@ public class LoginController {
             rootPane.getChildren().addAll(darkOverlay, forgotGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ quên mật khẩu: {}", e.getMessage(), e);
-            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+            messageLabel.getStyleClass().setAll("label", "msg-error");
             messageLabel.setText("Lỗi hiển thị giao diện khôi phục mật khẩu.");
         }
     }
