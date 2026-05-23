@@ -53,9 +53,10 @@
             </HBox>
         </VBox>
 
-        <Label fx:id="lblMessage" style="-fx-font-size: 11px;"/>
+        <Label fx:id="lblMessage" styleClass="deposit-msg"/>
 
-        <Button text="XÁC NHẬN NẠP"
+        <Button fx:id="btnConfirm"
+                text="XÁC NHẬN NẠP"
                 prefWidth="350" 
                 prefHeight="55"
                 onAction="#handleDeposit"
