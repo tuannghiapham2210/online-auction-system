@@ -47,6 +47,11 @@ public class DepositController {
     @FXML
     private Label lblMessage;
 
+    @FXML
+    private Button btnConfirm;
+
+    private boolean isProcessing = false;
+
     private Runnable onCloseCallback;
 
     @FXML
@@ -97,6 +102,13 @@ public class DepositController {
      */
     @FXML
     private void handleDeposit() {
+        if (isProcessing) {
+            return;
+        }
+        isProcessing = true;
+        if (btnConfirm != null) {
+            btnConfirm.setDisable(true);
+        }
 
         try {
 
@@ -107,6 +119,10 @@ public class DepositController {
                         "Số tiền không hợp lệ!",
                         false
                 );
+                isProcessing = false;
+                if (btnConfirm != null) {
+                    btnConfirm.setDisable(false);
+                }
                 return;
             }
 
@@ -116,14 +132,14 @@ public class DepositController {
 
                     PrintWriter out =
                             new PrintWriter(
-                                    socket.getOutputStream(),
-                                    true
-                            );
+                                     socket.getOutputStream(),
+                                     true
+                             );
 
                     BufferedReader in =
                             new BufferedReader(
                                     new InputStreamReader(
-                                            socket.getInputStream()
+                                             socket.getInputStream()
                                     )
                             )
             ) {
@@ -164,7 +180,10 @@ public class DepositController {
                             "Server không phản hồi!",
                             false
                     );
-
+                    isProcessing = false;
+                    if (btnConfirm != null) {
+                        btnConfirm.setDisable(false);
+                    }
                     return;
                 }
 
@@ -218,6 +237,10 @@ public class DepositController {
                                     .getAsString();
 
                     showMessage(message, false);
+                    isProcessing = false;
+                    if (btnConfirm != null) {
+                        btnConfirm.setDisable(false);
+                    }
                 }
             }
 
@@ -227,6 +250,10 @@ public class DepositController {
                     "Số tiền phải là số!",
                     false
             );
+            isProcessing = false;
+            if (btnConfirm != null) {
+                btnConfirm.setDisable(false);
+            }
 
         } catch (Exception e) {
 
@@ -240,6 +267,10 @@ public class DepositController {
                     "Không kết nối được server!",
                     false
             );
+            isProcessing = false;
+            if (btnConfirm != null) {
+                btnConfirm.setDisable(false);
+            }
         }
     }
 
@@ -297,18 +328,12 @@ public class DepositController {
     ) {
 
         lblMessage.setText(message);
+        lblMessage.getStyleClass().removeAll("deposit-msg-success", "deposit-msg-error");
 
         if (success) {
-
-            lblMessage.setStyle(
-                    "-fx-text-fill: #34D399;"
-            );
-
+            lblMessage.getStyleClass().add("deposit-msg-success");
         } else {
-
-            lblMessage.setStyle(
-                    "-fx-text-fill: #EF4444;"
-            );
+            lblMessage.getStyleClass().add("deposit-msg-error");
         }
     }
 }
