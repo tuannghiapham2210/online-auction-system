@@ -125,7 +125,7 @@ public class AccountInfoController {
 
     private void showMessage(String message, boolean isError) {
         lblMessage.setText(message);
-        lblMessage.setStyle(isError ? "-fx-text-fill: #EF4444; -fx-font-size: 12px;" : "-fx-text-fill: #34D399; -fx-font-size: 12px;");
+        lblMessage.getStyleClass().setAll("label", isError ? "msg-error" : "msg-success");
         lblMessage.setVisible(true);
     }
 

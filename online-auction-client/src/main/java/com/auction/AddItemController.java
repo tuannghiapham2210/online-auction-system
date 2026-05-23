@@ -87,7 +87,7 @@ public class AddItemController {
     public void handleSubmit() {
         // 1. Cài đặt màu chữ mặc định (đỏ) và xóa thông báo cũ
         messageLabel.setText("");
-        messageLabel.setStyle("-fx-text-fill: #ef4444;");
+        messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-error");
 
         String name = nameField.getText();
         String type = typeComboBox.getValue();
@@ -183,7 +183,7 @@ public class AddItemController {
                 // 3. Gói lệnh cập nhật UI vào Platform.runLater()
                 Platform.runLater(() -> {
                     if (response.get("status").getAsString().equals("SUCCESS")) {
-                        messageLabel.setStyle("-fx-text-fill: #10b981;");
+                        messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-success");
                         messageLabel.setText("Đăng bán thành công!");
 
                         // 4. Tạo độ trễ 1.5s (PauseTransition) rồi mới đóng Popup

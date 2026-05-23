@@ -32,22 +32,22 @@ public class WinnerOverlayController {
         // Gán text và định dạng dựa trên kết quả
         if (noWinner) {
             subLabel.setText("Không có người chiến thắng");
-            subLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 26px; -fx-font-weight: bold;");
+            subLabel.getStyleClass().setAll("label", "sub-label-nowinner");
 
             winnerLabel.setText("Phiên đấu giá không có lượt trả giá nào");
-            winnerLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 28px; -fx-font-weight: bold;");
+            winnerLabel.getStyleClass().setAll("label", "winner-label-nowinner");
 
             priceTextLabel.setText("Mức giá chốt: Không có");
-            priceTextLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 34px; -fx-font-weight: bold;");
+            priceTextLabel.getStyleClass().setAll("label", "price-label-nowinner");
         } else {
             subLabel.setText("Chủ nhân mới:");
-            subLabel.setStyle("-fx-text-fill: #D1D5DB; -fx-font-size: 26px;");
+            subLabel.getStyleClass().setAll("label", "sub-label-winner");
 
             winnerLabel.setText(winnerUsername);
-            winnerLabel.setStyle("-fx-text-fill: #FBBF24; -fx-font-size: 48px; -fx-font-weight: bold;");
+            winnerLabel.getStyleClass().setAll("label", "winner-label-active");
 
             priceTextLabel.setText(String.format("Mức giá chốt: $%,.0f", finalPrice));
-            priceTextLabel.setStyle("-fx-text-fill: #34D399; -fx-font-size: 34px; -fx-font-weight: bold;");
+            priceTextLabel.getStyleClass().setAll("label", "price-label-active");
         }
 
         // Chuỗi hiệu ứng: Hiện dần (800ms) -> Chờ (5s) -> Mờ dần (800ms) -> Kích hoạt Callback (Đóng popup)

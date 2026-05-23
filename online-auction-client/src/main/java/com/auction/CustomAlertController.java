@@ -18,19 +18,14 @@ public class CustomAlertController {
 
     public void setData(String title, String message, String iconText, String confirmText, boolean isError, Runnable onConfirm) {
         this.onConfirm = onConfirm;
-        String borderColor = isError ? "#EF4444" : "#F59E0B";
-        alertRoot.setStyle(alertRoot.getStyle() + "-fx-border-color: " + borderColor + ";");
+        
+        // Cài đặt trạng thái động qua style classes kế thừa từ root
+        alertRoot.getStyleClass().setAll("alert-root", isError ? "alert-error" : "alert-success");
         
         iconLabel.setText(iconText);
-        iconLabel.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-size: " + (isError ? "50px" : "60px") + "; " + iconLabel.getStyle());
-        
         titleLabel.setText(title);
-        titleLabel.setStyle("-fx-text-fill: " + borderColor + "; " + titleLabel.getStyle());
-        
         msgLabel.setText(message);
-        
         btnConfirm.setText(confirmText);
-        btnConfirm.setStyle("-fx-background-color: " + borderColor + "; " + btnConfirm.getStyle());
         
         btnCancel.setVisible(!isError);
         btnCancel.setManaged(!isError);

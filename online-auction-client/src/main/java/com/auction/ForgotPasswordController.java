@@ -104,7 +104,7 @@ public class ForgotPasswordController {
 
     private void showMessage(String message, boolean isError) {
         lblMessage.setText(message);
-        lblMessage.setStyle(isError ? "-fx-text-fill: #EF4444; -fx-font-weight: bold;" : "-fx-text-fill: #34D399; -fx-font-weight: bold;");
+        lblMessage.getStyleClass().setAll("label", "forgot-password-msg", isError ? "msg-error" : "msg-success");
         lblMessage.setManaged(true);
         lblMessage.setVisible(true);
     }

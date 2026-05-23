@@ -89,7 +89,7 @@ public class RegisterController {
 
         // 1. Kiểm tra validation cơ bản
         if (username.isEmpty() || password.isEmpty() || roleValue == null) {
-            messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+            messageLabel.getStyleClass().setAll("label", "msg-error");
             messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
             return;
         }
@@ -102,7 +102,7 @@ public class RegisterController {
             role = "SELLER";
         }
 
-        messageLabel.setStyle("-fx-text-fill: #f59e0b;");
+        messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng ký...");
 
         // 3. Mở Thread mạng độc lập gửi request lên Server
@@ -138,7 +138,7 @@ public class RegisterController {
 
                     if ("SUCCESS".equals(status)) {
 
-                        messageLabel.setStyle("-fx-text-fill: #00ff99;");
+                        messageLabel.getStyleClass().setAll("label", "msg-success");
                         messageLabel.setText("✔ " + message + " Đang chuyển");
 
                         // 7. Hiệu ứng dấu chấm lửng lúc chuyển trang
@@ -164,7 +164,7 @@ public class RegisterController {
                         delay.play();
 
                     } else {
-                        messageLabel.setStyle("-fx-text-fill: #ff4d4d;");
+                        messageLabel.getStyleClass().setAll("label", "msg-error");
                         messageLabel.setText(message);
                     }
                 });

@@ -50,7 +50,6 @@
     </VBox>
 
     <Label fx:id="lblMessage" text="" wrapText="true"
-           style="-fx-text-fill: #34D399; -fx-font-size: 12px;"
            visible="false" maxWidth="Infinity" />
 
     <HBox spacing="10" alignment="CENTER_RIGHT" style="-fx-background-color: transparent;">

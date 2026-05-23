@@ -93,7 +93,7 @@
                 </VBox>
             </HBox>
 
-            <Label fx:id="messageLabel" style="-fx-text-fill: #ef4444; -fx-font-weight: bold; -fx-padding: 0 0 0 5;" />
+            <Label fx:id="messageLabel" styleClass="add-item-message-label" />
 
             <HBox spacing="20.0" translateY="5.0">
                 <Button maxWidth="Infinity" onAction="#closePopup" styleClass="btn-target-cancel" text="Hủy" HBox.hgrow="ALWAYS" />
