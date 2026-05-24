@@ -1557,3 +1557,78 @@
     -fx-text-fill: #a7f3d0;
     -fx-font-size: 12px;
 }
+
+/* ================= AUTO-BID PANEL ================= */
+.autobid-panel {
+    -fx-background-color: -fx-base-panel-color;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 25px;
+    -fx-border-width: 1px;
+}
+
+.autobid-title {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.autobid-label {
+    -fx-text-fill: #9CA3AF;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+
+.autobid-input-wrapper {
+    -fx-background-color: #0B101A;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 0 15px;
+}
+
+.autobid-dollar-sign {
+    -fx-text-fill: #94A3B8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.autobid-input {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 12px 5px;
+    -fx-font-size: 14px;
+}
+
+.autobid-btn {
+    -fx-background-color: #10B981;
+    -fx-text-fill: #111827;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 25px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-font-size: 13px;
+}
+.autobid-btn:hover {
+    -fx-background-color: #059669;
+}
+
+.autobid-disclaimer {
+    -fx-background-color: transparent;
+    -fx-border-color: #2A3441;
+    -fx-border-radius: 8px;
+    -fx-padding: 15px 20px;
+    -fx-border-width: 1px;
+}
+
+.autobid-disclaimer-text-normal {
+    -fx-font-size: 13px;
+    -fx-fill: #9CA3AF;
+}
+
+.autobid-disclaimer-text-bold {
+    -fx-font-size: 13px;
+    -fx-fill: #D1D5DB;
+    -fx-font-weight: bold;
+}

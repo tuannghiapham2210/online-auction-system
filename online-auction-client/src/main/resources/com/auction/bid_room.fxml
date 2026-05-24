@@ -145,6 +145,63 @@
                      </children>
                   </HBox>
 
+                  <VBox fx:id="autoBidPanel" spacing="20.0" styleClass="autobid-panel">
+                     <children>
+                        <!-- Header -->
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                           <children>
+                              <SVGPath content="M11.5 2L3 13h7v9l8.5-11h-7z" fill="#F59E0B" />
+                              <Label styleClass="autobid-title" text="CÔNG CỤ ĐẤU GIÁ &amp; AUTO-BID" />
+                           </children>
+                        </HBox>
+                        <!-- Input Section -->
+                        <HBox alignment="BOTTOM_LEFT" spacing="20.0" maxWidth="Infinity">
+                           <children>
+                              <!-- Group 1: Bước nhạy -->
+                              <VBox minWidth="150.0" prefWidth="280.0" spacing="8.0">
+                                 <children>
+                                    <Label styleClass="autobid-label" text="BƯỚC NHẠY AUTO-BID" />
+                                    <HBox alignment="CENTER_LEFT" spacing="5.0" styleClass="autobid-input-wrapper">
+                                       <children>
+                                          <Label styleClass="autobid-dollar-sign" text="\$" />
+                                          <TextField fx:id="autoBidIncField" styleClass="autobid-input" HBox.hgrow="ALWAYS" />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                              </VBox>
+                              <!-- Group 2: Ngân sách tối đa -->
+                              <VBox minWidth="150.0" prefWidth="280.0" spacing="8.0">
+                                 <children>
+                                    <Label styleClass="autobid-label" text="NGÂN SÁCH TỐI ĐA" />
+                                    <HBox alignment="CENTER_LEFT" spacing="5.0" styleClass="autobid-input-wrapper">
+                                       <children>
+                                          <Label styleClass="autobid-dollar-sign" text="\$" />
+                                          <TextField fx:id="autoBidMaxField" styleClass="autobid-input" HBox.hgrow="ALWAYS" />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                              </VBox>
+                              <Region HBox.hgrow="ALWAYS" />
+                              <!-- Register Button -->
+                              <Button fx:id="btnRegisterAutoBid" onAction="#handleRegisterAutoBidClick" prefHeight="45.0" styleClass="autobid-btn" text="▷ KÍCH HOẠT AUTO-BID" />
+                           </children>
+                        </HBox>
+                        <!-- Disclaimer Section -->
+                        <HBox alignment="CENTER_LEFT" spacing="15.0" styleClass="autobid-disclaimer" maxWidth="Infinity">
+                           <children>
+                              <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#4E586E" scaleX="1.2" scaleY="1.2" />
+                              <TextFlow HBox.hgrow="ALWAYS">
+                                 <children>
+                                    <Text styleClass="autobid-disclaimer-text-normal" text="Khi kích hoạt, hệ thống sẽ tự động theo dõi và đặt giá thay bạn mỗi khi có đối thủ vượt mặt " />
+                                    <Text styleClass="autobid-disclaimer-text-bold" text="(Giá đặt = Giá hiện tại + Bước nhảy Auto-Bid)" />
+                                    <Text styleClass="autobid-disclaimer-text-normal" text=", cho đến khi chạm mốc Ngân sách tối đa hoặc Ví hết tiền." />
+                                 </children>
+                              </TextFlow>
+                           </children>
+                        </HBox>
+                     </children>
+                  </VBox>
+
                </children>
             </VBox>
          </children>
