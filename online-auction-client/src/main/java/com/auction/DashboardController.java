@@ -176,6 +176,25 @@ public class DashboardController {
                     Session.justWon = false;
                     Session.lastWinMessage = null;
                 }
+                if (Session.justSold) {
+                    if (lblBalance != null) {
+                        lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                    }
+                    try {
+                        StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                        Parent saleNode = loader.load();
+                        SaleNotificationController ctrl = loader.getController();
+                        
+                        rootPane.getChildren().add(saleNode);
+                        ctrl.setData(Session.lastSoldItemName, Session.lastSoldWinnerUsername, Session.lastSoldPrice, Session.lastSoldSellerBalance, rootPane);
+                    } catch (Exception e) {
+                        logger.error("Failed to load sale notification FXML inside dashboard initialize: ", e);
+                    }
+                    Session.justSold = false;
+                    Session.lastSoldItemName = null;
+                    Session.lastSoldWinnerUsername = null;
+                }
             } catch (Exception ignored) {}
         });
     }
