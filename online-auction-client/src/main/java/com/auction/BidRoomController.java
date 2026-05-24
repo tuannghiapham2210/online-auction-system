@@ -1522,44 +1522,53 @@ private void hideNotification(HBox notification) {
 
                     pout.println(req.toString());
 
-                    String respStr = pin.readLine();
-                    if (respStr != null) {
+                    String respStr;
+                    boolean statusProcessed = false;
+                    while ((respStr = pin.readLine()) != null) {
+                        logger.info("PROCESS_WINNER_PAYMENT response raw string: {}", respStr);
                         try {
                             JsonObject resp = JsonParser.parseString(respStr).getAsJsonObject();
-                            String status = resp.has("status") ? resp.get("status").getAsString() : "";
-                            if ("SUCCESS".equalsIgnoreCase(status) && resp.has("newBalance")) {
-                                int newBal = resp.get("newBalance").getAsInt();
-                                Session.balance = newBal;
-                                Session.justWon = true;
-                                Session.lastWonPrice = finalPrice;
-                                Session.lastWinRemainingBalance = newBal;
-                                Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
-                                try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
+                            if (resp.has("status")) {
+                                String status = resp.get("status").getAsString();
+                                if ("SUCCESS".equalsIgnoreCase(status) && resp.has("newBalance")) {
+                                    int newBal = resp.get("newBalance").getAsInt();
+                                    logger.info("Winner payment processed successfully on server. New Balance: {}", newBal);
+                                    Session.balance = newBal;
+                                    Session.justWon = true;
+                                    Session.lastWonPrice = finalPrice;
+                                    Session.lastWinRemainingBalance = newBal;
+                                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
+                                    try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
+                                } else {
+                                    logger.warn("PROCESS_WINNER_PAYMENT response status not SUCCESS or missing newBalance: {}", respStr);
+                                    Session.justWon = true;
+                                    Session.lastWonPrice = finalPrice;
+                                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
+                                    try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
+                                }
+                                statusProcessed = true;
+                                break; // exit loop after reading our status response
                             } else {
-                                // Fallback: still mark as won but do not change balance
-                                Session.justWon = true;
-                                Session.lastWonPrice = finalPrice;
-                                Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
-                                try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
+                                logger.info("Ignoring broadcast/non-status message on temporary socket: {}", respStr);
                             }
                         } catch (Exception ex) {
-                            Session.justWon = true;
-                            Session.lastWonPrice = finalPrice;
-                            Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
-                            try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
+                            logger.error("Error parsing message on temporary socket: {}", respStr, ex);
                         }
-                    } else {
+                    }
+
+                    if (!statusProcessed) {
+                        logger.error("PROCESS_WINNER_PAYMENT response stream ended without a status response!");
                         Session.justWon = true;
                         Session.lastWonPrice = finalPrice;
-                        Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                        Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
                         try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
                     }
 
                 } catch (Exception ex) {
-                    logger.warn("Failed to deduct winner payment: {}", ex.getMessage());
+                    logger.error("Failed to connect or deduct winner payment: {}", ex.getMessage(), ex);
                     Session.justWon = true;
                     Session.lastWonPrice = finalPrice;
-                    Session.lastWinMessage = "Chúc mừng bạn đã thành công sở hữu cái item của phiên đó";
+                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
                 } finally {
                     Platform.runLater(showOverlayRunnable);
                 }
