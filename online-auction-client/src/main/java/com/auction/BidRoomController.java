@@ -708,16 +708,7 @@ public class BidRoomController {
 
             XYChart.Data<String, Number> newData = new XYChart.Data<>(uniqueTimeStamp, newPrice);
 
-            StackPane customNode = new StackPane();
-            customNode.setStyle("-fx-background-color: transparent;");
-            Circle dot = new Circle(6);
-            dot.setFill(Color.web("#f9a825"));
-            dot.setStroke(Color.WHITE);
-            dot.setStrokeWidth(2);
-            Label priceLbl = new Label("$" + NumberUtil.format(newPrice));
-            priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-            priceLbl.setTranslateY(-25);
-            customNode.getChildren().addAll(dot, priceLbl);
+            StackPane customNode = createChartNode(newPrice);
             newData.setNode(customNode);
             
             priceSeries.getData().add(newData);
@@ -727,13 +718,19 @@ public class BidRoomController {
                 priceSeries.getData().remove(0);
             }
 
+            // Cập nhật khoảng giới hạn trục Y
+            updateYAxisBounds();
+
             // 3. Thêm log vào danh sách lịch sử (đẩy lên vị trí đầu tiên index = 0)
             historyLogs.add(0, new BidEvent(timeStamp, bidderId, username, newPrice));
 
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
-                if (dot != null) {
-                    applyPulseAnimation(dot, newPrice);
+                if (customNode != null) {
+                    Circle dot = (Circle) customNode.lookup("#dotNode");
+                    if (dot != null) {
+                        applyPulseAnimation(dot, newPrice);
+                    }
                 }
             });
         });
@@ -1597,8 +1594,14 @@ private void hideNotification(HBox notification) {
                 initialData.setNode(customNode);
                 
                 priceSeries.getData().add(initialData);
-                Circle dot = (Circle) customNode.getChildren().get(0);
-                applyPulseAnimation(dot, cp);
+                updateYAxisBounds();
+                
+                if (customNode != null) {
+                    Circle dot = (Circle) customNode.lookup("#dotNode");
+                    if (dot != null) {
+                        applyPulseAnimation(dot, cp);
+                    }
+                }
                 return;
             }
 
@@ -1654,10 +1657,17 @@ private void hideNotification(HBox notification) {
 
                 // Thêm hiệu ứng nhấp nháy vào điểm cuối cùng
                 if (i == historySize - 1) {
-                    Circle dot = (Circle) customNode.getChildren().get(0);
-                    applyPulseAnimation(dot, event.price);
+                    if (customNode != null) {
+                        Circle dot = (Circle) customNode.lookup("#dotNode");
+                        if (dot != null) {
+                            applyPulseAnimation(dot, event.price);
+                        }
+                    }
                 }
             }
+
+            // Cập nhật khoảng giới hạn trục Y cho biểu đồ
+            updateYAxisBounds();
 
             // 3. Đổ dữ liệu vào Log (mới nhất ở trên cùng)
             historyLogs.clear();
@@ -1670,17 +1680,71 @@ private void hideNotification(HBox notification) {
     }
 
     private StackPane createChartNode(double price) {
-        StackPane customNode = new StackPane();
-        customNode.setStyle("-fx-background-color: transparent;");
-        Circle dot = new Circle(6);
-        dot.setFill(Color.web("#f9a825"));
-        dot.setStroke(Color.WHITE);
-        dot.setStrokeWidth(2);
-        Label priceLbl = new Label("$" + NumberUtil.format(price));
-        priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px;");
-        priceLbl.setTranslateY(-25);
-        customNode.getChildren().addAll(dot, priceLbl);
-        return customNode;
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("chart_node.fxml"));
+            StackPane customNode = loader.load();
+            Label priceLbl = (Label) customNode.lookup("#priceLabel");
+            if (priceLbl != null) {
+                priceLbl.setText("$" + NumberUtil.format(price));
+            }
+            return customNode;
+        } catch (Exception e) {
+            logger.error("Failed to load chart_node.fxml", e);
+            // Fallback to a plain StackPane in case of errors
+            StackPane fallback = new StackPane();
+            fallback.setStyle("-fx-background-color: transparent;");
+            Circle dot = new Circle(6);
+            dot.setId("dotNode");
+            dot.setFill(Color.web("#f9a825"));
+            dot.setStroke(Color.WHITE);
+            dot.setStrokeWidth(2);
+            Label priceLbl = new Label("$" + NumberUtil.format(price));
+            priceLbl.setId("priceLabel");
+            priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-translate-y: -25px;");
+            fallback.getChildren().addAll(dot, priceLbl);
+            return fallback;
+        }
+    }
+
+    private void updateYAxisBounds() {
+        if (priceChart == null) return;
+        NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
+        if (yAxis == null) return;
+
+        double maxPrice = 0;
+        double minPrice = Double.MAX_VALUE;
+        boolean hasData = false;
+
+        if (priceSeries != null && priceSeries.getData() != null) {
+            for (XYChart.Data<String, Number> data : priceSeries.getData()) {
+                if (data.getYValue() != null) {
+                    double val = data.getYValue().doubleValue();
+                    if (val > maxPrice) maxPrice = val;
+                    if (val < minPrice) minPrice = val;
+                    hasData = true;
+                }
+            }
+        }
+
+        if (hasData) {
+            yAxis.setAutoRanging(false);
+            double range = maxPrice - minPrice;
+            // Add a 20% margin to prevent the label (translated up by 25px) from being clipped
+            double margin = range > 0 ? range * 0.20 : maxPrice * 0.20;
+            if (margin <= 0) margin = 50.0;
+            
+            double lower = Math.max(0, minPrice - margin);
+            double upper = maxPrice + margin;
+            
+            yAxis.setLowerBound(lower);
+            yAxis.setUpperBound(upper);
+            
+            // Set tick unit to a nice round value
+            double diff = upper - lower;
+            yAxis.setTickUnit(diff / 5.0);
+        } else {
+            yAxis.setAutoRanging(true);
+        }
     }
 
     public void paymentProcessedRealtime(int itemId, String itemName, double amount, String winnerUsername, int sellerId, int newSellerBalance) {

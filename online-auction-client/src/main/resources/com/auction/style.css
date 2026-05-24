@@ -1632,3 +1632,21 @@
     -fx-fill: #D1D5DB;
     -fx-font-weight: bold;
 }
+
+/* ================= CHART NODE ================= */
+.chart-node-pane {
+    -fx-background-color: transparent;
+}
+
+.chart-node-dot {
+    -fx-fill: #f9a825;
+    -fx-stroke: white;
+    -fx-stroke-width: 2px;
+}
+
+.chart-node-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-translate-y: -25px;
+}
