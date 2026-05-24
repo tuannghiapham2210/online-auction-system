@@ -1636,6 +1636,21 @@
 /* ================= CHART NODE ================= */
 .chart-node-pane {
     -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0px;
+    -fx-border-radius: 0px;
+    -fx-padding: 0px;
+    -fx-effect: null;
+}
+
+/* Ẩn hoàn toàn viền/nền mặc định của AreaChart Symbol do JavaFX tự sinh */
+.bid-chart .chart-area-symbol {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0px;
+    -fx-border-radius: 0px;
+    -fx-padding: 0px;
+    -fx-effect: null;
 }
 
 .chart-node-dot {
