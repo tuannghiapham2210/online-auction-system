@@ -1514,9 +1514,11 @@ private void hideNotification(HBox notification) {
                     int deduct = (int) Math.round(finalPrice);
 
                     JsonObject req = new JsonObject();
-                    req.addProperty("action", "DEPOSIT");
-                    req.addProperty("username", Session.username);
-                    req.addProperty("amount", -deduct);
+                    req.addProperty("action", "PROCESS_WINNER_PAYMENT");
+                    req.addProperty("itemId", this.currentItemId);
+                    req.addProperty("bidderUsername", Session.username);
+                    req.addProperty("amount", deduct);
+                    req.addProperty("sellerId", this.currentSellerId);
 
                     pout.println(req.toString());
 
@@ -1784,6 +1786,27 @@ private void hideNotification(HBox notification) {
         priceLbl.setTranslateY(-25);
         customNode.getChildren().addAll(dot, priceLbl);
         return customNode;
+    }
+
+    public void paymentProcessedRealtime(int itemId, String itemName, double amount, String winnerUsername, int sellerId, int newSellerBalance) {
+        if (Session.userId == sellerId) {
+            Platform.runLater(() -> {
+                Session.balance = newSellerBalance;
+                if (lblBalance != null) {
+                    lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                }
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                    Parent saleNode = loader.load();
+                    SaleNotificationController ctrl = loader.getController();
+                    
+                    rootPane.getChildren().add(saleNode);
+                    ctrl.setData(itemName, winnerUsername, amount, newSellerBalance, rootPane);
+                } catch (Exception e) {
+                    logger.error("Failed to load sale notification FXML inside bid room: ", e);
+                }
+            });
+        }
     }
 
     private String generateUniqueTimeStamp(String timeStamp) {

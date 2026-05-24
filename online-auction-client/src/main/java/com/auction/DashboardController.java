@@ -1099,4 +1099,26 @@ public class DashboardController {
             }
         });
     }
+
+    public void paymentProcessedRealtime(int itemId, String itemName, double amount, String winnerUsername, int sellerId, int newSellerBalance) {
+        if (Session.userId == sellerId) {
+            Platform.runLater(() -> {
+                Session.balance = newSellerBalance;
+                if (lblBalance != null) {
+                    lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                }
+                try {
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                    Parent saleNode = loader.load();
+                    SaleNotificationController ctrl = loader.getController();
+                    
+                    rootPane.getChildren().add(saleNode);
+                    ctrl.setData(itemName, winnerUsername, amount, newSellerBalance, rootPane);
+                } catch (Exception e) {
+                    logger.error("Failed to load sale notification FXML inside dashboard: ", e);
+                }
+            });
+        }
+    }
 }
