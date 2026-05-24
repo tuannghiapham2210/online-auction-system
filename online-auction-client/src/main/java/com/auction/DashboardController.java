@@ -176,6 +176,25 @@ public class DashboardController {
                     Session.justWon = false;
                     Session.lastWinMessage = null;
                 }
+                if (Session.justSold) {
+                    if (lblBalance != null) {
+                        lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                    }
+                    try {
+                        StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                        Parent saleNode = loader.load();
+                        SaleNotificationController ctrl = loader.getController();
+                        
+                        rootPane.getChildren().add(saleNode);
+                        ctrl.setData(Session.lastSoldItemName, Session.lastSoldWinnerUsername, Session.lastSoldPrice, Session.lastSoldSellerBalance, rootPane);
+                    } catch (Exception e) {
+                        logger.error("Failed to load sale notification FXML inside dashboard initialize: ", e);
+                    }
+                    Session.justSold = false;
+                    Session.lastSoldItemName = null;
+                    Session.lastSoldWinnerUsername = null;
+                }
             } catch (Exception ignored) {}
         });
     }
@@ -1098,5 +1117,27 @@ public class DashboardController {
                 logger.error("Error updating viewer count: {}", e.getMessage(), e);
             }
         });
+    }
+
+    public void paymentProcessedRealtime(int itemId, String itemName, double amount, String winnerUsername, int sellerId, int newSellerBalance) {
+        if (Session.userId == sellerId) {
+            Platform.runLater(() -> {
+                Session.balance = newSellerBalance;
+                if (lblBalance != null) {
+                    lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                }
+                try {
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                    Parent saleNode = loader.load();
+                    SaleNotificationController ctrl = loader.getController();
+                    
+                    rootPane.getChildren().add(saleNode);
+                    ctrl.setData(itemName, winnerUsername, amount, newSellerBalance, rootPane);
+                } catch (Exception e) {
+                    logger.error("Failed to load sale notification FXML inside dashboard: ", e);
+                }
+            });
+        }
     }
 }

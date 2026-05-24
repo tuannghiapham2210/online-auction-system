@@ -76,6 +76,18 @@ public class DashboardListener implements Runnable {
                         controller.auctionFinishedRealtime(itemId, winnerUsername, finalPrice);
                     }
                 }
+                else if ("PAYMENT_PROCESSED".equals(action)) {
+                    int itemId = json.get("itemId").getAsInt();
+                    String itemName = json.has("itemName") ? json.get("itemName").getAsString() : "";
+                    double amount = json.has("amount") ? json.get("amount").getAsDouble() : 0.0;
+                    String winnerUsername = json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "";
+                    int sellerId = json.has("sellerId") ? json.get("sellerId").getAsInt() : -1;
+                    int newSellerBalance = json.has("newSellerBalance") ? json.get("newSellerBalance").getAsInt() : 0;
+
+                    if (controller != null) {
+                        controller.paymentProcessedRealtime(itemId, itemName, amount, winnerUsername, sellerId, newSellerBalance);
+                    }
+                }
                 // 7. Xử lý sự kiện cập nhật giá trong phòng đấu giá (nếu đang xem)
                 else if ("UPDATE_PRICE".equals(action)) {
                     int itemId = json.get("itemId").getAsInt();

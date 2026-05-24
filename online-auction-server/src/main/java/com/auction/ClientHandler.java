@@ -106,6 +106,9 @@ public class ClientHandler implements Runnable {
                     case "DEPOSIT":
                         handleDeposit(request);
                         break;
+                    case "PROCESS_WINNER_PAYMENT":
+                        handleProcessWinnerPayment(request);
+                        break;
                     case "OPEN_AUCTION_REQUEST":
                         handleOpenAuction(request);
                         break;
@@ -850,6 +853,67 @@ public class ClientHandler implements Runnable {
                     "Server error"
             );
 
+            writer.println(response.toString());
+        }
+    }
+
+    private void handleProcessWinnerPayment(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            String bidderUsername = request.get("bidderUsername").getAsString();
+            int amount = request.get("amount").getAsInt();
+            int sellerId = request.get("sellerId").getAsInt();
+
+            logger.info("Processing winner payment for item {}: bidder={}, amount={}, sellerId={}",
+                    itemId, bidderUsername, amount, sellerId);
+
+            UserDAO userDAO = new UserDAO();
+            ItemDAO itemDAO = new ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+            String itemName = (item != null) ? item.getName() : "sản phẩm";
+
+            // 1. Deduct bidder's balance (subtract amount)
+            boolean deductSuccess = userDAO.depositBalance(bidderUsername, -amount);
+
+            // 2. Add balance to seller (add amount)
+            String sellerUsername = userDAO.getUsernameById(sellerId);
+            boolean creditSuccess = false;
+            if (sellerUsername != null) {
+                creditSuccess = userDAO.depositBalance(sellerUsername, amount);
+            }
+
+            JsonObject response = new JsonObject();
+            if (deductSuccess) {
+                int newBidderBalance = userDAO.getBalanceByUsername(bidderUsername);
+                response.addProperty("status", "SUCCESS");
+                response.addProperty("newBalance", newBidderBalance);
+
+                // Broadcast payment processed event to all active clients
+                JsonObject broadcastMsg = new JsonObject();
+                broadcastMsg.addProperty("action", "PAYMENT_PROCESSED");
+                broadcastMsg.addProperty("itemId", itemId);
+                broadcastMsg.addProperty("itemName", itemName);
+                broadcastMsg.addProperty("amount", amount);
+                broadcastMsg.addProperty("winnerUsername", bidderUsername);
+                broadcastMsg.addProperty("sellerId", sellerId);
+                if (sellerUsername != null) {
+                    broadcastMsg.addProperty("sellerUsername", sellerUsername);
+                    broadcastMsg.addProperty("newSellerBalance", userDAO.getBalanceByUsername(sellerUsername));
+                }
+
+                logger.info("Winner payment processed successfully. Broadcasting PAYMENT_PROCESSED...");
+                broadcast(broadcastMsg);
+            } else {
+                response.addProperty("status", "FAIL");
+                response.addProperty("message", "Deduction failed");
+            }
+            writer.println(response.toString());
+
+        } catch (Exception e) {
+            logger.error("PROCESS_WINNER_PAYMENT failed", e);
+            JsonObject response = new JsonObject();
+            response.addProperty("status", "ERROR");
+            response.addProperty("message", "Server error: " + e.getMessage());
             writer.println(response.toString());
         }
     }

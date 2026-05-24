@@ -1519,3 +1519,41 @@
 .role-card-icon {
     -fx-font-size: 24px;
 }
+
+/* Winner/Victory Notification Styles */
+.win-notification {
+    -fx-background-color: rgba(15, 15, 15, 0.98);
+    -fx-background-radius: 18px;
+    -fx-border-color: #F59E0B;
+    -fx-border-radius: 18px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 0 25px 0 25px;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.3), 15, 0, 0, 0);
+}
+
+/* Successful Sale Notification Styles */
+.sale-notification {
+    -fx-background-color: rgba(10, 25, 20, 0.98);
+    -fx-background-radius: 18px;
+    -fx-border-color: #10B981;
+    -fx-border-radius: 18px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 0 25px 0 25px;
+    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.3), 15, 0, 0, 0);
+}
+
+.sale-notification-icon {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.sale-notification-title {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.sale-notification-msg {
+    -fx-text-fill: #a7f3d0;
+    -fx-font-size: 12px;
+}

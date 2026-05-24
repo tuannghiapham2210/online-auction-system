@@ -21,6 +21,14 @@ public class Session {
     public static double lastWonPrice = 0.0;
     public static int lastWinRemainingBalance = 0;
     public static String lastWinMessage = null;
+    
+    // --- Fields used to signal a recent successful sale to a seller ---
+    public static boolean justSold = false;
+    public static String lastSoldItemName = null;
+    public static double lastSoldPrice = 0.0;
+    public static int lastSoldSellerBalance = 0;
+    public static String lastSoldWinnerUsername = null;
+    
     // Track which itemIds have already had their payment processed for this session
     public static java.util.Set<Integer> processedPayments = new java.util.HashSet<>();
 }
