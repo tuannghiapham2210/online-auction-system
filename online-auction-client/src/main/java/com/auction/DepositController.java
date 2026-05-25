@@ -108,6 +108,9 @@ public class DepositController {
         isProcessing = true;
         if (btnConfirm != null) {
             btnConfirm.setDisable(true);
+            if (spinnerAmount != null && spinnerAmount.getEditor() != null) {
+                spinnerAmount.getEditor().requestFocus();
+            }
         }
 
         try {
