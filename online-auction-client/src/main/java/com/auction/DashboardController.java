@@ -93,6 +93,7 @@ public class DashboardController {
     private Map<Label, Label> liveBadgeMap = new HashMap<>();
     private VBox profileDropdown;
     private EventHandler<MouseEvent> profileDropdownCloser;    
+    private boolean isAddItemPopupOpen = false;
     
     // Real-time listener socket connections
     private Socket listenerSocket;
@@ -743,8 +744,11 @@ public class DashboardController {
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
 
+            isAddItemPopupOpen = true;
+
             rootPane.getChildren().addAll(darkOverlay, addItemGroup);
             addItemCtrl.setOnCloseCallback(() -> {
+                isAddItemPopupOpen = false;
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, addItemGroup);
                 loadDataFromServer();
@@ -935,6 +939,10 @@ public class DashboardController {
      */
     public void addNewItemRealtime(JsonObject itemJson) {
         Platform.runLater(() -> {
+            if (isAddItemPopupOpen) {
+                logger.info("Realtime item addition deferred because the Add Item popup is currently open.");
+                return;
+            }
             try {
                 String type = itemJson.get("itemType").getAsString();
                 String name = itemJson.get("name").getAsString();
