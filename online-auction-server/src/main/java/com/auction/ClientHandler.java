@@ -97,6 +97,9 @@ public class ClientHandler implements Runnable {
                     case "ADD_ITEM":
                         handleAddItem(request);
                         break;
+                    case "PUBLISH_ITEM":
+                        handlePublishItem(request);
+                        break;
                     case "GET_ALL_ITEMS":
                         handleGetAllItems(request);
                         break;
@@ -355,59 +358,22 @@ public class ClientHandler implements Runnable {
             ItemDAO itemDAO = new ItemDAO();
             boolean isSuccess = itemDAO.insertItem(newItem);
 
-            // 6. Gửi response phản hồi
             JsonObject response = new JsonObject();
             if (isSuccess) {
                     logger.info("Saved item successfully [{}] into items table.", name);
 
-                    response.addProperty("status", "SUCCESS");
-                    response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
-
-                    // =====================================================
-                    // QUAN TRỌNG:
-                    // Gửi response về cho chính AddItemController TRƯỚC
-                    // để tránh client nhận nhầm broadcast message
-                    // =====================================================
-                    writer.println(response.toString());
-
-                    // 6a. Lấy item mới nhất để broadcast
+                    // 6a. Lấy item mới nhất để lấy ID
                     List<Item> allItems = itemDAO.getAllItems();
-
+                    int insertedId = -1;
                     if (!allItems.isEmpty()) {
-
-                        Item newInsertedItem = allItems.get(allItems.size() - 1);
-
-                        JsonObject broadcastMsg = new JsonObject();
-
-                        broadcastMsg.addProperty("action", "NEW_ITEM_ADDED");
-                        broadcastMsg.addProperty("id", newInsertedItem.getId());
-                        broadcastMsg.addProperty("name", newInsertedItem.getName());
-                        broadcastMsg.addProperty("itemType", newInsertedItem.getItemType());
-                        broadcastMsg.addProperty("startingPrice", newInsertedItem.getStartingPrice());
-                        broadcastMsg.addProperty("currentPrice", newInsertedItem.getCurrentPrice());
-                        broadcastMsg.addProperty("stepPrice", newInsertedItem.getStepPrice());
-                        broadcastMsg.addProperty("durationHours", newInsertedItem.getDurationHours());
-                        broadcastMsg.addProperty("imageUrl", newInsertedItem.getImageUrl());
-                        broadcastMsg.addProperty("description", newInsertedItem.getDescription());
-                        broadcastMsg.addProperty("extraInfo", newInsertedItem.getExtraInfo());
-                        broadcastMsg.addProperty("sellerId", newInsertedItem.getSellerId());
-                        broadcastMsg.addProperty("status", newInsertedItem.getStatus());
-
-                        broadcastMsg.addProperty(
-                                "endTime",
-                                newInsertedItem.getEndTime() != null
-                                        ? newInsertedItem.getEndTime()
-                                        : ""
-                        );
-
-                        logger.info(
-                                "Broadcasting NEW_ITEM_ADDED event for itemId={}",
-                                newInsertedItem.getId()
-                        );
-
-                        broadcast(broadcastMsg);
+                        insertedId = allItems.get(allItems.size() - 1).getId();
                     }
 
+                    response.addProperty("status", "SUCCESS");
+                    response.addProperty("itemId", insertedId);
+                    response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
+
+                    writer.println(response.toString());
                     return;
             } else {
                 logger.error("Failed to save item [{}] into items table.", name);
@@ -422,6 +388,37 @@ public class ClientHandler implements Runnable {
             errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
             logger.error("ADD_ITEM failed: {}", e.getMessage(), e);
             writer.println(errorResponse.toString());
+        }
+    }
+
+    private void handlePublishItem(JsonObject request) {
+        try {
+            int itemId = request.get("itemId").getAsInt();
+            logger.info("Processing PUBLISH_ITEM request for itemId={}...", itemId);
+            ItemDAO itemDAO = new ItemDAO();
+            Item item = itemDAO.getItemById(itemId);
+            if (item != null) {
+                JsonObject broadcastMsg = new JsonObject();
+                broadcastMsg.addProperty("action", "NEW_ITEM_ADDED");
+                broadcastMsg.addProperty("id", item.getId());
+                broadcastMsg.addProperty("name", item.getName());
+                broadcastMsg.addProperty("itemType", item.getItemType());
+                broadcastMsg.addProperty("startingPrice", item.getStartingPrice());
+                broadcastMsg.addProperty("currentPrice", item.getCurrentPrice());
+                broadcastMsg.addProperty("stepPrice", item.getStepPrice());
+                broadcastMsg.addProperty("durationHours", item.getDurationHours());
+                broadcastMsg.addProperty("imageUrl", item.getImageUrl());
+                broadcastMsg.addProperty("description", item.getDescription());
+                broadcastMsg.addProperty("extraInfo", item.getExtraInfo());
+                broadcastMsg.addProperty("sellerId", item.getSellerId());
+                broadcastMsg.addProperty("status", item.getStatus());
+                broadcastMsg.addProperty("endTime", item.getEndTime() != null ? item.getEndTime() : "");
+
+                logger.info("Broadcasting NEW_ITEM_ADDED event for published itemId={}", item.getId());
+                broadcast(broadcastMsg);
+            }
+        } catch (Exception e) {
+            logger.error("PUBLISH_ITEM failed: {}", e.getMessage(), e);
         }
     }
 
