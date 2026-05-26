@@ -68,16 +68,10 @@ public class BidRoomController {
 
     private static final Logger logger = LoggerFactory.getLogger(BidRoomController.class);
 
-    @FXML private Label itemNameLabel;
+    @FXML private HeroImageController heroImageController;
     @FXML private Label currentPriceLabel;
     @FXML private Label highestBidderLabel;
     @FXML private Label timerLabel;
-    @FXML private StackPane heroImageContainer;
-    @FXML private Rectangle heroImageRect;
-    @FXML private Label lotBadgeLabel;
-    @FXML private Label typeBadgeLabel;
-    @FXML private Label itemDescLabel;
-    @FXML private Label liveBadge;
     @FXML private Label hotBadge;
     @FXML private Region timeProgressBar;
     @FXML private Label lblBalance;
@@ -156,7 +150,7 @@ public class BidRoomController {
         priceChart.setAnimated(true);
         priceChart.getData().add(priceSeries);
 
-        startBlinkingAnimation(liveBadge);
+
         startBlinkingAnimation(hotBadge);
 
         if (lblBalance != null) {
@@ -242,83 +236,29 @@ public class BidRoomController {
         this.currentWinnerUsername = winnerUsername;
 
         // 2. Hiển thị thông tin cơ bản
-        itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + NumberUtil.format(currentPrice));
         
         if (lblMinStepPrice != null) {
             lblMinStepPrice.setText("$" + NumberUtil.format(stepPrice));
         }
         
-        if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
-        if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
-        if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
         if (highestBidderLabel != null && winnerUsername != null && !winnerUsername.trim().isEmpty()) {
             highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
         }
 
-        // 3. Tải và hiển thị ảnh sản phẩm
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            try {
-                Image img = new Image(imageUrl, true);
-                if (heroImageRect != null && heroImageContainer != null) {
-                    // Bind rectangle to container size to act as a background
-                    heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    heroImageRect.heightProperty().bind(heroImageContainer.heightProperty());
-                    heroImageRect.setFill(Color.web("#1A1D27")); // Placeholder color
-
-                    // When image is loaded, calculate the correct pattern to "cover" the area without stretching
-                    img.progressProperty().addListener((obs, oldVal, newVal) -> {
-                        if (newVal.doubleValue() == 1.0 && !img.isError()) {
-
-                            // This logic will run once loaded and on every resize to keep the "cover" effect
-                            Runnable updateImagePattern = () -> {
-                                double containerW = heroImageContainer.getWidth();
-                                double containerH = heroImageContainer.getHeight();
-                                if (containerW <= 0 || containerH <= 0) return;
-
-                                double imgW = img.getWidth();
-                                double imgH = img.getHeight();
-                                if (imgW <= 0 || imgH <= 0) return;
-
-                                double containerAspect = containerW / containerH;
-                                double imgAspect = imgW / imgH;
-
-                                double patternW, patternH, patternX, patternY;
-
-                                if (imgAspect > containerAspect) { // Image is wider than container, so scale by height
-                                    patternH = containerH;
-                                    patternW = containerH * imgAspect;
-                                    patternX = (containerW - patternW) / 2;
-                                    patternY = 0;
-                                } else { // Image is taller or same aspect, so scale by width
-                                    patternW = containerW;
-                                    patternH = containerW / imgAspect;
-                                    patternX = 0;
-                                    patternY = (containerH - patternH) / 2;
-                                }
-                                
-                                heroImageRect.setFill(new ImagePattern(img, patternX, patternY, patternW, patternH, false));
-                            };
-
-                            // Add listeners to update on resize
-                            heroImageContainer.widthProperty().addListener(o -> updateImagePattern.run());
-                            heroImageContainer.heightProperty().addListener(o -> updateImagePattern.run());
-
-                            // Run once now
-                            updateImagePattern.run();
-                        }
-                    });
-                    
-                    // Apply rounded corner clip
-                    Rectangle clipRect = new Rectangle();
-                    clipRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
-                    clipRect.setArcWidth(24);
-                    clipRect.setArcHeight(24);
-                    heroImageRect.setClip(clipRect);
-                }
-            } catch (Exception e) {
-                logger.warn("Could not load image: {}", imageUrl);
+        // 3. Tải và hiển thị ảnh sản phẩm thông qua HeroImageController
+        if (heroImageController != null) {
+            heroImageController.setItemData(
+                "LOT-" + String.format("%03d", itemId),
+                itemType != null ? itemType : "Sản phẩm",
+                itemName,
+                description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp..."
+            );
+            
+            heroImageController.setLive(currentStatus.equals("ONGOING"));
+            
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                heroImageController.setImageUrl(imageUrl);
             }
         }
 
@@ -334,7 +274,7 @@ public class BidRoomController {
         
         // 6. Kiểm tra trạng thái Lockout PENDING
         if ("PENDING".equalsIgnoreCase(status)) {
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
             bidAmountField.setDisable(true);
             if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
             if (timerLabel != null) timerLabel.setText("CHỜ MỞ PHIÊN");
@@ -389,7 +329,7 @@ public class BidRoomController {
 
             // Nếu phiên đã kết thúc (CLOSED) hoặc thời gian đã hết thì hiển thị overlay chiến thắng luôn
             if ("CLOSED".equalsIgnoreCase(status) || "FINISHED".equalsIgnoreCase(status) || auctionExpired) {
-                if (liveBadge != null) liveBadge.setVisible(false);
+                if (heroImageController != null) heroImageController.setLive(false);
                 if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 if (bidAmountField != null) bidAmountField.setDisable(true);
@@ -409,7 +349,7 @@ public class BidRoomController {
                 // =========================================================
                 // CODE CỦA BẠN: Nếu đang ACTIVE thật sự thì bắt đầu đếm ngược
                 // =========================================================
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
 
                 // Phân quyền kích hoạt nút "Dừng phiên" cho Admin hoặc người bán
                 if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
@@ -815,7 +755,7 @@ private void hideNotification(HBox notification) {
                 // --- OPTIMISTIC UI UPDATE ---
                 // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
                 this.currentStatus = "ACTIVE";
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
@@ -914,7 +854,7 @@ private void hideNotification(HBox notification) {
 
                 this.currentStatus = "ACTIVE";
                 this.currentEndTime = endTime;
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
                     if (bidAmountField != null) {
@@ -1005,7 +945,7 @@ private void hideNotification(HBox notification) {
             }
 
             showWinnerOverlay(winnerName, finalPrice);
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
 
             if (countdownTimeline != null) {
                 countdownTimeline.stop();
@@ -1357,7 +1297,7 @@ private void hideNotification(HBox notification) {
             if (progressTimeline != null) progressTimeline.stop();
 
             if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
             if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
             if (currentPriceLabel != null) currentPriceLabel.setText("$" + NumberUtil.format(finalPrice));
 

@@ -31,29 +31,7 @@
 
                   <VBox style="-fx-background-color: -fx-base-panel-color; -fx-background-radius: 12; -fx-border-radius: 12; -fx-border-color: #2A3441; -fx-border-width: 1;" VBox.vgrow="NEVER" maxHeight="Infinity">
                      <children>
-                        <StackPane fx:id="heroImageContainer" minHeight="320.0" prefHeight="320.0">
-                           <children>
-                              <Rectangle fx:id="heroImageRect" height="250.0" />
-                              <Region style="-fx-background-color: linear-gradient(to bottom, transparent, -fx-base-panel-color); -fx-background-radius: 12 12 0 0;" />
-                              <AnchorPane pickOnBounds="false">
-                                 <children>
-                                    <HBox alignment="CENTER_LEFT" spacing="10.0" AnchorPane.leftAnchor="15.0" AnchorPane.topAnchor="15.0">
-                                       <children>
-                                          <Label fx:id="lotBadgeLabel" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-padding: 4 12; -fx-background-radius: 15; -fx-font-size: 12px; -fx-font-weight: bold;" text="LOT-003" />
-                                          <Label fx:id="typeBadgeLabel" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-padding: 4 12; -fx-background-radius: 15; -fx-font-size: 12px; -fx-font-weight: bold;" text="Ô tô" />
-                                       </children>
-                                    </HBox>
-                                    <Label fx:id="liveBadge" styleClass="badge-live" text="LIVE" AnchorPane.rightAnchor="15.0" AnchorPane.topAnchor="15.0" />
-                                    <VBox spacing="5.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0">
-                                       <children>
-                                          <Label fx:id="itemNameLabel" style="-fx-text-fill: white; -fx-font-size: 32px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" text="Đang tải dữ liệu sản phẩm..." />
-                                          <Label fx:id="itemDescLabel" style="-fx-text-fill: #E2E8F0; -fx-font-size: 14px;" text="Đang tải thông tin chi tiết..." />
-                                       </children>
-                                    </VBox>
-                                 </children>
-                              </AnchorPane>
-                           </children>
-                        </StackPane>
+                        <fx:include fx:id="heroImage" source="hero_image.fxml" />
 
                         <Region fx:id="timeProgressBar" maxWidth="Infinity" minHeight="3.0" prefHeight="3.0" style="-fx-background-color: #FFA500;" />
 
