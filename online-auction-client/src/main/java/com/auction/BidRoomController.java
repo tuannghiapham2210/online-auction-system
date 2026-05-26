@@ -126,7 +126,8 @@ public class BidRoomController {
     private boolean auctionEndedShown = false;
     private String lastTickTimeStamp = "";
     private int tickSpaceCounter = 0;
-    private ScrollPane mainScrollPane;
+    @FXML private ScrollPane mainScrollPane;
+    @FXML private Region darkOverlay;
 
     public static class BidEvent {
         public String timestamp;
@@ -148,23 +149,6 @@ public class BidRoomController {
      */
     @FXML
     public void initialize() {
-        // --- FIX: SCROLLABLE ROOT & COMPRESSION PREVENTION ---
-        // 1. Bọc nội dung chính vào ScrollPane để chống bị ép nén UI
-        if (rootPane != null && !rootPane.getChildren().isEmpty()) {
-            Node mainContent = rootPane.getChildren().get(0);
-            if (mainContent instanceof ScrollPane) {
-                mainScrollPane = (ScrollPane) mainContent;
-            } else {
-                rootPane.getChildren().remove(mainContent);
-                ScrollPane scrollPane = new ScrollPane(mainContent);
-                scrollPane.setFitToWidth(true);
-                scrollPane.setFitToHeight(false); // Cho phép nội dung giãn dài xuống dưới
-                scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;");
-                rootPane.getChildren().add(0, scrollPane);
-                mainScrollPane = scrollPane;
-            }
-        }
-
         // 2. Cố định chiều cao tối thiểu cho Chart và Socket Log (Middle Row)
         if (priceChart != null && priceChart.getParent() instanceof Region) {
             ((Region) priceChart.getParent()).setMinHeight(350);
@@ -779,7 +763,7 @@ private void hideNotification(HBox notification) {
     private void handleDeposit() {
         try {
             Node mainContent = rootPane.getChildren().get(0);
-            if (rootPane.lookup("#dark-overlay") != null) return;
+            if (darkOverlay != null && darkOverlay.isVisible()) return;
 
             // Lưu lại vị trí cuộn hiện tại của ScrollPane để giữ nguyên màn hình khi quay lại
             final double currentVvalue = (mainScrollPane != null) ? mainScrollPane.getVvalue() : 0.0;
@@ -790,15 +774,19 @@ private void hideNotification(HBox notification) {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setManaged(true);
+                darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            }
 
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, depositGroup);
+                if (darkOverlay != null) {
+                    darkOverlay.setVisible(false);
+                    darkOverlay.setManaged(false);
+                }
+                rootPane.getChildren().remove(depositGroup);
                 if (lblBalance != null) lblBalance.setText("$" + NumberUtil.format(Session.balance));
 
                 // Khôi phục lại vị trí cuộn cũ một cách chính xác sau khi đóng popup nạp tiền
@@ -816,7 +804,7 @@ private void hideNotification(HBox notification) {
                 }
             });
 
-            rootPane.getChildren().addAll(darkOverlay, depositGroup);
+            rootPane.getChildren().add(depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
         }

@@ -18,11 +18,14 @@
 <?import javafx.scene.text.Text?>
 <?import javafx.scene.text.TextFlow?>
 
+<?import javafx.scene.control.ScrollPane?>
 <StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
    <children>
 
-      <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 70 20 20 20;">
-         <children>
+      <ScrollPane fx:id="mainScrollPane" fitToWidth="true" fitToHeight="false" style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;">
+         <content>
+            <VBox alignment="CENTER" pickOnBounds="false" style="-fx-padding: 70 20 20 20;">
+               <children>
             <VBox maxWidth="960.0" spacing="20.0" VBox.vgrow="NEVER">
                <children>
 
@@ -204,8 +207,12 @@
 
                </children>
             </VBox>
-         </children>
-      </VBox>
+               </children>
+            </VBox>
+         </content>
+      </ScrollPane>
+      
+      <Region fx:id="darkOverlay" visible="false" managed="false" style="-fx-background-color: rgba(0,0,0,0.6);" maxWidth="Infinity" maxHeight="Infinity" />
 
       <AnchorPane pickOnBounds="false">
          <children>
