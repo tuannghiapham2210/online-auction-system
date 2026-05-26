@@ -54,6 +54,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.auction.network.ServerListener;
+import com.auction.network.PaymentService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,16 +69,10 @@ public class BidRoomController {
 
     private static final Logger logger = LoggerFactory.getLogger(BidRoomController.class);
 
-    @FXML private Label itemNameLabel;
+    @FXML private HeroImageController heroImageController;
     @FXML private Label currentPriceLabel;
     @FXML private Label highestBidderLabel;
     @FXML private Label timerLabel;
-    @FXML private StackPane heroImageContainer;
-    @FXML private Rectangle heroImageRect;
-    @FXML private Label lotBadgeLabel;
-    @FXML private Label typeBadgeLabel;
-    @FXML private Label itemDescLabel;
-    @FXML private Label liveBadge;
     @FXML private Label hotBadge;
     @FXML private Region timeProgressBar;
     @FXML private Label lblBalance;
@@ -104,7 +99,7 @@ public class BidRoomController {
     private Timeline countdownTimeline;
     private Timeline progressTimeline;
     private FadeTransition pulseAnimation;
-    private HBox toastNotification;
+    private ToastNotificationController toastNotificationController;
     @FXML private VBox autoBidPanel;
     @FXML private TextField autoBidIncField;
     @FXML private TextField autoBidMaxField;
@@ -126,7 +121,8 @@ public class BidRoomController {
     private boolean auctionEndedShown = false;
     private String lastTickTimeStamp = "";
     private int tickSpaceCounter = 0;
-    private ScrollPane mainScrollPane;
+    @FXML private ScrollPane mainScrollPane;
+    @FXML private Region darkOverlay;
 
     public static class BidEvent {
         public String timestamp;
@@ -148,43 +144,6 @@ public class BidRoomController {
      */
     @FXML
     public void initialize() {
-        // --- FIX: SCROLLABLE ROOT & COMPRESSION PREVENTION ---
-        // 1. Bọc nội dung chính vào ScrollPane để chống bị ép nén UI
-        if (rootPane != null && !rootPane.getChildren().isEmpty()) {
-            Node mainContent = rootPane.getChildren().get(0);
-            if (mainContent instanceof ScrollPane) {
-                mainScrollPane = (ScrollPane) mainContent;
-            } else {
-                rootPane.getChildren().remove(mainContent);
-                ScrollPane scrollPane = new ScrollPane(mainContent);
-                scrollPane.setFitToWidth(true);
-                scrollPane.setFitToHeight(false); // Cho phép nội dung giãn dài xuống dưới
-                scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;");
-                rootPane.getChildren().add(0, scrollPane);
-                mainScrollPane = scrollPane;
-            }
-        }
-
-        // 2. Cố định chiều cao tối thiểu cho Chart và Socket Log (Middle Row)
-        if (priceChart != null && priceChart.getParent() instanceof Region) {
-            ((Region) priceChart.getParent()).setMinHeight(350);
-        }
-        if (bidHistoryList != null && bidHistoryList.getParent() instanceof Region) {
-            ((Region) bidHistoryList.getParent()).setMinHeight(350);
-        }
-
-        // 3. Tăng chiều cao của ảnh sản phẩm và bỏ giới hạn chiều cao của Card cha
-        if (heroImageContainer != null) {
-            heroImageContainer.setMinHeight(320);
-            heroImageContainer.setPrefHeight(320);
-            if (heroImageContainer.getParent() instanceof Region) {
-                Region parentCard = (Region) heroImageContainer.getParent();
-                parentCard.setMinHeight(Region.USE_COMPUTED_SIZE);
-                parentCard.setPrefHeight(Region.USE_COMPUTED_SIZE);
-                parentCard.setMaxHeight(Double.MAX_VALUE);
-            }
-        }
-
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
@@ -192,7 +151,7 @@ public class BidRoomController {
         priceChart.setAnimated(true);
         priceChart.getData().add(priceSeries);
 
-        startBlinkingAnimation(liveBadge);
+
         startBlinkingAnimation(hotBadge);
 
         if (lblBalance != null) {
@@ -211,29 +170,21 @@ public class BidRoomController {
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
-        toastNotification = new HBox();
-        toastNotification.getStyleClass().add("toast-notification");
-        toastNotification.setOpacity(0);
-        toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
-        toastNotification.setVisible(false); // Ẩn để không chặn sự kiện click chuột
-        toastNotification.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("toast_notification.fxml"));
+            HBox toastNode = loader.load();
+            toastNotificationController = loader.getController();
 
-        // Icon Checkmark (Thành công)
-        SVGPath toastIcon = new SVGPath();
-        toastIcon.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z");
-        toastIcon.setFill(Color.WHITE);
+            StackPane.setAlignment(toastNode, Pos.TOP_CENTER);
+            StackPane.setMargin(toastNode, new Insets(20, 0, 0, 0));
+            
+            Platform.runLater(() -> {
+                if (rootPane != null) rootPane.getChildren().add(toastNode);
+            });
+        } catch (Exception e) {
+            logger.error("Failed to load toast notification FXML", e);
+        }
 
-        Label toastLabel = new Label("Phiên đấu giá chính thức mở cửa!");
-        toastLabel.getStyleClass().add("toast-label");
-
-        toastNotification.getChildren().addAll(toastIcon, toastLabel);
-
-        StackPane.setAlignment(toastNotification, Pos.TOP_CENTER);
-        StackPane.setMargin(toastNotification, new Insets(20, 0, 0, 0));
-        
-        Platform.runLater(() -> {
-            if (rootPane != null) rootPane.getChildren().add(toastNotification);
-        });
 
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
@@ -286,83 +237,29 @@ public class BidRoomController {
         this.currentWinnerUsername = winnerUsername;
 
         // 2. Hiển thị thông tin cơ bản
-        itemNameLabel.setText(itemName);
         currentPriceLabel.setText("$" + NumberUtil.format(currentPrice));
         
         if (lblMinStepPrice != null) {
             lblMinStepPrice.setText("$" + NumberUtil.format(stepPrice));
         }
         
-        if (lotBadgeLabel != null) lotBadgeLabel.setText("LOT-" + String.format("%03d", itemId));
-        if (typeBadgeLabel != null) typeBadgeLabel.setText(itemType != null ? itemType : "Sản phẩm");
-        if (itemDescLabel != null) itemDescLabel.setText(description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp...");
         if (highestBidderLabel != null && winnerUsername != null && !winnerUsername.trim().isEmpty()) {
             highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
         }
 
-        // 3. Tải và hiển thị ảnh sản phẩm
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            try {
-                Image img = new Image(imageUrl, true);
-                if (heroImageRect != null && heroImageContainer != null) {
-                    // Bind rectangle to container size to act as a background
-                    heroImageRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    heroImageRect.heightProperty().bind(heroImageContainer.heightProperty());
-                    heroImageRect.setFill(Color.web("#1A1D27")); // Placeholder color
-
-                    // When image is loaded, calculate the correct pattern to "cover" the area without stretching
-                    img.progressProperty().addListener((obs, oldVal, newVal) -> {
-                        if (newVal.doubleValue() == 1.0 && !img.isError()) {
-
-                            // This logic will run once loaded and on every resize to keep the "cover" effect
-                            Runnable updateImagePattern = () -> {
-                                double containerW = heroImageContainer.getWidth();
-                                double containerH = heroImageContainer.getHeight();
-                                if (containerW <= 0 || containerH <= 0) return;
-
-                                double imgW = img.getWidth();
-                                double imgH = img.getHeight();
-                                if (imgW <= 0 || imgH <= 0) return;
-
-                                double containerAspect = containerW / containerH;
-                                double imgAspect = imgW / imgH;
-
-                                double patternW, patternH, patternX, patternY;
-
-                                if (imgAspect > containerAspect) { // Image is wider than container, so scale by height
-                                    patternH = containerH;
-                                    patternW = containerH * imgAspect;
-                                    patternX = (containerW - patternW) / 2;
-                                    patternY = 0;
-                                } else { // Image is taller or same aspect, so scale by width
-                                    patternW = containerW;
-                                    patternH = containerW / imgAspect;
-                                    patternX = 0;
-                                    patternY = (containerH - patternH) / 2;
-                                }
-                                
-                                heroImageRect.setFill(new ImagePattern(img, patternX, patternY, patternW, patternH, false));
-                            };
-
-                            // Add listeners to update on resize
-                            heroImageContainer.widthProperty().addListener(o -> updateImagePattern.run());
-                            heroImageContainer.heightProperty().addListener(o -> updateImagePattern.run());
-
-                            // Run once now
-                            updateImagePattern.run();
-                        }
-                    });
-                    
-                    // Apply rounded corner clip
-                    Rectangle clipRect = new Rectangle();
-                    clipRect.widthProperty().bind(heroImageContainer.widthProperty());
-                    clipRect.heightProperty().bind(heroImageContainer.heightProperty().add(24));
-                    clipRect.setArcWidth(24);
-                    clipRect.setArcHeight(24);
-                    heroImageRect.setClip(clipRect);
-                }
-            } catch (Exception e) {
-                logger.warn("Could not load image: {}", imageUrl);
+        // 3. Tải và hiển thị ảnh sản phẩm thông qua HeroImageController
+        if (heroImageController != null) {
+            heroImageController.setItemData(
+                "LOT-" + String.format("%03d", itemId),
+                itemType != null ? itemType : "Sản phẩm",
+                itemName,
+                description != null && !description.isEmpty() ? description : "Đang mở đấu giá trực tiếp..."
+            );
+            
+            heroImageController.setLive(currentStatus.equals("ONGOING"));
+            
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                heroImageController.setImageUrl(imageUrl);
             }
         }
 
@@ -378,7 +275,7 @@ public class BidRoomController {
         
         // 6. Kiểm tra trạng thái Lockout PENDING
         if ("PENDING".equalsIgnoreCase(status)) {
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
             bidAmountField.setDisable(true);
             if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
             if (timerLabel != null) timerLabel.setText("CHỜ MỞ PHIÊN");
@@ -433,7 +330,7 @@ public class BidRoomController {
 
             // Nếu phiên đã kết thúc (CLOSED) hoặc thời gian đã hết thì hiển thị overlay chiến thắng luôn
             if ("CLOSED".equalsIgnoreCase(status) || "FINISHED".equalsIgnoreCase(status) || auctionExpired) {
-                if (liveBadge != null) liveBadge.setVisible(false);
+                if (heroImageController != null) heroImageController.setLive(false);
                 if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
                 if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
                 if (bidAmountField != null) bidAmountField.setDisable(true);
@@ -453,7 +350,7 @@ public class BidRoomController {
                 // =========================================================
                 // CODE CỦA BẠN: Nếu đang ACTIVE thật sự thì bắt đầu đếm ngược
                 // =========================================================
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
 
                 // Phân quyền kích hoạt nút "Dừng phiên" cho Admin hoặc người bán
                 if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
@@ -676,11 +573,8 @@ public class BidRoomController {
 
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
-                if (customNode != null) {
-                    Circle dot = (Circle) customNode.lookup("#dotNode");
-                    if (dot != null) {
-                        applyPulseAnimation(dot, newPrice);
-                    }
+                if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                    ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                 }
             });
         });
@@ -736,95 +630,35 @@ public class BidRoomController {
      * Hiển thị thông báo đẹp mắt với vòng tròn đếm ngược.
      */
     private void showNotification(String title, String message) {
-    // KIỂM TRA: Nếu đang có thông báo rồi thì thoát ngay, không làm gì thêm
-    if (isNotificationShowing) {
-        return;
+        // KIỂM TRA: Nếu đang có thông báo rồi thì thoát ngay, không làm gì thêm
+        if (isNotificationShowing) {
+            return;
+        }
+
+        try {
+            isNotificationShowing = true;
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("live_notification.fxml"));
+            HBox notification = loader.load();
+            LiveNotificationController controller = loader.getController();
+
+            controller.setNotificationData(title, message, () -> hideNotification(notification));
+
+            // --- XỬ LÝ HIỂN THỊ ---
+            StackPane.setAlignment(notification, Pos.TOP_CENTER);
+            notification.setTranslateY(-120);
+            rootPane.getChildren().add(notification);
+
+            TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
+            slideDown.setToY(30);
+            slideDown.play();
+
+            controller.startAnimation();
+
+        } catch (Exception e) {
+            logger.error("Error showing live notification: {}", e.getMessage(), e);
+            isNotificationShowing = false;
+        }
     }
-
-    // ĐÁNH DẤU: Đã bắt đầu hiển thị thông báo
-    isNotificationShowing = true;
-
-    HBox notification = new HBox();
-    notification.getStyleClass().add("live-notification");
-    notification.setAlignment(Pos.CENTER_LEFT);
-    notification.setSpacing(20);
-    notification.setMaxWidth(Region.USE_PREF_SIZE);
-    notification.setPrefWidth(520);
-    notification.setPrefHeight(85);
-    notification.setMaxHeight(85);
-
-    // --- PHẦN ICON XOAY (CẢNH BÁO TAM GIÁC) ---
-    StackPane iconPane = new StackPane();
-    iconPane.setPrefSize(50, 50);
-    iconPane.setMaxSize(50, 50);
-
-    Circle bgCircle = new Circle(22);
-    bgCircle.setFill(Color.TRANSPARENT);
-    bgCircle.setStroke(Color.web("#F59E0B", 0.15));
-    bgCircle.setStrokeWidth(3);
-
-    Arc timerArc = new Arc();
-    timerArc.setCenterX(0);
-    timerArc.setCenterY(0);
-    timerArc.setRadiusX(22);
-    timerArc.setRadiusY(22);
-    timerArc.setStartAngle(90);
-    timerArc.setLength(360);
-    timerArc.setType(ArcType.OPEN);
-    timerArc.setFill(Color.TRANSPARENT);
-    timerArc.setStroke(Color.web("#F59E0B"));
-    timerArc.setStrokeWidth(3);
-    timerArc.setStrokeLineCap(StrokeLineCap.ROUND);
-    
-    timerArc.setManaged(false);
-    timerArc.setLayoutX(25); 
-    timerArc.setLayoutY(25);
-
-    Label warningIcon = new Label("\u26A0");
-    warningIcon.getStyleClass().add("live-notification-warning-icon");
-
-    iconPane.getChildren().addAll(bgCircle, timerArc, warningIcon);
-
-    // --- PHẦN TEXT ---
-    VBox textVBox = new VBox();
-    textVBox.setAlignment(Pos.CENTER_LEFT);
-    Label lbTitle = new Label(title);
-    lbTitle.getStyleClass().add("live-notification-title");
-    Label lbMsg = new Label(message);
-    lbMsg.getStyleClass().add("live-notification-msg");
-    textVBox.getChildren().addAll(lbTitle, lbMsg);
-
-    Region spacer = new Region();
-    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-    Label closeBtn = new Label("✕");
-    closeBtn.setCursor(javafx.scene.Cursor.HAND);
-    closeBtn.getStyleClass().add("live-notification-close-btn");
-
-    notification.getChildren().addAll(iconPane, textVBox, spacer, closeBtn);
-
-    // --- XỬ LÝ HIỂN THỊ ---
-    StackPane.setAlignment(notification, Pos.TOP_CENTER);
-    notification.setTranslateY(-120);
-    rootPane.getChildren().add(notification);
-
-    TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
-    slideDown.setToY(30);
-    slideDown.play();
-
-    Timeline arcAnim = new Timeline(
-        new KeyFrame(Duration.ZERO, new KeyValue(timerArc.lengthProperty(), 360)),
-        new KeyFrame(Duration.seconds(4), new KeyValue(timerArc.lengthProperty(), 0))
-    );
-    
-    arcAnim.setOnFinished(e -> hideNotification(notification));
-    arcAnim.play();
-
-    closeBtn.setOnMouseClicked(e -> {
-        arcAnim.stop();
-        hideNotification(notification);
-    });
-}
 
 /**
  * Hiệu ứng trượt lên và xóa thông báo khỏi giao diện.
@@ -847,7 +681,7 @@ private void hideNotification(HBox notification) {
     private void handleDeposit() {
         try {
             Node mainContent = rootPane.getChildren().get(0);
-            if (rootPane.lookup("#dark-overlay") != null) return;
+            if (darkOverlay != null && darkOverlay.isVisible()) return;
 
             // Lưu lại vị trí cuộn hiện tại của ScrollPane để giữ nguyên màn hình khi quay lại
             final double currentVvalue = (mainScrollPane != null) ? mainScrollPane.getVvalue() : 0.0;
@@ -858,15 +692,19 @@ private void hideNotification(HBox notification) {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setManaged(true);
+                darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            }
 
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, depositGroup);
+                if (darkOverlay != null) {
+                    darkOverlay.setVisible(false);
+                    darkOverlay.setManaged(false);
+                }
+                rootPane.getChildren().remove(depositGroup);
                 if (lblBalance != null) lblBalance.setText("$" + NumberUtil.format(Session.balance));
 
                 // Khôi phục lại vị trí cuộn cũ một cách chính xác sau khi đóng popup nạp tiền
@@ -884,7 +722,7 @@ private void hideNotification(HBox notification) {
                 }
             });
 
-            rootPane.getChildren().addAll(darkOverlay, depositGroup);
+            rootPane.getChildren().add(depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
         }
@@ -894,25 +732,8 @@ private void hideNotification(HBox notification) {
      * Hiển thị Toast thông báo thành công (Snackbar Style).
      */
     private void showSuccessToast() {
-        if (toastNotification != null) {
-            // Tạm thời bật managed để StackPane tính toán đúng vị trí TOP_RIGHT
-            toastNotification.setManaged(true);
-            toastNotification.setVisible(true);
-            
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), toastNotification);
-            fadeIn.setToValue(1.0);
-
-            PauseTransition delay = new PauseTransition(Duration.seconds(3));
-
-            FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastNotification);
-            fadeOut.setToValue(0.0);
-            fadeOut.setOnFinished(e -> {
-                toastNotification.setManaged(false);
-                toastNotification.setVisible(false);
-            }); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
-
-            SequentialTransition toastSequence = new SequentialTransition(fadeIn, delay, fadeOut);
-            toastSequence.play();
+        if (toastNotificationController != null) {
+            toastNotificationController.showToast("Phiên đấu giá chính thức mở cửa!");
         }
     }
 
@@ -935,7 +756,7 @@ private void hideNotification(HBox notification) {
                 // --- OPTIMISTIC UI UPDATE ---
                 // Mở khóa UI ngay lập tức cho Admin để tạo cảm giác mượt mà không độ trễ
                 this.currentStatus = "ACTIVE";
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
                 if (pulseAnimation != null) pulseAnimation.stop();
                 if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
                 if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
@@ -1034,7 +855,7 @@ private void hideNotification(HBox notification) {
 
                 this.currentStatus = "ACTIVE";
                 this.currentEndTime = endTime;
-                if (liveBadge != null) liveBadge.setVisible(true);
+                if (heroImageController != null) heroImageController.setLive(true);
 
                 if ("BIDDER".equalsIgnoreCase(Session.role)) {
                     if (bidAmountField != null) {
@@ -1125,7 +946,7 @@ private void hideNotification(HBox notification) {
             }
 
             showWinnerOverlay(winnerName, finalPrice);
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
 
             if (countdownTimeline != null) {
                 countdownTimeline.stop();
@@ -1342,73 +1163,13 @@ private void hideNotification(HBox notification) {
             } catch (Exception ignored) {}
 
             // Deduct payment on server in background thread, update Session, then show overlay
-            new Thread(() -> {
-                try (Socket sock = new Socket("localhost", 8080);
-                     PrintWriter pout = new PrintWriter(sock.getOutputStream(), true);
-                     BufferedReader pin = new BufferedReader(new InputStreamReader(sock.getInputStream()))) {
-
-                    int deduct = (int) Math.round(finalPrice);
-
-                    JsonObject req = new JsonObject();
-                    req.addProperty("action", "PROCESS_WINNER_PAYMENT");
-                    req.addProperty("itemId", this.currentItemId);
-                    req.addProperty("bidderUsername", Session.username);
-                    req.addProperty("amount", deduct);
-                    req.addProperty("sellerId", this.currentSellerId);
-
-                    pout.println(req.toString());
-
-                    String respStr;
-                    boolean statusProcessed = false;
-                    while ((respStr = pin.readLine()) != null) {
-                        logger.info("PROCESS_WINNER_PAYMENT response raw string: {}", respStr);
-                        try {
-                            JsonObject resp = JsonParser.parseString(respStr).getAsJsonObject();
-                            if (resp.has("status")) {
-                                String status = resp.get("status").getAsString();
-                                if ("SUCCESS".equalsIgnoreCase(status) && resp.has("newBalance")) {
-                                    int newBal = resp.get("newBalance").getAsInt();
-                                    logger.info("Winner payment processed successfully on server. New Balance: {}", newBal);
-                                    Session.balance = newBal;
-                                    Session.justWon = true;
-                                    Session.lastWonPrice = finalPrice;
-                                    Session.lastWinRemainingBalance = newBal;
-                                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
-                                    try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
-                                } else {
-                                    logger.warn("PROCESS_WINNER_PAYMENT response status not SUCCESS or missing newBalance: {}", respStr);
-                                    Session.justWon = true;
-                                    Session.lastWonPrice = finalPrice;
-                                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
-                                    try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
-                                }
-                                statusProcessed = true;
-                                break; // exit loop after reading our status response
-                            } else {
-                                logger.info("Ignoring broadcast/non-status message on temporary socket: {}", respStr);
-                            }
-                        } catch (Exception ex) {
-                            logger.error("Error parsing message on temporary socket: {}", respStr, ex);
-                        }
-                    }
-
-                    if (!statusProcessed) {
-                        logger.error("PROCESS_WINNER_PAYMENT response stream ended without a status response!");
-                        Session.justWon = true;
-                        Session.lastWonPrice = finalPrice;
-                        Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
-                        try { Session.processedPayments.add(this.currentItemId); } catch (Exception ignored) {}
-                    }
-
-                } catch (Exception ex) {
-                    logger.error("Failed to connect or deduct winner payment: {}", ex.getMessage(), ex);
-                    Session.justWon = true;
-                    Session.lastWonPrice = finalPrice;
-                    Session.lastWinMessage = "Chúc mừng! Bạn đã sở hữu sản phẩm này.";
-                } finally {
-                    Platform.runLater(showOverlayRunnable);
-                }
-            }).start();
+            PaymentService.processWinnerPaymentAsync(
+                this.currentItemId,
+                Session.username,
+                (int) Math.round(finalPrice),
+                this.currentSellerId,
+                showOverlayRunnable
+            );
         } else {
             Platform.runLater(showOverlayRunnable);
         }
@@ -1477,7 +1238,7 @@ private void hideNotification(HBox notification) {
             if (progressTimeline != null) progressTimeline.stop();
 
             if (timerLabel != null) timerLabel.setText("ĐÃ KẾT THÚC");
-            if (liveBadge != null) liveBadge.setVisible(false);
+            if (heroImageController != null) heroImageController.setLive(false);
             if (highestBidderLabel != null) highestBidderLabel.setText("Dẫn đầu bởi: " + winnerUsername);
             if (currentPriceLabel != null) currentPriceLabel.setText("$" + NumberUtil.format(finalPrice));
 
@@ -1493,28 +1254,7 @@ private void hideNotification(HBox notification) {
         });
     }
 
-    /**
-     * Áp dụng hiệu ứng nhấp nháy (Pulse/Radar) cho điểm dữ liệu mới nhất trên biểu đồ.
-     */
-    private void applyPulseAnimation(Circle dot, double price) {
-        Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(price));
-        tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-        Tooltip.install(dot, tooltip);
 
-        ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
-        st.setByX(0.5);
-        st.setByY(0.5);
-        st.setAutoReverse(true);
-        st.setCycleCount(Timeline.INDEFINITE);
-
-        FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
-        ft.setFromValue(1.0);
-        ft.setToValue(0.5);
-        ft.setAutoReverse(true);
-        ft.setCycleCount(Timeline.INDEFINITE);
-
-        new ParallelTransition(st, ft).play();
-    }
 
     /**
      * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
@@ -1538,11 +1278,8 @@ private void hideNotification(HBox notification) {
                 priceSeries.getData().add(initialData);
                 updateYAxisBounds();
                 
-                if (customNode != null) {
-                    Circle dot = (Circle) customNode.lookup("#dotNode");
-                    if (dot != null) {
-                        applyPulseAnimation(dot, cp);
-                    }
+                if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                    ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                 }
                 return;
             }
@@ -1599,11 +1336,8 @@ private void hideNotification(HBox notification) {
 
                 // Thêm hiệu ứng nhấp nháy vào điểm cuối cùng
                 if (i == historySize - 1) {
-                    if (customNode != null) {
-                        Circle dot = (Circle) customNode.lookup("#dotNode");
-                        if (dot != null) {
-                            applyPulseAnimation(dot, event.price);
-                        }
+                    if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                        ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                     }
                 }
             }
@@ -1625,26 +1359,15 @@ private void hideNotification(HBox notification) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("chart_node.fxml"));
             StackPane customNode = loader.load();
-            Label priceLbl = (Label) customNode.lookup("#priceLabel");
-            if (priceLbl != null) {
-                priceLbl.setText("$" + NumberUtil.format(price));
+            ChartNodeController controller = loader.getController();
+            if (controller != null) {
+                controller.setPrice(price);
+                customNode.setUserData(controller);
             }
             return customNode;
         } catch (Exception e) {
             logger.error("Failed to load chart_node.fxml", e);
-            // Fallback to a plain StackPane in case of errors
-            StackPane fallback = new StackPane();
-            fallback.setStyle("-fx-background-color: transparent;");
-            Circle dot = new Circle(6);
-            dot.setId("dotNode");
-            dot.setFill(Color.web("#f9a825"));
-            dot.setStroke(Color.WHITE);
-            dot.setStrokeWidth(2);
-            Label priceLbl = new Label("$" + NumberUtil.format(price));
-            priceLbl.setId("priceLabel");
-            priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-translate-y: -25px;");
-            fallback.getChildren().addAll(dot, priceLbl);
-            return fallback;
+            return new StackPane();
         }
     }
 

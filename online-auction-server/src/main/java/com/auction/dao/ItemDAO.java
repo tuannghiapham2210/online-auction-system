@@ -25,8 +25,11 @@ public class ItemDAO {
      * @return true nếu thêm thành công, ngược lại là false.
      */
     public boolean insertItem(Item item) {
-        boolean isSuccess = false;
-        String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status, winner_id, final_price) " +
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "INSERT INTO items (name, item_type, starting_price, current_price, step_price, end_time, duration_hours, image_url, description, extra_info, seller_id, status, winner_id, final_price) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
@@ -63,6 +66,9 @@ public class ItemDAO {
             logger.error("SQL error while inserting Item: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -181,8 +187,11 @@ public class ItemDAO {
      * @return true nếu cập nhật thành công, ngược lại là false.
      */
     public boolean updateCurrentPrice(int itemId, double newPrice, int winnerId) {
-        boolean isSuccess = false;
-        String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price + step_price <= ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price + step_price <= ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
@@ -205,10 +214,50 @@ public class ItemDAO {
             logger.error("Error updating Item price: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean updateCurrentPrice(int itemId, double newPrice) {
         return updateCurrentPrice(itemId, newPrice, -1);
+    }
+
+    /**
+     * Cập nhật giá hiện tại cho một sản phẩm thông qua cơ chế Auto-Bid (Proxy Bidding).
+     * Nới lỏng điều kiện kiểm tra bước giá, cho phép ghi đè khi giá bằng hoặc lớn hơn giá hiện tại.
+     */
+    public boolean updateProxyPrice(int itemId, double newPrice, int winnerId) {
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price <= ?";
+
+            try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+
+                pstmt.setDouble(1, newPrice);
+                if (winnerId > 0) {
+                    pstmt.setInt(2, winnerId);
+                } else {
+                    pstmt.setNull(2, java.sql.Types.INTEGER);
+                }
+                pstmt.setDouble(3, newPrice);
+                pstmt.setInt(4, itemId);
+                pstmt.setDouble(5, newPrice);
+
+                int rowsAffected = pstmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    isSuccess = true;
+                    logger.info("Successfully updated proxy price: ${} and winnerId={} for Item ID: {}", newPrice, winnerId, itemId);
+                }
+            } catch (Exception e) {
+                logger.error("Error updating Proxy price: {}", e.getMessage(), e);
+            }
+            return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -218,8 +267,11 @@ public class ItemDAO {
      * @return true nếu cập nhật thành công, ngược lại là false.
      */
     public boolean updateAuctionStatus(int itemId, String newStatus) {
-        boolean isSuccess = false;
-        String sql = "UPDATE items SET status = ? WHERE id = ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "UPDATE items SET status = ? WHERE id = ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
             pstmt.setString(1, newStatus);
@@ -230,11 +282,17 @@ public class ItemDAO {
             logger.error("Error updating Item status: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
     public boolean startAuction(int itemId, String endTime) {
-        boolean isSuccess = false;
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
 
-        String sql = "UPDATE items SET status = ?, end_time = ? WHERE id = ?";
+            String sql = "UPDATE items SET status = ?, end_time = ? WHERE id = ?";
 
         try (PreparedStatement pstmt =
                     DatabaseConnection.getInstance()
@@ -256,6 +314,9 @@ public class ItemDAO {
         }
 
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
     
     /**
@@ -264,8 +325,11 @@ public class ItemDAO {
      * @return true nếu xóa thành công, ngược lại false.
      */
     public boolean deleteItem(int itemId) {
-        boolean isSuccess = false;
-        String sql = "DELETE FROM items WHERE id = ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "DELETE FROM items WHERE id = ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
             pstmt.setInt(1, itemId);
@@ -275,13 +339,19 @@ public class ItemDAO {
             logger.error("Error deleting item: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
     /**
      * Gia hạn thời gian kết thúc phiên đấu giá (Chống bắn tỉa - Anti-sniping).
      */
     public boolean updateEndTime(int itemId, String newEndTime) {
-        boolean isSuccess = false;
-        String sql = "UPDATE items SET end_time = ? WHERE id = ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "UPDATE items SET end_time = ? WHERE id = ?";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
             pstmt.setString(1, newEndTime);
@@ -292,5 +362,8 @@ public class ItemDAO {
             logger.error("Lỗi khi gia hạn thời gian: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
 }

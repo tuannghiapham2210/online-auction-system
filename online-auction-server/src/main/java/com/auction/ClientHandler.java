@@ -51,11 +51,13 @@ public class ClientHandler implements Runnable {
     private static class AutoBidConfig {
         int userId;
         double maxBid;
+        double increment;
         String createdAt; // For tie-breaking
 
-        AutoBidConfig(int userId, double maxBid, String createdAt) {
+        AutoBidConfig(int userId, double maxBid, double increment, String createdAt) {
             this.userId = userId;
             this.maxBid = maxBid;
+            this.increment = increment;
             this.createdAt = createdAt;
         }
     }
@@ -628,6 +630,14 @@ public class ClientHandler implements Runnable {
 
             logger.info("Received REGISTER_AUTO_BID: user={}, item={}, max={}, inc={}", username, itemId, maxBid, increment);
 
+            // Xóa cấu hình cũ của người dùng này nếu có (Tránh tự đấu giá với chính mình)
+            String deleteOldConfigSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
+            try (java.sql.PreparedStatement deleteStmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteOldConfigSql)) {
+                deleteStmt.setInt(1, itemId);
+                deleteStmt.setInt(2, userId);
+                deleteStmt.executeUpdate();
+            }
+
             String sql = "INSERT INTO auto_bids (item_id, user_id, max_bid, increment_amount, created_at) VALUES (?, ?, ?, ?, ?)";
             try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
                 pstmt.setInt(1, itemId);
@@ -687,12 +697,12 @@ public class ClientHandler implements Runnable {
 
             // 2. Lấy tất cả các cấu hình auto-bid, sắp xếp theo giá tối đa giảm dần
             List<AutoBidConfig> autoBidders = new ArrayList<>();
-            String getAutoBidsSql = "SELECT user_id, max_bid, created_at FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
+            String getAutoBidsSql = "SELECT user_id, max_bid, increment_amount, created_at FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
             try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getAutoBidsSql)) {
                 pstmt.setInt(1, itemId);
                 try (java.sql.ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
-                        autoBidders.add(new AutoBidConfig(rs.getInt("user_id"), rs.getDouble("max_bid"), rs.getString("created_at")));
+                        autoBidders.add(new AutoBidConfig(rs.getInt("user_id"), rs.getDouble("max_bid"), rs.getDouble("increment_amount"), rs.getString("created_at")));
                     }
                 }
             }
@@ -717,27 +727,55 @@ public class ClientHandler implements Runnable {
             }
 
             // 5. Tính toán mức giá mới.
-            // Giá mới = Mức giá thách thức + 1 bước giá.
-            double newPrice = challengePrice + item.getStepPrice();
+            // Giá mới = Mức giá thách thức + 1 bước giá tùy chỉnh của người dùng.
+            double newPrice = challengePrice + topBidder.increment;
+            
+            // Ngoại lệ: Nếu là người đặt Auto-Bid đầu tiên (chưa có ai bid) và không có đối thủ cạnh tranh
+            if (currentHighestBidderId == -1 && autoBidders.size() == 1) {
+                newPrice = item.getCurrentPrice();
+            }
 
             // Giá mới không được vượt quá giới hạn của người thắng.
             if (newPrice > topBidder.maxBid) {
                 newPrice = topBidder.maxBid;
             }
 
-            // Giá mới được tính ra vẫn không thể vượt qua giá đối thủ (do maxBid quá thấp), thì bỏ cuộc
-            if (newPrice <= item.getCurrentPrice()) {
+            // Giá mới không thể thấp hơn giá hiện tại. 
+            // Nếu bằng giá hiện tại, người đặt sớm ưu tiên hơn nên vẫn được phép "cướp cờ" (trừ khi chính họ đang dẫn đầu).
+            if (newPrice < item.getCurrentPrice()) {
+                return;
+            }
+            if (newPrice == item.getCurrentPrice() && topBidder.userId == currentHighestBidderId) {
                 return;
             }
 
+            // --- KIỂM TRA SỐ DƯ TRƯỚC KHI ĐẶT GIÁ ---
+            UserDAO userDAO = new UserDAO();
+            String username = getUsernameById(topBidder.userId);
+            int balance = userDAO.getBalanceByUsername(username);
+            if (balance < newPrice) {
+                logger.warn("[PROXY ENGINE] User {} has insufficient balance (${}) for Auto-Bid ${}. Deactivating their Auto-Bid.", username, balance, newPrice);
+                // Vô hiệu hóa cấu hình Auto-Bid của người dùng này
+                String deleteAutoBidSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
+                try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteAutoBidSql)) {
+                    pstmt.setInt(1, itemId);
+                    pstmt.setInt(2, topBidder.userId);
+                    pstmt.executeUpdate();
+                }
+                
+                // Đệ quy để bộ máy tự đánh giá lại với những người còn lại
+                evaluateAutoBids(itemId);
+                return;
+            }
+            // ----------------------------------------
+
             // 6. Cập nhật CSDL và phát sóng sự kiện DUY NHẤT.
             com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, newPrice, topBidder.userId);
+            boolean updateSuccess = itemDAO.updateProxyPrice(itemId, newPrice, topBidder.userId);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, topBidder.userId, newPrice);
 
             if (updateSuccess && logSuccess) {
                 String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
-                String username = getUsernameById(topBidder.userId);
 
                 JsonObject broadcastMsg = new JsonObject();
                 broadcastMsg.addProperty("action", "UPDATE_PRICE");

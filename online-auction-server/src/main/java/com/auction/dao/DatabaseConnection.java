@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Lớp quản lý kết nối cơ sở dữ liệu SQLite theo mô hình Singleton.
@@ -23,6 +24,9 @@ public class DatabaseConnection {
     private static volatile DatabaseConnection instance;
 
     private Connection connection;
+
+    /** Khóa đồng bộ hóa dùng chung cho các thao tác ghi dữ liệu (INSERT, UPDATE, DELETE). */
+    private final ReentrantLock dbWriteLock = new ReentrantLock();
 
     /** URL kết nối SQLite, tự động tạo file auction.db ở thư mục gốc nếu chưa có. */
     private static final String DB_URL = "jdbc:sqlite:auction.db";
@@ -79,6 +83,13 @@ public class DatabaseConnection {
             logger.error("Failed to re-open SQLite connection: {}", e.getMessage(), e);
         }
         return connection;
+    }
+
+    /**
+     * Lấy đối tượng khóa dùng chung để đồng bộ các thao tác ghi xuống CSDL.
+     */
+    public ReentrantLock getDbWriteLock() {
+        return dbWriteLock;
     }
 
     /**

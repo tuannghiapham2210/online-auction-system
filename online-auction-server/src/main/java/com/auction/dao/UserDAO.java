@@ -29,7 +29,10 @@ public class UserDAO {
      * @return true nếu đăng ký thành công, false nếu tài khoản đã tồn tại hoặc có lỗi.
      */
     public boolean registerUser(String username, String password, String role, String email, String phone) {
-        String checkSql = "SELECT * FROM users WHERE username=?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            String checkSql = "SELECT * FROM users WHERE username=?";
         String insertSql = "INSERT INTO users(username, password, role, email, phone) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement check = getConnection().prepareStatement(checkSql)) {
@@ -52,6 +55,9 @@ public class UserDAO {
             logger.error("User registration failed: {}", e.getMessage(), e);
         }
         return false;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -173,7 +179,10 @@ public class UserDAO {
     }
 
     public boolean updateUserProfile(int userId, String username, String email, String phone) {
-        String sql = "UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            String sql = "UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?";
 
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, username);
@@ -185,10 +194,16 @@ public class UserDAO {
             logger.error("Failed to update user profile: {}", e.getMessage(), e);
             return false;
         }
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean changePassword(int userId, String oldPassword, String newPassword) {
-        String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
 
         try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
             ps.setString(1, newPassword);
@@ -198,6 +213,9 @@ public class UserDAO {
         } catch (Exception e) {
             logger.error("Failed to change password: {}", e.getMessage(), e);
             return false;
+        }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -209,7 +227,10 @@ public class UserDAO {
      * @return true nếu thông tin khớp và cập nhật thành công, ngược lại false.
      */
     public boolean resetPassword(String username, String contactInfo, String newPassword) {
-        if (contactInfo == null || contactInfo.trim().isEmpty()) {
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            if (contactInfo == null || contactInfo.trim().isEmpty()) {
             return false;
         }
         
@@ -224,12 +245,18 @@ public class UserDAO {
             logger.error("Failed to reset password: {}", e.getMessage(), e);
             return false;
         }
+        } finally {
+            lock.unlock();
+        }
     }
 
     public boolean depositBalance(
                 String username,
                 int amount
         ) {
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
 
             String sql =
                     "UPDATE users " +
@@ -264,6 +291,9 @@ public class UserDAO {
             }
 
             return false;
+        } finally {
+            lock.unlock();
+        }
         }
 
         // ================= GET BALANCE =================
