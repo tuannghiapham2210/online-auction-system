@@ -4,6 +4,7 @@ import com.auction.dao.UserDAO;
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
+import com.auction.service.PaymentService;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -808,86 +809,19 @@ public class ClientHandler implements Runnable {
         return "Robot";
     }
     private void handleDeposit(JsonObject request) {
-
         try {
+            String username = request.get("username").getAsString();
+            int amount = request.get("amount").getAsInt();
 
-            String username =
-                    request.get("username").getAsString();
+            PaymentService paymentService = new PaymentService();
+            PaymentService.PaymentResult result = paymentService.processDeposit(username, amount);
 
-            int amount =
-                    request.get("amount").getAsInt();
-
-            logger.info(
-                    "Deposit request from {} amount {}",
-                    username,
-                    amount
-            );
-
-            // ================= UPDATE DATABASE =================
-            UserDAO userDAO = new UserDAO();
-
-            boolean success =
-                    userDAO.depositBalance(username, amount);
-
-            // ================= RESPONSE =================
-            JsonObject response = new JsonObject();
-
-            if (success) {
-
-        // lấy balance mới từ DB
-                int newBalance = userDAO.getBalanceByUsername(username);
-
-                response.addProperty("status", "SUCCESS");
-
-                response.addProperty(
-                "message",
-                "Deposit successful"
-                );
-
-        // QUAN TRỌNG
-                response.addProperty(
-                        "newBalance",
-                        newBalance
-                );
-
-                logger.info(
-                        "Deposit successful for {}. New balance={}",
-                        username,
-                        newBalance
-                );
-
-            } else {
-
-                response.addProperty("status", "FAIL");
-                response.addProperty(
-                        "message",
-                        "Deposit failed"
-                );
-
-                logger.error(
-                        "Deposit failed for {}",
-                        username
-                );
-            }
-
-            writer.println(response.toString());
-
+            writer.println(result.response.toString());
         } catch (Exception e) {
-
-            logger.error(
-                    "DEPOSIT failed: {}",
-                    e.getMessage(),
-                    e
-            );
-
+            logger.error("DEPOSIT failed: {}", e.getMessage(), e);
             JsonObject response = new JsonObject();
-
             response.addProperty("status", "ERROR");
-            response.addProperty(
-                    "message",
-                    "Server error"
-            );
-
+            response.addProperty("message", "Server error");
             writer.println(response.toString());
         }
     }
@@ -899,51 +833,13 @@ public class ClientHandler implements Runnable {
             int amount = request.get("amount").getAsInt();
             int sellerId = request.get("sellerId").getAsInt();
 
-            logger.info("Processing winner payment for item {}: bidder={}, amount={}, sellerId={}",
-                    itemId, bidderUsername, amount, sellerId);
+            PaymentService paymentService = new PaymentService();
+            PaymentService.PaymentResult result = paymentService.processWinnerPayment(itemId, bidderUsername, amount, sellerId);
 
-            UserDAO userDAO = new UserDAO();
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            String itemName = (item != null) ? item.getName() : "sản phẩm";
-
-            // 1. Deduct bidder's balance (subtract amount)
-            boolean deductSuccess = userDAO.depositBalance(bidderUsername, -amount);
-
-            // 2. Add balance to seller (add amount)
-            String sellerUsername = userDAO.getUsernameById(sellerId);
-            boolean creditSuccess = false;
-            if (sellerUsername != null) {
-                creditSuccess = userDAO.depositBalance(sellerUsername, amount);
+            if (result.broadcastMessage != null) {
+                broadcast(result.broadcastMessage);
             }
-
-            JsonObject response = new JsonObject();
-            if (deductSuccess) {
-                int newBidderBalance = userDAO.getBalanceByUsername(bidderUsername);
-                response.addProperty("status", "SUCCESS");
-                response.addProperty("newBalance", newBidderBalance);
-
-                // Broadcast payment processed event to all active clients
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "PAYMENT_PROCESSED");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("itemName", itemName);
-                broadcastMsg.addProperty("amount", amount);
-                broadcastMsg.addProperty("winnerUsername", bidderUsername);
-                broadcastMsg.addProperty("sellerId", sellerId);
-                if (sellerUsername != null) {
-                    broadcastMsg.addProperty("sellerUsername", sellerUsername);
-                    broadcastMsg.addProperty("newSellerBalance", userDAO.getBalanceByUsername(sellerUsername));
-                }
-
-                logger.info("Winner payment processed successfully. Broadcasting PAYMENT_PROCESSED...");
-                broadcast(broadcastMsg);
-            } else {
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Deduction failed");
-            }
-            writer.println(response.toString());
-
+            writer.println(result.response.toString());
         } catch (Exception e) {
             logger.error("PROCESS_WINNER_PAYMENT failed", e);
             JsonObject response = new JsonObject();
