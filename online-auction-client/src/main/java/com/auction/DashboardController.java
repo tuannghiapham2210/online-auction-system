@@ -762,57 +762,30 @@ public class DashboardController {
     }
 
     private void showCustomAlert(String title, String message, String iconText, String confirmText, boolean isError, Runnable onConfirm) {
-        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                javafx.scene.control.Alert.AlertType.NONE, "",
-                isError ? javafx.scene.control.ButtonType.OK : javafx.scene.control.ButtonType.YES,
-                isError ? null : javafx.scene.control.ButtonType.NO
-        );
-        alert.setHeaderText(null);
-        alert.setGraphic(null);
+        try {
+            Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
+            Stage dialogStage = new Stage();
+            dialogStage.initOwner(ownerStage);
+            dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            dialogStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
 
-        javafx.scene.control.DialogPane dialogPane = alert.getDialogPane();
-        javafx.stage.Stage stage = (javafx.stage.Stage) dialogPane.getScene().getWindow();
-        stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
-        dialogPane.getScene().setFill(javafx.scene.paint.Color.TRANSPARENT);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("custom_alert.fxml"));
+            Parent root = loader.load();
 
-        String borderColor = isError ? "#EF4444" : "#F59E0B";
-        dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: " + borderColor + "; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(Color.TRANSPARENT);
+            dialogStage.setScene(scene);
 
-        VBox content = new VBox(15);
-        content.setAlignment(Pos.CENTER);
-        content.setPadding(new Insets(25, 20, 10, 20));
+            CustomAlertController controller = loader.getController();
+            controller.setData(title, message, iconText, confirmText, isError, onConfirm);
 
-        Label icon = new Label(iconText);
-        icon.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-size: " + (isError ? "50px" : "60px") + "; -fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;");
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-text-fill: " + borderColor + "; -fx-font-size: 18px; -fx-font-weight: bold;");
-
-        Label msgLabel = new Label(message);
-        msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
-
-        content.getChildren().addAll(icon, titleLabel, msgLabel);
-        dialogPane.setContent(content);
-
-        Button confirmBtn = (Button) dialogPane.lookupButton(isError ? javafx.scene.control.ButtonType.OK : javafx.scene.control.ButtonType.YES);
-        if (confirmBtn != null) {
-            confirmBtn.setText(confirmText);
-            confirmBtn.setStyle("-fx-background-color: " + borderColor + "; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
-        }
-
-        if (!isError) {
-            Button cancelBtn = (Button) dialogPane.lookupButton(javafx.scene.control.ButtonType.NO);
-            if (cancelBtn != null) {
-                cancelBtn.setText("Hủy");
-                cancelBtn.setStyle("-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
+            dialogStage.showAndWait();
+        } catch (Exception e) {
+            logger.error("Lỗi khi hiển thị Custom Alert FXML: {}", e.getMessage(), e);
+            if (onConfirm != null && !isError) {
+                onConfirm.run();
             }
         }
-
-        alert.showAndWait().ifPresent(response -> {
-            if (response == javafx.scene.control.ButtonType.YES || response == javafx.scene.control.ButtonType.OK) {
-                if (onConfirm != null) onConfirm.run();
-            }
-        });
     }
 
     private void confirmAndDelete(Item item) {
