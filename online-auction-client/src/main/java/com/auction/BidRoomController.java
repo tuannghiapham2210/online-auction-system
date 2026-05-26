@@ -212,9 +212,7 @@ public class BidRoomController {
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
         toastNotification = new HBox();
-        toastNotification.setStyle("-fx-background-color: #00BFA5; -fx-background-radius: 8px; -fx-padding: 10 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);");
-        toastNotification.setSpacing(10);
-        toastNotification.setAlignment(Pos.CENTER_LEFT);
+        toastNotification.getStyleClass().add("toast-notification");
         toastNotification.setOpacity(0);
         toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
         toastNotification.setVisible(false); // Ẩn để không chặn sự kiện click chuột
@@ -226,7 +224,7 @@ public class BidRoomController {
         toastIcon.setFill(Color.WHITE);
 
         Label toastLabel = new Label("Phiên đấu giá chính thức mở cửa!");
-        toastLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
+        toastLabel.getStyleClass().add("toast-label");
 
         toastNotification.getChildren().addAll(toastIcon, toastLabel);
 
@@ -799,22 +797,13 @@ public class BidRoomController {
     isNotificationShowing = true;
 
     HBox notification = new HBox();
+    notification.getStyleClass().add("live-notification");
     notification.setAlignment(Pos.CENTER_LEFT);
     notification.setSpacing(20);
     notification.setMaxWidth(Region.USE_PREF_SIZE);
     notification.setPrefWidth(520);
     notification.setPrefHeight(85);
     notification.setMaxHeight(85);
-
-    notification.setStyle(
-        "-fx-background-color: rgba(15, 15, 15, 0.98);" +
-        "-fx-background-radius: 18;" +
-        "-fx-border-color: #F59E0B;" +
-        "-fx-border-radius: 18;" +
-        "-fx-border-width: 1.5;" +
-        "-fx-padding: 0 25 0 25;" +
-        "-fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 15, 0, 0, 0);"
-    );
 
     // --- PHẦN ICON XOAY (CẢNH BÁO TAM GIÁC) ---
     StackPane iconPane = new StackPane();
@@ -844,12 +833,7 @@ public class BidRoomController {
     timerArc.setLayoutY(25);
 
     Label warningIcon = new Label("\u26A0");
-    warningIcon.setStyle(
-        "-fx-text-fill: #F59E0B;" +
-        "-fx-font-size: 26px;" +
-        "-fx-font-weight: bold;" +
-        "-fx-padding: 0 0 4 0;"
-    );
+    warningIcon.getStyleClass().add("live-notification-warning-icon");
 
     iconPane.getChildren().addAll(bgCircle, timerArc, warningIcon);
 
@@ -857,9 +841,9 @@ public class BidRoomController {
     VBox textVBox = new VBox();
     textVBox.setAlignment(Pos.CENTER_LEFT);
     Label lbTitle = new Label(title);
-    lbTitle.setStyle("-fx-text-fill: white; -fx-font-size: 17px; -fx-font-weight: bold;");
+    lbTitle.getStyleClass().add("live-notification-title");
     Label lbMsg = new Label(message);
-    lbMsg.setStyle("-fx-text-fill: #BBBBBB; -fx-font-size: 13px;");
+    lbMsg.getStyleClass().add("live-notification-msg");
     textVBox.getChildren().addAll(lbTitle, lbMsg);
 
     Region spacer = new Region();
@@ -867,7 +851,7 @@ public class BidRoomController {
 
     Label closeBtn = new Label("✕");
     closeBtn.setCursor(javafx.scene.Cursor.HAND);
-    closeBtn.setStyle("-fx-text-fill: #666666; -fx-font-size: 18px;");
+    closeBtn.getStyleClass().add("live-notification-close-btn");
 
     notification.getChildren().addAll(iconPane, textVBox, spacer, closeBtn);
 
@@ -1482,53 +1466,42 @@ private void hideNotification(HBox notification) {
         }
     }
 
+    private void showCustomAlert(String title, String message, String iconText, String confirmText, boolean isError, Runnable onConfirm) {
+        try {
+            Stage ownerStage = (Stage) btnStopAuction.getScene().getWindow();
+            Stage dialogStage = new Stage();
+            dialogStage.initOwner(ownerStage);
+            dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            dialogStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("custom_alert.fxml"));
+            Parent root = loader.load();
+
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            scene.setFill(Color.TRANSPARENT);
+            dialogStage.setScene(scene);
+
+            CustomAlertController controller = loader.getController();
+            controller.setData(title, message, iconText, confirmText, isError, onConfirm);
+
+            dialogStage.showAndWait();
+        } catch (Exception e) {
+            logger.error("Lỗi khi hiển thị Custom Alert FXML: {}", e.getMessage(), e);
+            if (onConfirm != null && !isError) {
+                onConfirm.run();
+            }
+        }
+    }
+
     @FXML
     private void handleStopAuction() {
-        Alert alert = new Alert(Alert.AlertType.NONE, "", ButtonType.YES, ButtonType.NO);
-        // Ẩn các phần thừa mặc định của Alert
-        alert.setHeaderText(null);
-        alert.setGraphic(null);
-
-        DialogPane dialogPane = alert.getDialogPane();
-        // =========================================================
-        // CẮT BỎ NỀN TRẮNG HỆ THỐNG VÀ THANH TIÊU ĐỀ
-        // =========================================================
-        Stage stage = (Stage) dialogPane.getScene().getWindow();
-        stage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-
-        dialogPane.setStyle("-fx-background-color: #1E293B; -fx-border-color: #F59E0B; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12;");
-
-        VBox content = new VBox(15);
-        content.setAlignment(Pos.CENTER);
-        content.setPadding(new Insets(25, 20, 10, 20));
-
-        Label icon = new Label("!");
-        icon.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 60px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI', sans-serif;");
-
-        Label titleLabel = new Label("XÁC NHẬN CHỐT SỔ SỚM");
-        titleLabel.setStyle("-fx-text-fill: #F59E0B; -fx-font-size: 18px; -fx-font-weight: bold;");
-
-        Label msgLabel = new Label("Bạn có chắc chắn muốn chốt sổ sớm phiên đấu giá này không?\nNgười đang dẫn đầu sẽ giành chiến thắng ngay lập tức!");
-        msgLabel.setStyle("-fx-text-fill: #E2E8F0; -fx-font-size: 14px; -fx-wrap-text: true; -fx-text-alignment: center;");
-
-        content.getChildren().addAll(icon, titleLabel, msgLabel);
-        dialogPane.setContent(content);
-
-        Button yesBtn = (Button) dialogPane.lookupButton(ButtonType.YES);
-        if (yesBtn != null) {
-            yesBtn.setText("Chốt ngay");
-            yesBtn.setStyle("-fx-background-color: #EF4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
-        }
-
-        Button noBtn = (Button) dialogPane.lookupButton(ButtonType.NO);
-        if (noBtn != null) {
-            noBtn.setText("Hủy");
-            noBtn.setStyle("-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 6; -fx-cursor: hand;");
-        }
-
-        alert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.YES) {
+        showCustomAlert(
+            "XÁC NHẬN CHỐT SỔ SỚM",
+            "Bạn có chắc chắn muốn chốt sổ sớm phiên đấu giá này không?\nNgười đang dẫn đầu sẽ giành chiến thắng ngay lập tức!",
+            "!",
+            "Chốt ngay",
+            false,
+            () -> {
                 try {
                     JsonObject request = new JsonObject();
                     request.addProperty("action", "STOP_AUCTION_REQUEST");
@@ -1544,7 +1517,7 @@ private void hideNotification(HBox notification) {
                     logger.error("Failed to send STOP_AUCTION_REQUEST", e);
                 }
             }
-        });
+        );
     }
 
     /**
