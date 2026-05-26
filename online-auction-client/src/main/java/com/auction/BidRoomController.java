@@ -736,95 +736,35 @@ public class BidRoomController {
      * Hiển thị thông báo đẹp mắt với vòng tròn đếm ngược.
      */
     private void showNotification(String title, String message) {
-    // KIỂM TRA: Nếu đang có thông báo rồi thì thoát ngay, không làm gì thêm
-    if (isNotificationShowing) {
-        return;
+        // KIỂM TRA: Nếu đang có thông báo rồi thì thoát ngay, không làm gì thêm
+        if (isNotificationShowing) {
+            return;
+        }
+
+        try {
+            isNotificationShowing = true;
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("live_notification.fxml"));
+            HBox notification = loader.load();
+            LiveNotificationController controller = loader.getController();
+
+            controller.setNotificationData(title, message, () -> hideNotification(notification));
+
+            // --- XỬ LÝ HIỂN THỊ ---
+            StackPane.setAlignment(notification, Pos.TOP_CENTER);
+            notification.setTranslateY(-120);
+            rootPane.getChildren().add(notification);
+
+            TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
+            slideDown.setToY(30);
+            slideDown.play();
+
+            controller.startAnimation();
+
+        } catch (Exception e) {
+            logger.error("Error showing live notification: {}", e.getMessage(), e);
+            isNotificationShowing = false;
+        }
     }
-
-    // ĐÁNH DẤU: Đã bắt đầu hiển thị thông báo
-    isNotificationShowing = true;
-
-    HBox notification = new HBox();
-    notification.getStyleClass().add("live-notification");
-    notification.setAlignment(Pos.CENTER_LEFT);
-    notification.setSpacing(20);
-    notification.setMaxWidth(Region.USE_PREF_SIZE);
-    notification.setPrefWidth(520);
-    notification.setPrefHeight(85);
-    notification.setMaxHeight(85);
-
-    // --- PHẦN ICON XOAY (CẢNH BÁO TAM GIÁC) ---
-    StackPane iconPane = new StackPane();
-    iconPane.setPrefSize(50, 50);
-    iconPane.setMaxSize(50, 50);
-
-    Circle bgCircle = new Circle(22);
-    bgCircle.setFill(Color.TRANSPARENT);
-    bgCircle.setStroke(Color.web("#F59E0B", 0.15));
-    bgCircle.setStrokeWidth(3);
-
-    Arc timerArc = new Arc();
-    timerArc.setCenterX(0);
-    timerArc.setCenterY(0);
-    timerArc.setRadiusX(22);
-    timerArc.setRadiusY(22);
-    timerArc.setStartAngle(90);
-    timerArc.setLength(360);
-    timerArc.setType(ArcType.OPEN);
-    timerArc.setFill(Color.TRANSPARENT);
-    timerArc.setStroke(Color.web("#F59E0B"));
-    timerArc.setStrokeWidth(3);
-    timerArc.setStrokeLineCap(StrokeLineCap.ROUND);
-    
-    timerArc.setManaged(false);
-    timerArc.setLayoutX(25); 
-    timerArc.setLayoutY(25);
-
-    Label warningIcon = new Label("\u26A0");
-    warningIcon.getStyleClass().add("live-notification-warning-icon");
-
-    iconPane.getChildren().addAll(bgCircle, timerArc, warningIcon);
-
-    // --- PHẦN TEXT ---
-    VBox textVBox = new VBox();
-    textVBox.setAlignment(Pos.CENTER_LEFT);
-    Label lbTitle = new Label(title);
-    lbTitle.getStyleClass().add("live-notification-title");
-    Label lbMsg = new Label(message);
-    lbMsg.getStyleClass().add("live-notification-msg");
-    textVBox.getChildren().addAll(lbTitle, lbMsg);
-
-    Region spacer = new Region();
-    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-    Label closeBtn = new Label("✕");
-    closeBtn.setCursor(javafx.scene.Cursor.HAND);
-    closeBtn.getStyleClass().add("live-notification-close-btn");
-
-    notification.getChildren().addAll(iconPane, textVBox, spacer, closeBtn);
-
-    // --- XỬ LÝ HIỂN THỊ ---
-    StackPane.setAlignment(notification, Pos.TOP_CENTER);
-    notification.setTranslateY(-120);
-    rootPane.getChildren().add(notification);
-
-    TranslateTransition slideDown = new TranslateTransition(Duration.millis(400), notification);
-    slideDown.setToY(30);
-    slideDown.play();
-
-    Timeline arcAnim = new Timeline(
-        new KeyFrame(Duration.ZERO, new KeyValue(timerArc.lengthProperty(), 360)),
-        new KeyFrame(Duration.seconds(4), new KeyValue(timerArc.lengthProperty(), 0))
-    );
-    
-    arcAnim.setOnFinished(e -> hideNotification(notification));
-    arcAnim.play();
-
-    closeBtn.setOnMouseClicked(e -> {
-        arcAnim.stop();
-        hideNotification(notification);
-    });
-}
 
 /**
  * Hiệu ứng trượt lên và xóa thông báo khỏi giao diện.

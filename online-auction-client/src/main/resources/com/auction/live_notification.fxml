@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Pos?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.shape.Arc?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.StrokeLineCap?>
+
+<HBox fx:id="notificationRoot" alignment="CENTER_LEFT" maxHeight="85.0" maxWidth="-Infinity" prefHeight="85.0" prefWidth="520.0" spacing="20.0" styleClass="live-notification" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.LiveNotificationController">
+   <children>
+      <StackPane maxHeight="50.0" maxWidth="50.0" prefHeight="50.0" prefWidth="50.0">
+         <children>
+            <Circle fill="TRANSPARENT" radius="22.0" stroke="#f59e0b26" strokeWidth="3.0" />
+            <Arc fx:id="timerArc" fill="TRANSPARENT" layoutX="25.0" layoutY="25.0" length="360.0" managed="false" radiusX="22.0" radiusY="22.0" startAngle="90.0" stroke="#f59e0b" strokeWidth="3.0" type="OPEN">
+               <strokeLineCap>
+                  <StrokeLineCap fx:constant="ROUND" />
+               </strokeLineCap>
+            </Arc>
+            <Label styleClass="live-notification-warning-icon" text="⚠" />
+         </children>
+      </StackPane>
+      <VBox alignment="CENTER_LEFT">
+         <children>
+            <Label fx:id="lbTitle" styleClass="live-notification-title" text="Title" />
+            <Label fx:id="lbMsg" styleClass="live-notification-msg" text="Message" />
+         </children>
+      </VBox>
+      <Region HBox.hgrow="ALWAYS" />
+      <Label fx:id="closeBtn" onMouseClicked="#handleClose" styleClass="live-notification-close-btn" text="✕">
+         <cursor>
+            <Cursor fx:constant="HAND" />
+         </cursor>
+      </Label>
+   </children>
+</HBox>
