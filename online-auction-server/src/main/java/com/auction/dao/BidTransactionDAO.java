@@ -21,9 +21,12 @@ public class BidTransactionDAO {
      * @return true nếu lưu thành công, ngược lại là false.
      */
     public boolean insertBidTransaction(int itemId, int bidderId, double bidAmount) {
-        boolean isSuccess = false;
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
 
-        // 1. Chuẩn bị câu lệnh SQL kết hợp hàm datetime của SQLite
+            // 1. Chuẩn bị câu lệnh SQL kết hợp hàm datetime của SQLite
         String sql = "INSERT INTO bids (item_id, bidder_id, bid_amount, bid_time) VALUES (?, ?, ?, datetime('now', 'localtime'))";
 
         try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
@@ -42,6 +45,9 @@ public class BidTransactionDAO {
             logger.error("Failed to save bid transaction: {}", e.getMessage(), e);
         }
         return isSuccess;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
