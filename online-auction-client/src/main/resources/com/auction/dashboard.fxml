@@ -120,4 +120,14 @@
 
     </BorderPane>
 
+    <!-- Lớp phủ tối mờ nền chuẩn MVC -->
+    <Region fx:id="darkOverlay" visible="false" styleClass="dialog-overlay" />
+
+    <!-- Menu thả xuống của Avatar tĩnh chuẩn FXML -->
+    <fx:include fx:id="profileDropdown" source="profile_dropdown.fxml" StackPane.alignment="TOP_RIGHT" visible="false">
+        <StackPane.margin>
+            <Insets top="96" right="8" bottom="0" left="0"/>
+        </StackPane.margin>
+    </fx:include>
+
 </StackPane>

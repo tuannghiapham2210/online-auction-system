@@ -1779,4 +1779,19 @@
     -fx-font-size: 14px;
     -fx-font-weight: bold;
 }
+
+.item-card-error {
+    -fx-text-fill: #EF4444;
+    -fx-font-weight: bold;
+    -fx-background-color: #1E293B;
+    -fx-padding: 10;
+    -fx-background-radius: 8;
+}
+
+.timer-expired-label {
+    -fx-text-fill: gray;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
 
