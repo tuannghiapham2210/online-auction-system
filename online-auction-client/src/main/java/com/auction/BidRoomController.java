@@ -104,7 +104,7 @@ public class BidRoomController {
     private Timeline countdownTimeline;
     private Timeline progressTimeline;
     private FadeTransition pulseAnimation;
-    private HBox toastNotification;
+    private ToastNotificationController toastNotificationController;
     @FXML private VBox autoBidPanel;
     @FXML private TextField autoBidIncField;
     @FXML private TextField autoBidMaxField;
@@ -211,29 +211,21 @@ public class BidRoomController {
         }
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
-        toastNotification = new HBox();
-        toastNotification.getStyleClass().add("toast-notification");
-        toastNotification.setOpacity(0);
-        toastNotification.setManaged(false); // Đảm bảo không chiếm không gian layout ban đầu
-        toastNotification.setVisible(false); // Ẩn để không chặn sự kiện click chuột
-        toastNotification.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("toast_notification.fxml"));
+            HBox toastNode = loader.load();
+            toastNotificationController = loader.getController();
 
-        // Icon Checkmark (Thành công)
-        SVGPath toastIcon = new SVGPath();
-        toastIcon.setContent("M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z");
-        toastIcon.setFill(Color.WHITE);
+            StackPane.setAlignment(toastNode, Pos.TOP_CENTER);
+            StackPane.setMargin(toastNode, new Insets(20, 0, 0, 0));
+            
+            Platform.runLater(() -> {
+                if (rootPane != null) rootPane.getChildren().add(toastNode);
+            });
+        } catch (Exception e) {
+            logger.error("Failed to load toast notification FXML", e);
+        }
 
-        Label toastLabel = new Label("Phiên đấu giá chính thức mở cửa!");
-        toastLabel.getStyleClass().add("toast-label");
-
-        toastNotification.getChildren().addAll(toastIcon, toastLabel);
-
-        StackPane.setAlignment(toastNotification, Pos.TOP_CENTER);
-        StackPane.setMargin(toastNotification, new Insets(20, 0, 0, 0));
-        
-        Platform.runLater(() -> {
-            if (rootPane != null) rootPane.getChildren().add(toastNotification);
-        });
 
         // 2. Kết nối danh sách lịch sử với ListView
         historyLogs = FXCollections.observableArrayList();
@@ -834,25 +826,8 @@ private void hideNotification(HBox notification) {
      * Hiển thị Toast thông báo thành công (Snackbar Style).
      */
     private void showSuccessToast() {
-        if (toastNotification != null) {
-            // Tạm thời bật managed để StackPane tính toán đúng vị trí TOP_RIGHT
-            toastNotification.setManaged(true);
-            toastNotification.setVisible(true);
-            
-            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), toastNotification);
-            fadeIn.setToValue(1.0);
-
-            PauseTransition delay = new PauseTransition(Duration.seconds(3));
-
-            FadeTransition fadeOut = new FadeTransition(Duration.millis(300), toastNotification);
-            fadeOut.setToValue(0.0);
-            fadeOut.setOnFinished(e -> {
-                toastNotification.setManaged(false);
-                toastNotification.setVisible(false);
-            }); // Ẩn hoàn toàn khỏi layout sau khi mờ đi
-
-            SequentialTransition toastSequence = new SequentialTransition(fadeIn, delay, fadeOut);
-            toastSequence.play();
+        if (toastNotificationController != null) {
+            toastNotificationController.showToast("Phiên đấu giá chính thức mở cửa!");
         }
     }
 
