@@ -5,12 +5,12 @@
 <?import javafx.scene.control.Tooltip?>
 
 <!-- Tách biệt hoàn toàn giao diện điểm biểu đồ (Chart Node) ra khỏi Java Code -->
-<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" styleClass="chart-node-pane">
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.ChartNodeController" styleClass="chart-node-pane">
     <!-- Khai báo Tooltip ngầm (tuân thủ MVC, không cần dùng Label đệm) -->
     <fx:define>
         <Tooltip fx:id="dotTooltip" styleClass="chart-tooltip"/>
     </fx:define>
     <!-- Trả lại thẻ Circle nguyên thủy, fix cứng thuộc tính vector để đảm bảo sắc nét 100% -->
-    <Circle id="dotNode" radius="6" fill="#f9a825" stroke="WHITE" strokeWidth="2" styleClass="chart-node-dot" />
+    <Circle fx:id="dotNode" radius="6" fill="#f9a825" stroke="WHITE" strokeWidth="2" styleClass="chart-node-dot" />
     <Label fx:id="priceLabel" id="priceLabel" styleClass="chart-node-label" />
 </StackPane>

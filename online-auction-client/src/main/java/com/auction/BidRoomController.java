@@ -149,26 +149,6 @@ public class BidRoomController {
      */
     @FXML
     public void initialize() {
-        // 2. Cố định chiều cao tối thiểu cho Chart và Socket Log (Middle Row)
-        if (priceChart != null && priceChart.getParent() instanceof Region) {
-            ((Region) priceChart.getParent()).setMinHeight(350);
-        }
-        if (bidHistoryList != null && bidHistoryList.getParent() instanceof Region) {
-            ((Region) bidHistoryList.getParent()).setMinHeight(350);
-        }
-
-        // 3. Tăng chiều cao của ảnh sản phẩm và bỏ giới hạn chiều cao của Card cha
-        if (heroImageContainer != null) {
-            heroImageContainer.setMinHeight(320);
-            heroImageContainer.setPrefHeight(320);
-            if (heroImageContainer.getParent() instanceof Region) {
-                Region parentCard = (Region) heroImageContainer.getParent();
-                parentCard.setMinHeight(Region.USE_COMPUTED_SIZE);
-                parentCard.setPrefHeight(Region.USE_COMPUTED_SIZE);
-                parentCard.setMaxHeight(Double.MAX_VALUE);
-            }
-        }
-
         // 1. Cấu hình trục dữ liệu cho biểu đồ biến động giá
         priceSeries = new XYChart.Series<>();
         priceSeries.setName("Giá");
@@ -652,11 +632,8 @@ public class BidRoomController {
 
             // 4. Custom indicator pulse overlay with Tooltip on the newest node
             Platform.runLater(() -> {
-                if (customNode != null) {
-                    Circle dot = (Circle) customNode.lookup("#dotNode");
-                    if (dot != null) {
-                        applyPulseAnimation(dot, newPrice);
-                    }
+                if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                    ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                 }
             });
         });
@@ -1396,28 +1373,7 @@ private void hideNotification(HBox notification) {
         });
     }
 
-    /**
-     * Áp dụng hiệu ứng nhấp nháy (Pulse/Radar) cho điểm dữ liệu mới nhất trên biểu đồ.
-     */
-    private void applyPulseAnimation(Circle dot, double price) {
-        Tooltip tooltip = new Tooltip("Live: $" + NumberUtil.format(price));
-        tooltip.setStyle("-fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px;");
-        Tooltip.install(dot, tooltip);
 
-        ScaleTransition st = new ScaleTransition(Duration.millis(800), dot);
-        st.setByX(0.5);
-        st.setByY(0.5);
-        st.setAutoReverse(true);
-        st.setCycleCount(Timeline.INDEFINITE);
-
-        FadeTransition ft = new FadeTransition(Duration.millis(800), dot);
-        ft.setFromValue(1.0);
-        ft.setToValue(0.5);
-        ft.setAutoReverse(true);
-        ft.setCycleCount(Timeline.INDEFINITE);
-
-        new ParallelTransition(st, ft).play();
-    }
 
     /**
      * Tái tạo lại giao diện (Biểu đồ, Log) từ lịch sử đấu giá nhận được từ Server.
@@ -1441,11 +1397,8 @@ private void hideNotification(HBox notification) {
                 priceSeries.getData().add(initialData);
                 updateYAxisBounds();
                 
-                if (customNode != null) {
-                    Circle dot = (Circle) customNode.lookup("#dotNode");
-                    if (dot != null) {
-                        applyPulseAnimation(dot, cp);
-                    }
+                if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                    ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                 }
                 return;
             }
@@ -1502,11 +1455,8 @@ private void hideNotification(HBox notification) {
 
                 // Thêm hiệu ứng nhấp nháy vào điểm cuối cùng
                 if (i == historySize - 1) {
-                    if (customNode != null) {
-                        Circle dot = (Circle) customNode.lookup("#dotNode");
-                        if (dot != null) {
-                            applyPulseAnimation(dot, event.price);
-                        }
+                    if (customNode != null && customNode.getUserData() instanceof ChartNodeController) {
+                        ((ChartNodeController) customNode.getUserData()).setPulseActive(true);
                     }
                 }
             }
@@ -1528,26 +1478,15 @@ private void hideNotification(HBox notification) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("chart_node.fxml"));
             StackPane customNode = loader.load();
-            Label priceLbl = (Label) customNode.lookup("#priceLabel");
-            if (priceLbl != null) {
-                priceLbl.setText("$" + NumberUtil.format(price));
+            ChartNodeController controller = loader.getController();
+            if (controller != null) {
+                controller.setPrice(price);
+                customNode.setUserData(controller);
             }
             return customNode;
         } catch (Exception e) {
             logger.error("Failed to load chart_node.fxml", e);
-            // Fallback to a plain StackPane in case of errors
-            StackPane fallback = new StackPane();
-            fallback.setStyle("-fx-background-color: transparent;");
-            Circle dot = new Circle(6);
-            dot.setId("dotNode");
-            dot.setFill(Color.web("#f9a825"));
-            dot.setStroke(Color.WHITE);
-            dot.setStrokeWidth(2);
-            Label priceLbl = new Label("$" + NumberUtil.format(price));
-            priceLbl.setId("priceLabel");
-            priceLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11px; -fx-translate-y: -25px;");
-            fallback.getChildren().addAll(dot, priceLbl);
-            return fallback;
+            return new StackPane();
         }
     }
 
