@@ -1742,4 +1742,41 @@
 .live-notification-close-btn {
     -fx-text-fill: #666666;
     -fx-font-size: 18px;
-}
+}
+
+/* ================= BID HISTORY CELL ================= */
+.bid-cell-avatar-circle {
+    -fx-fill: #4A5568;
+}
+
+.bid-cell-avatar-text {
+    -fx-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+}
+
+.bid-cell-username {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.bid-cell-time {
+    -fx-text-fill: #A0AABF;
+    -fx-font-size: 11px;
+}
+
+.bid-cell-badge {
+    -fx-background-color: #FFA500;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 10px;
+    -fx-padding: 3px 6px;
+    -fx-background-radius: 4px;
+}
+
+.price-label {
+    -fx-text-fill: #A0AABF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+

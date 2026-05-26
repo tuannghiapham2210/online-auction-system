@@ -239,59 +239,7 @@ public class BidRoomController {
         historyLogs = FXCollections.observableArrayList();
         bidHistoryList.setItems(historyLogs);
 
-        bidHistoryList.setCellFactory(lv -> new ListCell<BidEvent>() {
-            @Override
-            protected void updateItem(BidEvent item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setGraphic(null);
-                    getStyleClass().remove("active-bid-row");
-                } else {
-                    HBox root = new HBox(15);
-                    root.setAlignment(Pos.CENTER_LEFT);
-
-                    StackPane avatar = new StackPane();
-                    Circle circle = new Circle(18, Color.web("#4A5568"));
-                    Text initials = new Text(item.username != null && !item.username.isEmpty() ? item.username.substring(0, 1).toUpperCase() : "U");
-                    initials.setFill(Color.WHITE);
-                    initials.setStyle("-fx-font-weight: bold; -fx-font-size: 11px;");
-                    avatar.getChildren().addAll(circle, initials);
-
-                    VBox details = new VBox(3);
-                    Label username = new Label(item.username != null ? item.username : "Khách");
-                    username.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
-                    Label time = new Label(item.timestamp);
-                    time.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 11px;");
-                    details.getChildren().addAll(username, time);
-
-                    Label badge = new Label("MỚI");
-                    badge.setStyle("-fx-background-color: #FFA500; -fx-text-fill: black; -fx-font-weight: bold; -fx-font-size: 10px; -fx-padding: 3 6; -fx-background-radius: 4;");
-                    badge.setVisible(getIndex() == 0);
-                    badge.setManaged(getIndex() == 0);
-
-                    Region spacer = new Region();
-                    HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                    Label priceLabel = new Label("$" + NumberUtil.format(item.price));
-                    priceLabel.getStyleClass().add("price-label");
-                    priceLabel.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 14px; -fx-font-weight: bold;");
-
-                    root.getChildren().addAll(avatar, details, badge, spacer, priceLabel);
-                    setGraphic(root);
-
-                    if (getIndex() == 0) {
-                        if (!getStyleClass().contains("active-bid-row")) {
-                            getStyleClass().add("active-bid-row");
-                        }
-                        priceLabel.setStyle("-fx-text-fill: #FFD700; -fx-font-size: 14px; -fx-font-weight: bold;");
-                    } else {
-                        getStyleClass().remove("active-bid-row");
-                        priceLabel.setStyle("-fx-text-fill: #A0AABF; -fx-font-size: 14px; -fx-font-weight: bold;");
-                    }
-                }
-            }
-        });
+        bidHistoryList.setCellFactory(lv -> new BidHistoryCell());
         
         initAutoBidPanel();
     }
