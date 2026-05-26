@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Text?>
+
+<HBox fx:id="cellRoot" alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <StackPane>
+         <children>
+            <Circle radius="18.0" styleClass="bid-cell-avatar-circle" />
+            <Text fx:id="txtInitials" styleClass="bid-cell-avatar-text" />
+         </children>
+      </StackPane>
+      <VBox alignment="CENTER_LEFT" spacing="3.0">
+         <children>
+            <Label fx:id="lblUsername" styleClass="bid-cell-username" />
+            <Label fx:id="lblTime" styleClass="bid-cell-time" />
+         </children>
+      </VBox>
+      <Label fx:id="lblBadge" styleClass="bid-cell-badge" text="MỚI" />
+      <Region HBox.hgrow="ALWAYS" />
+      <Label fx:id="lblPrice" styleClass="price-label" />
+   </children>
+</HBox>

@@ -898,7 +898,30 @@
     -fx-max-height: 40;
     -fx-alignment: center;
     -fx-background-radius: 20;
+    -fx-cursor: hand;
 }
+.profile-avatar.avatar-admin:hover {
+    -fx-border-color: #EF4444;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.profile-avatar.avatar-bidder:hover {
+    -fx-border-color: #3B82F6;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.profile-avatar.avatar-seller:hover {
+    -fx-border-color: #F59E0B;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.dialog-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.6);
+}
+
 
 .btn-logout-square {
     -fx-background-color: rgba(255, 255, 255, 0.05);
@@ -1671,3 +1694,89 @@
     -fx-font-size: 11px;
     -fx-translate-y: -25px;
 }
+
+/* ================= TOAST & LIVE NOTIFICATIONS ================= */
+.toast-notification {
+    -fx-background-color: #00BFA5;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 20px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);
+    -fx-spacing: 10px;
+    -fx-alignment: center-left;
+}
+
+.toast-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.live-notification {
+    -fx-background-color: rgba(15, 15, 15, 0.98);
+    -fx-background-radius: 18px;
+    -fx-border-color: #F59E0B;
+    -fx-border-radius: 18px;
+    -fx-border-width: 1.5px;
+    -fx-padding: 0px 25px 0px 25px;
+    -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 15, 0, 0, 0);
+}
+
+.live-notification-warning-icon {
+    -fx-text-fill: #F59E0B;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-padding: 0px 0px 4px 0px;
+}
+
+.live-notification-title {
+    -fx-text-fill: white;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+.live-notification-msg {
+    -fx-text-fill: #BBBBBB;
+    -fx-font-size: 13px;
+}
+
+.live-notification-close-btn {
+    -fx-text-fill: #666666;
+    -fx-font-size: 18px;
+}
+
+/* ================= BID HISTORY CELL ================= */
+.bid-cell-avatar-circle {
+    -fx-fill: #4A5568;
+}
+
+.bid-cell-avatar-text {
+    -fx-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+}
+
+.bid-cell-username {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.bid-cell-time {
+    -fx-text-fill: #A0AABF;
+    -fx-font-size: 11px;
+}
+
+.bid-cell-badge {
+    -fx-background-color: #FFA500;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 10px;
+    -fx-padding: 3px 6px;
+    -fx-background-radius: 4px;
+}
+
+.price-label {
+    -fx-text-fill: #A0AABF;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
