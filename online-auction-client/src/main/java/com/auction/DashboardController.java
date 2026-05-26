@@ -130,27 +130,17 @@ public class DashboardController {
             if (Session.role.equalsIgnoreCase("admin")) {
                 lblRole.getStyleClass().remove("profile-role-badge");
                 lblRole.getStyleClass().add("profile-role-badge-admin");
+                lblAvatar.getStyleClass().add("avatar-admin");
             } else if (Session.role.equalsIgnoreCase("bidder")) {
                 lblRole.getStyleClass().remove("profile-role-badge");
                 lblRole.getStyleClass().add("profile-role-badge-bidder");
+                lblAvatar.getStyleClass().add("avatar-bidder");
+            } else if (Session.role.equalsIgnoreCase("seller")) {
+                lblAvatar.getStyleClass().add("avatar-seller");
             }
         }
 
-        lblAvatar.setStyle(lblAvatar.getStyle() + "-fx-cursor: hand;");
         lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
-
-        // show border on hover matching user's role color
-        final String avatarBaseStyle = lblAvatar.getStyle();
-        lblAvatar.setOnMouseEntered(e -> {
-            String borderColor = "#F59E0B"; // default seller/gold
-            if (Session.role != null) {
-                if (Session.role.equalsIgnoreCase("admin")) borderColor = "#EF4444"; // red
-                else if (Session.role.equalsIgnoreCase("bidder")) borderColor = "#3B82F6"; // blue
-                else if (Session.role.equalsIgnoreCase("seller")) borderColor = "#F59E0B"; // amber
-            }
-            lblAvatar.setStyle(avatarBaseStyle + "-fx-border-color: " + borderColor + "; -fx-border-width: 2; -fx-border-radius: 22; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);");
-        });
-        lblAvatar.setOnMouseExited(e -> lblAvatar.setStyle(avatarBaseStyle));
 
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
@@ -211,53 +201,44 @@ public class DashboardController {
             return;
         }
 
-        profileDropdown = new VBox(10);
-        profileDropdown.getStyleClass().add("profile-dropdown");
-        profileDropdown.setPrefWidth(190);
-        profileDropdown.setMaxWidth(190);
-        profileDropdown.setMinWidth(190);
-        profileDropdown.setMaxHeight(Region.USE_PREF_SIZE);
-        profileDropdown.setMinHeight(Region.USE_PREF_SIZE);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("profile_dropdown.fxml"));
+            profileDropdown = loader.load();
+            ProfileDropdownController controller = loader.getController();
+            controller.setCallbacks(
+                () -> {
+                    closeProfileDropdown(rootPane);
+                    openAccountInfoPopup();
+                },
+                () -> {
+                    closeProfileDropdown(rootPane);
+                    openChangePasswordPopup();
+                }
+            );
 
-        Button btnProfileInfo = new Button("Thông tin cá nhân");
-        btnProfileInfo.setMaxWidth(Double.MAX_VALUE);
-        btnProfileInfo.setFocusTraversable(false);
-        btnProfileInfo.getStyleClass().add("dropdown-btn");
-        btnProfileInfo.setOnAction(e -> {
-            closeProfileDropdown(rootPane);
-            openAccountInfoPopup();
-        });
+            StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
+            // move the dropdown down so it sits just below the avatar/role card
+            StackPane.setMargin(profileDropdown, new Insets(96, 8, 0, 0));
 
-        Button btnChangePassword = new Button("Đổi mật khẩu");
-        btnChangePassword.setMaxWidth(Double.MAX_VALUE);
-        btnChangePassword.setFocusTraversable(false);
-        btnChangePassword.getStyleClass().add("dropdown-btn");
-        btnChangePassword.setOnAction(e -> {
-            closeProfileDropdown(rootPane);
-            openChangePasswordPopup();
-        });
+            // ensure no upward translation (place flush with margin)
+            profileDropdown.setTranslateY(0);
+            rootPane.getChildren().add(profileDropdown);
 
-        profileDropdown.getChildren().addAll(btnProfileInfo, btnChangePassword);
-        StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
-        // move the dropdown down so it sits just below the avatar/role card
-        StackPane.setMargin(profileDropdown, new Insets(96, 8, 0, 0));
+            TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
+            slide.setFromY(-8);
+            slide.setToY(0);
+            slide.play();
 
-        // ensure no upward translation (place flush with margin)
-        profileDropdown.setTranslateY(0);
-        rootPane.getChildren().add(profileDropdown);
-
-        TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
-        slide.setFromY(-8);
-        slide.setToY(0);
-        slide.play();
-
-        profileDropdownCloser = event -> {
-            if (isClickInsideNode(event, profileDropdown) || isClickInsideNode(event, lblAvatar)) {
-                return;
-            }
-            closeProfileDropdown(rootPane);
-        };
-        rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+            profileDropdownCloser = event -> {
+                if (isClickInsideNode(event, profileDropdown) || isClickInsideNode(event, lblAvatar)) {
+                    return;
+                }
+                closeProfileDropdown(rootPane);
+            };
+            rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
+        } catch (IOException e) {
+            logger.error("Lỗi khi tải profile dropdown FXML: {}", e.getMessage(), e);
+        }
     }
 
     private void closeProfileDropdown(StackPane rootPane) {
@@ -284,7 +265,7 @@ public class DashboardController {
 
             Region darkOverlay = new Region();
             darkOverlay.setId("dark-overlay-account");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            darkOverlay.getStyleClass().add("dialog-overlay");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
             darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
@@ -322,7 +303,7 @@ public class DashboardController {
 
             Region darkOverlay = new Region();
             darkOverlay.setId("dark-overlay-password");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+            darkOverlay.getStyleClass().add("dialog-overlay");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
             darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
@@ -699,7 +680,7 @@ public class DashboardController {
 
             Region darkOverlay = new Region();
             darkOverlay.setId("dark-overlay");
-            darkOverlay.setStyle("-fx-background-color: rgba(0,0,0,0.6);");
+            darkOverlay.getStyleClass().add("dialog-overlay");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
 
@@ -733,7 +714,7 @@ public class DashboardController {
 
             Region darkOverlay = new Region();
             darkOverlay.setId("dark-overlay");
-            darkOverlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+            darkOverlay.getStyleClass().add("dialog-overlay");
             darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
 

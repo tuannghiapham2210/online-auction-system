@@ -898,7 +898,30 @@
     -fx-max-height: 40;
     -fx-alignment: center;
     -fx-background-radius: 20;
+    -fx-cursor: hand;
 }
+.profile-avatar.avatar-admin:hover {
+    -fx-border-color: #EF4444;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.profile-avatar.avatar-bidder:hover {
+    -fx-border-color: #3B82F6;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.profile-avatar.avatar-seller:hover {
+    -fx-border-color: #F59E0B;
+    -fx-border-width: 2px;
+    -fx-border-radius: 22px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+}
+.dialog-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.6);
+}
+
 
 .btn-logout-square {
     -fx-background-color: rgba(255, 255, 255, 0.05);
