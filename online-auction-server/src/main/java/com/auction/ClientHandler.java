@@ -5,6 +5,7 @@ import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
 import com.auction.service.PaymentService;
+import com.auction.service.UserService;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -166,7 +167,6 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-
     /**
      * Xử lý request đăng nhập.
      * Xác thực thông tin với Database và trả về role cùng userId nếu thành công.
@@ -175,32 +175,8 @@ public class ClientHandler implements Runnable {
     private void handleLogin(JsonObject request) {
         String user = request.get("username").getAsString();
         String pass = request.get("password").getAsString();
-
-        UserDAO dao = new UserDAO();
-        boolean isOk = dao.login(user, pass);
-
-        JsonObject response = new JsonObject();
-
-        if (isOk) {
-            String role = dao.getUserRole(user, pass);
-            int userId = dao.getUserId(user, pass);
-            int balance = dao.getBalanceByUsername(user);
-            String email = dao.getUserEmail(user, pass);
-            String phone = dao.getUserPhone(user, pass);
-
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Đăng nhập thành công!");
-            response.addProperty("role", role);
-            response.addProperty("userId", userId);
-            response.addProperty("username", user);
-            response.addProperty("balance", balance);
-            response.addProperty("email", email != null ? email : "");
-            response.addProperty("phone", phone != null ? phone : "");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processLogin(user, pass);
         writer.println(response.toString());
     }
 
@@ -209,37 +185,8 @@ public class ClientHandler implements Runnable {
         String newUsername = request.has("username") ? request.get("username").getAsString().trim() : "";
         String email = request.has("email") ? request.get("email").getAsString().trim() : "";
         String phone = request.has("phone") ? request.get("phone").getAsString().trim() : "";
-
-        JsonObject response = new JsonObject();
-
-        if (newUsername.isEmpty()) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Tên người dùng không được để trống.");
-            writer.println(response.toString());
-            return;
-        }
-
-        UserDAO userDAO = new UserDAO();
-        if (userDAO.isUsernameTakenByOther(userId, newUsername)) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.");
-            writer.println(response.toString());
-            return;
-        }
-
-        boolean success = userDAO.updateUserProfile(userId, newUsername, email, phone);
-
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Cập nhật thông tin thành công.");
-            response.addProperty("username", newUsername);
-            response.addProperty("email", email != null ? email : "");
-            response.addProperty("phone", phone != null ? phone : "");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Không thể cập nhật hồ sơ. Vui lòng thử lại sau.");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processUpdateProfile(userId, newUsername, email, phone);
         writer.println(response.toString());
     }
 
@@ -247,27 +194,8 @@ public class ClientHandler implements Runnable {
         int userId = request.get("userId").getAsInt();
         String oldPassword = request.has("oldPassword") ? request.get("oldPassword").getAsString() : "";
         String newPassword = request.has("newPassword") ? request.get("newPassword").getAsString() : "";
-
-        JsonObject response = new JsonObject();
-
-        if (oldPassword.isEmpty() || newPassword.isEmpty()) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
-            writer.println(response.toString());
-            return;
-        }
-
-        UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.changePassword(userId, oldPassword, newPassword);
-
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Đổi mật khẩu thành công.");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processChangePassword(userId, oldPassword, newPassword);
         writer.println(response.toString());
     }
 
@@ -275,18 +203,8 @@ public class ClientHandler implements Runnable {
         String username = request.get("username").getAsString();
         String contactInfo = request.has("contactInfo") ? request.get("contactInfo").getAsString() : "";
         String newPassword = request.get("newPassword").getAsString();
-
-        UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.resetPassword(username, contactInfo, newPassword);
-
-        JsonObject response = new JsonObject();
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Khôi phục mật khẩu thành công!");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc thông tin xác thực!");
-        }
+        UserService userService = new UserService();
+        JsonObject response = userService.processResetPassword(username, contactInfo, newPassword);
         writer.println(response.toString());
     }
 
@@ -295,35 +213,14 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "username", "password", và "role".
      */
     private void handleRegister(JsonObject request) {
-        try {
-            String username = request.get("username").getAsString();
-            String password = request.get("password").getAsString();
-            String role = request.get("role").getAsString();
-            String email = request.has("email") ? request.get("email").getAsString() : "";
-            String phone = request.has("phone") ? request.get("phone").getAsString() : "";
-
-            UserDAO userDAO = new UserDAO();
-            boolean isSuccess = userDAO.registerUser(username, password, role, email, phone);
-
-            JsonObject response = new JsonObject();
-
-            if (isSuccess) {
-                response.addProperty("status", "SUCCESS");
-                response.addProperty("message", "Đăng ký thành công!");
-            } else {
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Tài khoản đã tồn tại hoặc có lỗi xảy ra!");
-            }
-
-            writer.println(response.toString());
-
-        } catch (Exception e) {
-            logger.error("REGISTER failed: {}", e.getMessage(), e);
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi Server!");
-            writer.println(response.toString());
-        }
+        String username = request.get("username").getAsString();
+        String password = request.get("password").getAsString();
+        String role = request.get("role").getAsString();
+        String email = request.has("email") ? request.get("email").getAsString() : "";
+        String phone = request.has("phone") ? request.get("phone").getAsString() : "";
+        UserService userService = new UserService();
+        JsonObject response = userService.processRegister(username, password, role, email, phone);
+        writer.println(response.toString());
     }
 
     /**
