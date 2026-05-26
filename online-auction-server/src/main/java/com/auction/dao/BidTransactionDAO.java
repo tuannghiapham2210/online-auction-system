@@ -57,8 +57,7 @@ public class BidTransactionDAO {
                      "FROM bids b JOIN users u ON b.bidder_id = u.id " +
                      "WHERE b.item_id = ? ORDER BY b.bid_time ASC";
 
-        try (java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
-             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (java.sql.PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             pstmt.setInt(1, itemId);
 
@@ -96,8 +95,7 @@ public class BidTransactionDAO {
                 "FROM bids b JOIN users u ON b.bidder_id = u.id " +
                 "WHERE b.item_id = ? ORDER BY b.bid_amount DESC LIMIT 1";
 
-        try (java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
-             java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (java.sql.PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
 
             // Gán tham số ID sản phẩm vào câu lệnh truy vấn
             pstmt.setInt(1, itemId);
