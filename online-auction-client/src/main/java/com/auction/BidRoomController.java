@@ -126,6 +126,7 @@ public class BidRoomController {
     private boolean auctionEndedShown = false;
     private String lastTickTimeStamp = "";
     private int tickSpaceCounter = 0;
+    private ScrollPane mainScrollPane;
 
     public static class BidEvent {
         public String timestamp;
@@ -151,13 +152,16 @@ public class BidRoomController {
         // 1. Bọc nội dung chính vào ScrollPane để chống bị ép nén UI
         if (rootPane != null && !rootPane.getChildren().isEmpty()) {
             Node mainContent = rootPane.getChildren().get(0);
-            if (!(mainContent instanceof ScrollPane)) {
+            if (mainContent instanceof ScrollPane) {
+                mainScrollPane = (ScrollPane) mainContent;
+            } else {
                 rootPane.getChildren().remove(mainContent);
                 ScrollPane scrollPane = new ScrollPane(mainContent);
                 scrollPane.setFitToWidth(true);
                 scrollPane.setFitToHeight(false); // Cho phép nội dung giãn dài xuống dưới
                 scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;");
                 rootPane.getChildren().add(0, scrollPane);
+                mainScrollPane = scrollPane;
             }
         }
 
@@ -913,6 +917,9 @@ private void hideNotification(HBox notification) {
             Node mainContent = rootPane.getChildren().get(0);
             if (rootPane.lookup("#dark-overlay") != null) return;
 
+            // Lưu lại vị trí cuộn hiện tại của ScrollPane để giữ nguyên màn hình khi quay lại
+            final double currentVvalue = (mainScrollPane != null) ? mainScrollPane.getVvalue() : 0.0;
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("deposit.fxml"));
             Parent depositGroup = loader.load();
             DepositController depositController = loader.getController();
@@ -929,6 +936,20 @@ private void hideNotification(HBox notification) {
                 mainContent.setEffect(null);
                 rootPane.getChildren().removeAll(darkOverlay, depositGroup);
                 if (lblBalance != null) lblBalance.setText("$" + NumberUtil.format(Session.balance));
+
+                // Khôi phục lại vị trí cuộn cũ một cách chính xác sau khi đóng popup nạp tiền
+                if (mainScrollPane != null) {
+                    mainScrollPane.requestFocus();
+                    Platform.runLater(() -> mainScrollPane.setVvalue(currentVvalue));
+                    
+                    // Khôi phục trễ 100ms để chắc chắn ghi đè mọi hành động cuộn tự động của JavaFX layout pulse/focus shifts
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(100);
+                            Platform.runLater(() -> mainScrollPane.setVvalue(currentVvalue));
+                        } catch (Exception ignored) {}
+                    }).start();
+                }
             });
 
             rootPane.getChildren().addAll(darkOverlay, depositGroup);

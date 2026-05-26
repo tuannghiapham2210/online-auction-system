@@ -36,6 +36,7 @@ public class AddItemController {
     @FXML private Label messageLabel;
 
     private int currentSellerId = Session.userId;
+    private int createdItemId = -1;
 
     /**
      * Hàm initialize() được JavaFX tự động gọi ngay sau khi file FXML được load lên.
@@ -180,9 +181,11 @@ public class AddItemController {
             if (responseStr != null) {
                 JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
 
-                // 3. Gói lệnh cập nhật UI vào Platform.runLater()
                 Platform.runLater(() -> {
                     if (response.get("status").getAsString().equals("SUCCESS")) {
+                        if (response.has("itemId")) {
+                            createdItemId = response.get("itemId").getAsInt();
+                        }
                         messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-success");
                         messageLabel.setText("Đăng bán thành công!");
 
@@ -217,6 +220,9 @@ public class AddItemController {
      */
     @FXML
     public void closePopup() {
+        if (createdItemId != -1) {
+            publishItemToServer(createdItemId);
+        }
         if (onCloseCallback != null) {
             onCloseCallback.run();
             return;
@@ -228,6 +234,20 @@ public class AddItemController {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void publishItemToServer(int itemId) {
+        new Thread(() -> {
+            try (Socket socket = new Socket("localhost", 8080);
+                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+                JsonObject req = new JsonObject();
+                req.addProperty("action", "PUBLISH_ITEM");
+                req.addProperty("itemId", itemId);
+                out.println(req.toString());
+            } catch (Exception e) {
+                System.err.println("Failed to publish item: " + e.getMessage());
+            }
+        }).start();
     }
 
     /**
