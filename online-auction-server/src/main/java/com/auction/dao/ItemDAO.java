@@ -224,6 +224,43 @@ public class ItemDAO {
     }
 
     /**
+     * Cập nhật giá hiện tại cho một sản phẩm thông qua cơ chế Auto-Bid (Proxy Bidding).
+     * Nới lỏng điều kiện kiểm tra bước giá, cho phép ghi đè khi giá bằng hoặc lớn hơn giá hiện tại.
+     */
+    public boolean updateProxyPrice(int itemId, double newPrice, int winnerId) {
+        java.util.concurrent.locks.ReentrantLock lock = DatabaseConnection.getInstance().getDbWriteLock();
+        lock.lock();
+        try {
+            boolean isSuccess = false;
+            String sql = "UPDATE items SET current_price = ?, winner_id = ?, final_price = ? WHERE id = ? AND current_price <= ?";
+
+            try (PreparedStatement pstmt = DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
+
+                pstmt.setDouble(1, newPrice);
+                if (winnerId > 0) {
+                    pstmt.setInt(2, winnerId);
+                } else {
+                    pstmt.setNull(2, java.sql.Types.INTEGER);
+                }
+                pstmt.setDouble(3, newPrice);
+                pstmt.setInt(4, itemId);
+                pstmt.setDouble(5, newPrice);
+
+                int rowsAffected = pstmt.executeUpdate();
+                if (rowsAffected > 0) {
+                    isSuccess = true;
+                    logger.info("Successfully updated proxy price: ${} and winnerId={} for Item ID: {}", newPrice, winnerId, itemId);
+                }
+            } catch (Exception e) {
+                logger.error("Error updating Proxy price: {}", e.getMessage(), e);
+            }
+            return isSuccess;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Cập nhật trạng thái (status) cho một sản phẩm.
      * @param itemId ID của sản phẩm cần cập nhật.
      * @param newStatus Trạng thái mới (ví dụ: PENDING, ACTIVE, CLOSED).
