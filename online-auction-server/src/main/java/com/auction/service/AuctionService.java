@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dao.BidTransactionDAO;
+import com.auction.dao.BidTransactionDao;
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
@@ -253,7 +253,7 @@ public class AuctionService {
                 itemDAO.updateEndTime(itemId, nowStr);
                 logger.info("[SERVER] Cập nhật CSDL: Chuyển item {} sang FINISHED và chốt giờ về {}", itemId, nowStr);
 
-                BidTransactionDAO bidDAO = new BidTransactionDAO();
+                BidTransactionDao bidDAO = new BidTransactionDao();
                 Map<String, Object> highestBid = bidDAO.getHighestBidder(itemId);
 
                 String winnerUsername = (String) highestBid.get("username");
@@ -283,7 +283,7 @@ public class AuctionService {
 
     public List<Map<String, Object>> getBidHistory(int itemId) {
         try {
-            BidTransactionDAO bidDAO = new BidTransactionDAO();
+            BidTransactionDao bidDAO = new BidTransactionDao();
             return bidDAO.getBidHistory(itemId);
         } catch (Exception e) {
             logger.error("Error getting bid history for item {}: {}", itemId, e.getMessage(), e);

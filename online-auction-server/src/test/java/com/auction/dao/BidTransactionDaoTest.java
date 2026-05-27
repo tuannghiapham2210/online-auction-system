@@ -11,11 +11,11 @@ import java.sql.ResultSet;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Lớp kiểm thử cho BidTransactionDAO.
+ * Lớp kiểm thử cho BidTransactionDao.
  * Phải tạo trước User và Item thật để không vi phạm Khóa ngoại khi chèn Bid.
  */
-class BidTransactionDAOTest {
-    private BidTransactionDAO bidDAO;
+class BidTransactionDaoTest {
+    private BidTransactionDao bidDAO;
     private UserDAO userDAO;
     private ItemDAO itemDAO;
 
@@ -26,7 +26,7 @@ class BidTransactionDAOTest {
 
     @BeforeEach
     void setUp() {
-        bidDAO = new BidTransactionDAO();
+        bidDAO = new BidTransactionDao();
         userDAO = new UserDAO();
         itemDAO = new ItemDAO();
         cleanupData();

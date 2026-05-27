@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dao.BidTransactionDAO;
+import com.auction.dao.BidTransactionDao;
 import com.auction.dao.ItemDAO;
 import com.auction.dao.UserDAO;
 import com.auction.model.Item;
@@ -69,7 +69,7 @@ public class BiddingService {
             }
 
             ItemDAO itemDAO = new ItemDAO();
-            BidTransactionDAO bidDAO = new BidTransactionDAO();
+            BidTransactionDao bidDAO = new BidTransactionDao();
 
             Item item = itemDAO.getItemById(itemId);
             if (item == null) {
@@ -300,7 +300,7 @@ public class BiddingService {
                 return;
             }
 
-            BidTransactionDAO bidDAO = new BidTransactionDAO();
+            BidTransactionDao bidDAO = new BidTransactionDao();
             boolean updateSuccess = itemDAO.updateProxyPrice(itemId, newPrice, topBidder.userId);
             boolean logSuccess = bidDAO.insertBidTransaction(itemId, topBidder.userId, newPrice);
 
