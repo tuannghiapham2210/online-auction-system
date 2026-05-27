@@ -22,9 +22,17 @@ public class PaymentService {
 
     public PaymentResult processDeposit(String username, int amount) {
         logger.info("Deposit request from {} amount {}", username, amount);
+        JsonObject response = new JsonObject();
+        
+        if (amount <= 0) {
+            response.addProperty("status", "FAIL");
+            response.addProperty("message", "Deposit amount must be greater than 0");
+            logger.error("Deposit failed for {}: Invalid amount {}", username, amount);
+            return new PaymentResult(response, null);
+        }
+
         UserDAO userDAO = new UserDAO();
         boolean success = userDAO.depositBalance(username, amount);
-        JsonObject response = new JsonObject();
         
         if (success) {
             int newBalance = userDAO.getBalanceByUsername(username);
