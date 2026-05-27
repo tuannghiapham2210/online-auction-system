@@ -91,10 +91,12 @@ public class DashboardController {
     private Timeline dashboardTimeline;
     private Map<Label, LocalDateTime> timerMap = new HashMap<>();
     private Map<Label, Label> liveBadgeMap = new HashMap<>();
-    private VBox profileDropdown;
-    private EventHandler<MouseEvent> profileDropdownCloser;    
+    @FXML private VBox profileDropdown;
+    @FXML private ProfileDropdownController profileDropdownController;
+    @FXML private Region darkOverlay;
+    private EventHandler<MouseEvent> profileDropdownCloser;
     private boolean isAddItemPopupOpen = false;
-    
+
     // Real-time listener socket connections
     private Socket listenerSocket;
     private PrintWriter listenerOut;
@@ -110,7 +112,7 @@ public class DashboardController {
     @FXML
     public void initialize() {
         loadDataFromServer();
-        
+
         // Kết nối tới Server để lắng nghe các cập nhật thời gian thực
         connectToServerListener();
 
@@ -143,6 +145,19 @@ public class DashboardController {
 
         lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
 
+        if (profileDropdownController != null) {
+            profileDropdownController.setCallbacks(
+                () -> {
+                    if (profileDropdown != null) profileDropdown.setVisible(false);
+                    openAccountInfoPopup();
+                },
+                () -> {
+                    if (profileDropdown != null) profileDropdown.setVisible(false);
+                    openChangePasswordPopup();
+                }
+            );
+        }
+
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterItems(newValue);
         });
@@ -167,7 +182,7 @@ public class DashboardController {
                         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/sale_notification.fxml"));
                         Parent saleNode = loader.load();
                         SaleNotificationController ctrl = loader.getController();
-                        
+
                         rootPane.getChildren().add(saleNode);
                         ctrl.setData(Session.lastSoldItemName, Session.lastSoldWinnerUsername, Session.lastSoldPrice, Session.lastSoldSellerBalance, rootPane);
                     } catch (Exception e) {
@@ -187,7 +202,7 @@ public class DashboardController {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/win_notification.fxml"));
             Parent winNode = loader.load();
             WinNotificationController ctrl = loader.getController();
-            
+
             rootPane.getChildren().add(winNode);
             ctrl.setData(message, balance, rootPane);
         } catch (Exception e) {
@@ -196,34 +211,13 @@ public class DashboardController {
     }
 
     private void toggleProfileDropdown() {
+        if (profileDropdown == null) return;
+
         StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
+        if (profileDropdown.isVisible()) {
             closeProfileDropdown(rootPane);
-            return;
-        }
-
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/profile_dropdown.fxml"));
-            profileDropdown = loader.load();
-            ProfileDropdownController controller = loader.getController();
-            controller.setCallbacks(
-                () -> {
-                    closeProfileDropdown(rootPane);
-                    openAccountInfoPopup();
-                },
-                () -> {
-                    closeProfileDropdown(rootPane);
-                    openChangePasswordPopup();
-                }
-            );
-
-            StackPane.setAlignment(profileDropdown, Pos.TOP_RIGHT);
-            // move the dropdown down so it sits just below the avatar/role card
-            StackPane.setMargin(profileDropdown, new Insets(96, 8, 0, 0));
-
-            // ensure no upward translation (place flush with margin)
-            profileDropdown.setTranslateY(0);
-            rootPane.getChildren().add(profileDropdown);
+        } else {
+            profileDropdown.setVisible(true);
 
             TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
             slide.setFromY(-8);
@@ -237,20 +231,17 @@ public class DashboardController {
                 closeProfileDropdown(rootPane);
             };
             rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
-        } catch (IOException e) {
-            logger.error("Lỗi khi tải profile dropdown FXML: {}", e.getMessage(), e);
         }
     }
 
     private void closeProfileDropdown(StackPane rootPane) {
-        if (profileDropdown != null && rootPane.getChildren().contains(profileDropdown)) {
-            rootPane.getChildren().remove(profileDropdown);
+        if (profileDropdown != null) {
+            profileDropdown.setVisible(false);
         }
-        if (profileDropdownCloser != null) {
+        if (profileDropdownCloser != null && rootPane != null) {
             rootPane.removeEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
             profileDropdownCloser = null;
         }
-        profileDropdown = null;
     }
 
     private void openAccountInfoPopup() {
@@ -264,28 +255,25 @@ public class DashboardController {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay-account");
-            darkOverlay.getStyleClass().add("dialog-overlay");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
-            darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
-            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+            }
 
             controller.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+                if (darkOverlay != null) darkOverlay.setVisible(false);
+                rootPane.getChildren().remove(accountInfoGroup);
             });
 
             controller.setOnSaveCallback(() -> {
                 refreshUserProfile();
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, accountInfoGroup);
+                if (darkOverlay != null) darkOverlay.setVisible(false);
+                rootPane.getChildren().remove(accountInfoGroup);
             });
 
-            StackPane.setAlignment(darkOverlay, Pos.CENTER);
-            StackPane.setAlignment(accountInfoGroup, Pos.CENTER);
-            rootPane.getChildren().addAll(darkOverlay, accountInfoGroup);
+            rootPane.getChildren().add(accountInfoGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
         }
@@ -302,22 +290,18 @@ public class DashboardController {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay-password");
-            darkOverlay.getStyleClass().add("dialog-overlay");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.prefWidthProperty().bind(rootPane.widthProperty());
-            darkOverlay.prefHeightProperty().bind(rootPane.heightProperty());
-            darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setOnMouseClicked(e -> controller.handleClose());
+            }
 
             controller.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, passwordChangeGroup);
+                if (darkOverlay != null) darkOverlay.setVisible(false);
+                rootPane.getChildren().remove(passwordChangeGroup);
             });
 
-            StackPane.setAlignment(darkOverlay, Pos.CENTER);
-            StackPane.setAlignment(passwordChangeGroup, Pos.CENTER);
-            rootPane.getChildren().addAll(darkOverlay, passwordChangeGroup);
+            rootPane.getChildren().add(passwordChangeGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở popup đổi mật khẩu: {}", e.getMessage());
         }
@@ -540,11 +524,11 @@ public class DashboardController {
                 if (fxmlUrl == null) {
                     logger.error("Không tìm thấy file item_card.fxml! Vui lòng Rebuild/Compile lại project.");
                     Label err = new Label("Lỗi: Không tìm thấy file item_card.fxml\n(Vui lòng Rebuild project)");
-                    err.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold; -fx-background-color: #1E293B; -fx-padding: 10; -fx-background-radius: 8;");
+                    err.getStyleClass().add("item-card-error");
                     itemGrid.getChildren().add(err);
                     continue;
                 }
-                
+
                 FXMLLoader loader = new FXMLLoader(fxmlUrl);
                 Node card = loader.load();
                 ItemCardController controller = loader.getController();
@@ -564,7 +548,7 @@ public class DashboardController {
                 logger.error("Lỗi khi load item card FXML cho sản phẩm: " + item.getName(), e);
                 e.printStackTrace();
                 Label err = new Label("Lỗi hiển thị Card (" + item.getName() + "):\n" + e.getMessage());
-                err.setStyle("-fx-text-fill: #EF4444; -fx-font-weight: bold; -fx-background-color: #1E293B; -fx-padding: 10; -fx-background-radius: 8;");
+                err.getStyleClass().add("item-card-error");
                 itemGrid.getChildren().add(err);
             }
         }
@@ -573,10 +557,10 @@ public class DashboardController {
         dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
             LocalDateTime now = LocalDateTime.now();
             boolean needRefresh = false;
-            
+
             // Kiểm tra xem có sản phẩm nào vừa hết hạn tự nhiên không
             for (Item item : itemsToDisplay) {
-                if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) 
+                if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus()))
                         && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
                     try {
                         LocalDateTime end = LocalDateTime.parse(item.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -587,7 +571,7 @@ public class DashboardController {
                     } catch (Exception ex) { }
                 }
             }
-            
+
             // Nếu có thẻ vừa hết hạn, vẽ lại giao diện để tự động cập nhật nút và màu sắc "ĐÃ KẾT THÚC"
             if (needRefresh) {
                 filterItems(searchField.getText());
@@ -599,7 +583,7 @@ public class DashboardController {
                 LocalDateTime end = entry.getValue();
                 if (now.isAfter(end)) {
                     lbl.setText("ĐÃ KẾT THÚC");
-                    lbl.setStyle("-fx-text-fill: gray; -fx-font-size: 12px; -fx-font-weight: bold;");
+                    lbl.getStyleClass().add("timer-expired-label");
                     Label b = liveBadgeMap.get(lbl);
                     if (b != null) {
                         b.setVisible(false);
@@ -663,15 +647,12 @@ public class DashboardController {
         filterItems(searchField.getText());
     }
 
-    /**
-     * Mở popup hỗ trợ Nạp tiền vào tài khoản.
-     */
     @FXML
     private void handleDeposit() {
         try {
             StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
             Node mainContent = rootPane.getChildren().get(0);
-            if (rootPane.lookup("#dark-overlay") != null) return;
+            if (darkOverlay != null && darkOverlay.isVisible()) return;
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/deposit.fxml"));
             Parent depositGroup = loader.load();
@@ -679,19 +660,19 @@ public class DashboardController {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay");
-            darkOverlay.getStyleClass().add("dialog-overlay");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
+            }
 
             depositController.setOnCloseCallback(() -> {
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, depositGroup);
+                if (darkOverlay != null) darkOverlay.setVisible(false);
+                rootPane.getChildren().remove(depositGroup);
                 lblBalance.setText("$" + NumberUtil.format(Session.balance));
             });
 
-            rootPane.getChildren().addAll(darkOverlay, depositGroup);
+            rootPane.getChildren().add(depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
         }
@@ -705,7 +686,7 @@ public class DashboardController {
         try {
             StackPane rootPane = (StackPane) btnAddItem.getScene().getRoot();
             Node mainContent = rootPane.getChildren().get(0);
-            if (rootPane.lookup("#dark-overlay") != null) return;
+            if (darkOverlay != null && darkOverlay.isVisible()) return;
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/add_item.fxml"));
             Parent addItemGroup = loader.load();
@@ -713,19 +694,19 @@ public class DashboardController {
 
             mainContent.setEffect(new GaussianBlur(15));
 
-            Region darkOverlay = new Region();
-            darkOverlay.setId("dark-overlay");
-            darkOverlay.getStyleClass().add("dialog-overlay");
-            darkOverlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-            darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
+            if (darkOverlay != null) {
+                darkOverlay.setVisible(true);
+                darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
+            }
 
             isAddItemPopupOpen = true;
 
-            rootPane.getChildren().addAll(darkOverlay, addItemGroup);
+            rootPane.getChildren().add(addItemGroup);
             addItemCtrl.setOnCloseCallback(() -> {
                 isAddItemPopupOpen = false;
                 mainContent.setEffect(null);
-                rootPane.getChildren().removeAll(darkOverlay, addItemGroup);
+                if (darkOverlay != null) darkOverlay.setVisible(false);
+                rootPane.getChildren().remove(addItemGroup);
                 loadDataFromServer();
             });
         } catch (Exception e) {
@@ -840,7 +821,7 @@ public class DashboardController {
             }
         }).start();
     }
-    
+
     /**
      * Kết nối tới Server để lắng nghe các sự kiện thời gian thực.
      * Mở luồng riêng để tránh treo giao diện UI chính.
@@ -863,7 +844,7 @@ public class DashboardController {
             }
         }).start();
     }
-    
+
     /**
      * Đóng kết nối socket của Dashboard để giải phóng tài nguyên (tránh rò rỉ bộ nhớ).
      */
@@ -908,7 +889,7 @@ public class DashboardController {
 
                 // Thêm vào danh sách
                 allItems.add(newItem);
-                
+
                 logger.info("New item added to dashboard: {} (ID: {})", name, id);
 
                 // Cập nhật giao diện
@@ -918,7 +899,7 @@ public class DashboardController {
             }
         });
     }
-    
+
     /**
      * Gọi bởi DashboardListener khi phiên đấu giá bắt đầu.
      * Cập nhật trạng thái item và hiển thị timer.
@@ -931,9 +912,9 @@ public class DashboardController {
                     if (item.getId() == itemId) {
                         item.setStatus("ACTIVE");
                         item.setEndTime(endTime);
-                        
+
                         logger.info("Auction started for item: {} at {}", itemId, endTime);
-                        
+
                         // Cập nhật lại giao diện
                         filterItems(searchField.getText());
                         return;
@@ -944,7 +925,7 @@ public class DashboardController {
             }
         });
     }
-    
+
     /**
      * Gọi bởi DashboardListener khi phiên đấu giá bị hủy.
      * Cập nhật trạng thái item.
@@ -956,7 +937,7 @@ public class DashboardController {
                 boolean removed = allItems.removeIf(item -> item.getId() == itemId);
                 if (removed) {
                     logger.info("Auction cancelled and removed from dashboard: {}", itemId);
-                    
+
                     // Cập nhật lại giao diện (áp dụng bộ lọc tìm kiếm hiện tại)
                     filterItems(searchField.getText());
                 }
@@ -965,7 +946,7 @@ public class DashboardController {
             }
         });
     }
-    
+
     /**
      * Gọi bởi DashboardListener khi phiên đấu giá kết thúc.
      * Cập nhật trạng thái item và lưu thông tin người thắng.
@@ -980,9 +961,9 @@ public class DashboardController {
                         item.setFinalPrice(finalPrice);
                         item.setCurrentPrice(finalPrice);
                         item.setWinnerUsername(winnerUsername);
-                        
+
                         logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId, winnerUsername, finalPrice);
-                        
+
                         // Cập nhật lại giao diện
                         filterItems(searchField.getText());
                         return;
@@ -993,7 +974,7 @@ public class DashboardController {
             }
         });
     }
-    
+
     /**
      * Gọi bởi DashboardListener khi giá item được cập nhật trong phòng đấu giá.
      * Cập nhật giá hiện tại của item.
@@ -1005,9 +986,9 @@ public class DashboardController {
                 for (Item item : allItems) {
                     if (item.getId() == itemId) {
                         item.setCurrentPrice(newPrice);
-                        
+
                         logger.info("Item price updated: {} -> ${}", itemId, newPrice);
-                        
+
                         // Cập nhật lại giao diện
                         filterItems(searchField.getText());
                         return;
@@ -1030,7 +1011,7 @@ public class DashboardController {
                 for (Item item : allItems) {
                     if (item.getId() == itemId) {
                         item.setViewerCount(viewerCount);
-                        
+
                         // Cập nhật lại giao diện
                         filterItems(searchField.getText());
                         return;
@@ -1054,7 +1035,7 @@ public class DashboardController {
                     FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/sale_notification.fxml"));
                     Parent saleNode = loader.load();
                     SaleNotificationController ctrl = loader.getController();
-                    
+
                     rootPane.getChildren().add(saleNode);
                     ctrl.setData(itemName, winnerUsername, amount, newSellerBalance, rootPane);
                 } catch (Exception e) {
