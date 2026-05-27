@@ -28,8 +28,20 @@ public class DatabaseConnection {
     /** Khóa đồng bộ hóa dùng chung cho các thao tác ghi dữ liệu (INSERT, UPDATE, DELETE). */
     private final ReentrantLock dbWriteLock = new ReentrantLock();
 
-    /** URL kết nối SQLite, tự động tạo file auction.db ở thư mục gốc nếu chưa có. */
-    private static final String DB_URL = "jdbc:sqlite:auction.db";
+    /** URL kết nối SQLite, sử dụng đường dẫn tuyệt đối để đảm bảo luôn lưu ở thư mục gốc (Root). */
+    private static final String DB_URL;
+    static {
+        String userDir = System.getProperty("user.dir");
+        java.io.File rootDir = new java.io.File(userDir);
+        
+        // Nếu đang chạy bên trong thư mục con "online-auction-server", lùi ra thư mục gốc
+        if (rootDir.getName().equals("online-auction-server")) {
+            rootDir = rootDir.getParentFile();
+        }
+        
+        java.io.File dbFile = new java.io.File(rootDir, "auction.db");
+        DB_URL = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+    }
 
     /**
      * Hàm khởi tạo private (Singleton Pattern).
@@ -73,7 +85,7 @@ public class DatabaseConnection {
      * Có cơ chế tự động mở lại kết nối nếu bị ngắt đột ngột.
      * @return Đối tượng Connection của java.sql.
      */
-    public Connection getConnection() {
+    public synchronized Connection getConnection() {
         try {
             // 1. Kiểm tra và mở lại nếu đường ống bị đóng
             if (connection == null || connection.isClosed()) {
@@ -166,8 +178,8 @@ public class DatabaseConnection {
     }
 
     private void ensureItemWinnerColumns() {
-        try (java.sql.Statement stmt = connection.createStatement()) {
-            java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(items);");
+        try (java.sql.Statement stmt = connection.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(items);")) {
             java.util.Set<String> columns = new java.util.HashSet<>();
             while (rs.next()) {
                 columns.add(rs.getString("name"));
@@ -187,8 +199,8 @@ public class DatabaseConnection {
     }
 
     private void ensureUserEmailPhoneColumns() {
-        try (java.sql.Statement stmt = connection.createStatement()) {
-            java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(users);");
+        try (java.sql.Statement stmt = connection.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(users);")) {
             java.util.Set<String> columns = new java.util.HashSet<>();
             while (rs.next()) {
                 columns.add(rs.getString("name"));
