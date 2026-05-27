@@ -15,7 +15,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.animation.Animation;
@@ -253,7 +252,7 @@ public class DashboardController {
             Parent accountInfoGroup = loader.load();
             AccountInfoController controller = loader.getController();
 
-            mainContent.setEffect(new GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             if (darkOverlay != null) {
                 darkOverlay.setVisible(true);
@@ -261,14 +260,14 @@ public class DashboardController {
             }
 
             controller.setOnCloseCallback(() -> {
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) darkOverlay.setVisible(false);
                 rootPane.getChildren().remove(accountInfoGroup);
             });
 
             controller.setOnSaveCallback(() -> {
                 refreshUserProfile();
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) darkOverlay.setVisible(false);
                 rootPane.getChildren().remove(accountInfoGroup);
             });
@@ -288,7 +287,7 @@ public class DashboardController {
             Parent passwordChangeGroup = loader.load();
             PasswordChangeController controller = loader.getController();
 
-            mainContent.setEffect(new GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             if (darkOverlay != null) {
                 darkOverlay.setVisible(true);
@@ -296,7 +295,7 @@ public class DashboardController {
             }
 
             controller.setOnCloseCallback(() -> {
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) darkOverlay.setVisible(false);
                 rootPane.getChildren().remove(passwordChangeGroup);
             });
@@ -658,7 +657,7 @@ public class DashboardController {
             Parent depositGroup = loader.load();
             DepositController depositController = loader.getController();
 
-            mainContent.setEffect(new GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             if (darkOverlay != null) {
                 darkOverlay.setVisible(true);
@@ -666,7 +665,7 @@ public class DashboardController {
             }
 
             depositController.setOnCloseCallback(() -> {
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) darkOverlay.setVisible(false);
                 rootPane.getChildren().remove(depositGroup);
                 lblBalance.setText("$" + NumberUtil.format(Session.balance));
@@ -692,7 +691,7 @@ public class DashboardController {
             Parent addItemGroup = loader.load();
             AddItemController addItemCtrl = loader.getController();
 
-            mainContent.setEffect(new GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             if (darkOverlay != null) {
                 darkOverlay.setVisible(true);
@@ -704,7 +703,7 @@ public class DashboardController {
             rootPane.getChildren().add(addItemGroup);
             addItemCtrl.setOnCloseCallback(() -> {
                 isAddItemPopupOpen = false;
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) darkOverlay.setVisible(false);
                 rootPane.getChildren().remove(addItemGroup);
                 loadDataFromServer();

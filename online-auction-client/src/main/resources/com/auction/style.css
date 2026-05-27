@@ -1781,3 +1781,7 @@
 }
 
 .chart-tooltip { -fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px; }
+
+.blurred-content {
+    -fx-effect: gaussian-blur(15);
+}

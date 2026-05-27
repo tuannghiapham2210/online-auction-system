@@ -206,7 +206,7 @@ public class LoginController {
             Parent forgotGroup = loader.load();
             ForgotPasswordController controller = loader.getController();
 
-            mainContent.setEffect(new javafx.scene.effect.GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             javafx.scene.layout.Region darkOverlay = new javafx.scene.layout.Region();
             darkOverlay.setId("dark-overlay-forgot");
@@ -215,7 +215,7 @@ public class LoginController {
             darkOverlay.setOnMouseClicked(e -> controller.handleClose());
 
             controller.setOnCloseCallback(() -> {
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 rootPane.getChildren().removeAll(darkOverlay, forgotGroup);
             });
 

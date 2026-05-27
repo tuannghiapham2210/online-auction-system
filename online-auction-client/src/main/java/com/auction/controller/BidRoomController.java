@@ -43,7 +43,6 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.SVGPath;
 import javafx.scene.paint.ImagePattern;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.transform.Scale;
 import javafx.animation.KeyValue;
 
@@ -691,7 +690,7 @@ private void hideNotification(HBox notification) {
             Parent depositGroup = loader.load();
             DepositController depositController = loader.getController();
 
-            mainContent.setEffect(new GaussianBlur(15));
+            mainContent.getStyleClass().add("blurred-content");
 
             if (darkOverlay != null) {
                 darkOverlay.setVisible(true);
@@ -700,7 +699,7 @@ private void hideNotification(HBox notification) {
             }
 
             depositController.setOnCloseCallback(() -> {
-                mainContent.setEffect(null);
+                mainContent.getStyleClass().remove("blurred-content");
                 if (darkOverlay != null) {
                     darkOverlay.setVisible(false);
                     darkOverlay.setManaged(false);
