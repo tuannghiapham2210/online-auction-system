@@ -1,5 +1,6 @@
-package com.auction.controller;
+package com.auction.controller.helper;
 
+import com.auction.controller.ChartNodeController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
