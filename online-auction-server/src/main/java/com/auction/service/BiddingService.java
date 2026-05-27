@@ -2,7 +2,7 @@ package com.auction.service;
 
 import com.auction.dao.BidTransactionDao;
 import com.auction.dao.ItemDao;
-import com.auction.dao.UserDAO;
+import com.auction.dao.UserDao;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
@@ -179,8 +179,8 @@ public class BiddingService {
                 return response;
             }
 
-            UserDAO dbUserDAO = new UserDAO();
-            int userBalance = dbUserDAO.getBalanceByUsername(username);
+            UserDao dbUserDao = new UserDao();
+            int userBalance = dbUserDao.getBalanceByUsername(username);
             if (maxBid > userBalance) {
                 JsonObject response = new JsonObject();
                 response.addProperty("status", "ERROR");
@@ -286,7 +286,7 @@ public class BiddingService {
                 return;
             }
 
-            UserDAO userDAO = new UserDAO();
+            UserDao userDAO = new UserDao();
             String username = getUsernameById(topBidder.userId);
             int balance = userDAO.getBalanceByUsername(username);
             if (balance < newPrice) {

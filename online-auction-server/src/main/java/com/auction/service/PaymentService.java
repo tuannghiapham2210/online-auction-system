@@ -1,7 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.ItemDao;
-import com.auction.dao.UserDAO;
+import com.auction.dao.UserDao;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
@@ -31,7 +31,7 @@ public class PaymentService {
             return new PaymentResult(response, null);
         }
 
-        UserDAO userDAO = new UserDAO();
+        UserDao userDAO = new UserDao();
         boolean success = userDAO.depositBalance(username, amount);
         
         if (success) {
@@ -53,7 +53,7 @@ public class PaymentService {
         logger.info("Processing winner payment for item {}: bidder={}, amount={}, sellerId={}",
                 itemId, bidderUsername, amount, sellerId);
 
-        UserDAO userDAO = new UserDAO();
+        UserDao userDAO = new UserDao();
         ItemDao itemDAO = new ItemDao();
         Item item = itemDAO.getItemById(itemId);
         String itemName = (item != null) ? item.getName() : "sản phẩm";

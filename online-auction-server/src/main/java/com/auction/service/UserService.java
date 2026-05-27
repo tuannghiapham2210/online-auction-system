@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dao.UserDAO;
+import com.auction.dao.UserDao;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,7 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     
     public JsonObject processLogin(String username, String password) {
-        UserDAO dao = new UserDAO();
+        UserDao dao = new UserDao();
         boolean isOk = dao.login(username, password);
         JsonObject response = new JsonObject();
         
@@ -44,7 +44,7 @@ public class UserService {
             return response;
         }
 
-        UserDAO userDAO = new UserDAO();
+        UserDao userDAO = new UserDao();
         if (userDAO.isUsernameTakenByOther(userId, newUsername)) {
             response.addProperty("status", "FAIL");
             response.addProperty("message", "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.");
@@ -75,7 +75,7 @@ public class UserService {
             return response;
         }
 
-        UserDAO userDAO = new UserDAO();
+        UserDao userDAO = new UserDao();
         boolean success = userDAO.changePassword(userId, oldPassword, newPassword);
 
         if (success) {
@@ -89,7 +89,7 @@ public class UserService {
     }
 
     public JsonObject processResetPassword(String username, String contactInfo, String newPassword) {
-        UserDAO userDAO = new UserDAO();
+        UserDao userDAO = new UserDao();
         boolean success = userDAO.resetPassword(username, contactInfo, newPassword);
 
         JsonObject response = new JsonObject();
@@ -106,7 +106,7 @@ public class UserService {
     public JsonObject processRegister(String username, String password, String role, String email, String phone) {
         JsonObject response = new JsonObject();
         try {
-            UserDAO userDAO = new UserDAO();
+            UserDao userDAO = new UserDao();
             boolean isSuccess = userDAO.registerUser(username, password, role, email, phone);
 
             if (isSuccess) {

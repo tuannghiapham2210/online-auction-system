@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class ItemDaoTest {
     private ItemDao itemDAO;
-    private UserDAO userDAO;
+    private UserDao userDAO;
 
     private static final String TEST_SELLER = "seller_test_9999";
     private static final String TEST_ITEM_NAME = "TEST_ITEM_9999";
@@ -25,7 +25,7 @@ class ItemDaoTest {
     @BeforeEach
     void setUp() {
         itemDAO = new ItemDao();
-        userDAO = new UserDAO();
+        userDAO = new UserDao();
         cleanupData();
 
         // Tạo 1 Seller giả để thỏa mãn khóa ngoại seller_id của bảng items
