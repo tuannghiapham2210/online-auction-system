@@ -153,6 +153,11 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý yêu cầu đăng nhập từ client.
+   *
+   * @param request Đối tượng JSON chứa thông tin đăng nhập (username, password).
+   */
   private void handleLogin(JsonObject request) {
     String user = request.get("username").getAsString();
     String pass = request.get("password").getAsString();
@@ -161,6 +166,11 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu cập nhật thông tin cá nhân của người dùng.
+   *
+   * @param request Đối tượng JSON chứa userId, username, email, phone.
+   */
   private void handleUpdateProfile(JsonObject request) {
     int userId = request.get("userId").getAsInt();
     String newUsername = request.has("username")
@@ -172,6 +182,11 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu đổi mật khẩu của người dùng.
+   *
+   * @param request Đối tượng JSON chứa userId, oldPassword, newPassword.
+   */
   private void handleChangePassword(JsonObject request) {
     int userId = request.get("userId").getAsInt();
     String oldPassword = request.has("oldPassword") ? request.get("oldPassword").getAsString() : "";
@@ -181,6 +196,11 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu đặt lại (reset) mật khẩu khi người dùng quên mật khẩu.
+   *
+   * @param request Đối tượng JSON chứa username, contactInfo, newPassword.
+   */
   private void handleResetPassword(JsonObject request) {
     String username = request.get("username").getAsString();
     String contactInfo = request.has("contactInfo")
@@ -191,6 +211,11 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu đăng ký tài khoản mới.
+   *
+   * @param request Đối tượng JSON chứa thông tin đăng ký (username, password, role, email, phone).
+   */
   private void handleRegister(JsonObject request) {
     String username = request.get("username").getAsString();
     String password = request.get("password").getAsString();
@@ -202,6 +227,12 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu thêm sản phẩm đấu giá mới.
+   * Gửi phản hồi lại cho client và broadcast nếu có thay đổi cần thiết.
+   *
+   * @param request Đối tượng JSON chứa thông tin sản phẩm cần thêm.
+   */
   private void handleAddItem(JsonObject request) {
     AuctionService auctionService = new AuctionService();
     AuctionService.AuctionResult result = auctionService.processAddItem(request);
@@ -213,6 +244,12 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý yêu cầu đăng bán (publish) một sản phẩm.
+   * Broadcast tới tất cả client thông báo sản phẩm đã được publish.
+   *
+   * @param request Đối tượng JSON chứa itemId cần publish.
+   */
   private void handlePublishItem(JsonObject request) {
     int itemId = request.get("itemId").getAsInt();
     AuctionService auctionService = new AuctionService();
@@ -222,6 +259,10 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Lấy danh sách tất cả các sản phẩm đấu giá và gửi về cho client.
+   * Danh sách bao gồm cả số lượng người đang xem mỗi sản phẩm.
+   */
   private void handleGetAllItems() {
     AuctionService auctionService = new AuctionService();
     List<Item> items = auctionService.getAllItems();
@@ -236,6 +277,11 @@ public class ClientHandler implements Runnable {
     writer.println(response);
   }
 
+  /**
+   * Xử lý yêu cầu đặt giá (bid) cho một sản phẩm.
+   *
+   * @param request Đối tượng JSON chứa thông tin đặt giá (itemId, userId, bidAmount, v.v.).
+   */
   private void handlePlaceBid(JsonObject request) {
     BiddingService biddingService = new BiddingService(this::broadcast);
     JsonObject response = biddingService.processPlaceBid(request);
@@ -244,6 +290,11 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý yêu cầu đăng ký đặt giá tự động (auto-bid).
+   *
+   * @param request Đối tượng JSON chứa thông tin auto-bid.
+   */
   private void handleRegisterAutoBid(JsonObject request) {
     BiddingService biddingService = new BiddingService(this::broadcast);
     JsonObject response = biddingService.processRegisterAutoBid(request);
@@ -252,6 +303,11 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý yêu cầu nạp tiền vào tài khoản của người dùng.
+   *
+   * @param request Đối tượng JSON chứa username và amount.
+   */
   private void handleDeposit(JsonObject request) {
     try {
       String username = request.get("username").getAsString();
@@ -270,6 +326,11 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý quá trình thanh toán khi người dùng thắng đấu giá.
+   *
+   * @param request Đối tượng JSON chứa itemId, bidderUsername, amount, sellerId.
+   */
   private void handleProcessWinnerPayment(JsonObject request) {
     try {
       int itemId = request.get("itemId").getAsInt();
@@ -295,6 +356,12 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Phương thức chung để thực thi các hành động trên một phiên đấu giá (Mở, Hủy, Dừng).
+   *
+   * @param request Đối tượng JSON chứa itemId, userId, role.
+   * @param actionType Loại hành động ("OPEN", "CANCEL", "STOP").
+   */
   private void executeAuctionAction(JsonObject request, String actionType) {
     int itemId = request.get("itemId").getAsInt();
     int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
@@ -318,18 +385,39 @@ public class ClientHandler implements Runnable {
     }
   }
 
+  /**
+   * Xử lý yêu cầu mở một phiên đấu giá.
+   *
+   * @param request Đối tượng JSON chứa thông tin cần thiết.
+   */
   private void handleOpenAuction(JsonObject request) {
     executeAuctionAction(request, "OPEN");
   }
 
+  /**
+   * Xử lý yêu cầu hủy một phiên đấu giá.
+   *
+   * @param request Đối tượng JSON chứa thông tin cần thiết.
+   */
   private void handleCancelAuction(JsonObject request) {
     executeAuctionAction(request, "CANCEL");
   }
 
+  /**
+   * Xử lý yêu cầu dừng một phiên đấu giá.
+   *
+   * @param request Đối tượng JSON chứa thông tin cần thiết.
+   */
   private void handleStopAuction(JsonObject request) {
     executeAuctionAction(request, "STOP");
   }
 
+  /**
+   * Lấy lịch sử đặt giá của một sản phẩm và gửi trả lại cho client yêu cầu.
+   * Đồng thời cập nhật trạng thái "đang xem" sản phẩm này của client.
+   *
+   * @param request Đối tượng JSON chứa itemId.
+   */
   private void handleFetchBidHistory(JsonObject request) {
     int itemId = request.get("itemId").getAsInt();
     this.currentItemId = itemId;
@@ -380,6 +468,11 @@ public class ClientHandler implements Runnable {
     broadcast(msg);
   }
 
+  /**
+   * Gửi thông báo (broadcast) đến tất cả các client đang kết nối.
+   *
+   * @param message Đối tượng JSON chứa nội dung thông báo.
+   */
   private void broadcast(JsonObject message) {
     synchronized (activeClients) {
       for (ClientHandler client : activeClients) {
