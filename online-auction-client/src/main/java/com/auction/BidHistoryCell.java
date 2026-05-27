@@ -1,6 +1,6 @@
 package com.auction;
 
-import com.auction.BidRoomController.BidEvent;
+import com.auction.controller.BidRoomController.BidEvent;
 import com.auction.util.NumberUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;

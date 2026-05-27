@@ -19,7 +19,7 @@
 <?import javafx.scene.text.TextFlow?>
 
 <?import javafx.scene.control.ScrollPane?>
-<StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.BidRoomController">
+<StackPane fx:id="rootPane" styleClass="background, dashboard-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.BidRoomController">
    <children>
 
       <ScrollPane fx:id="mainScrollPane" fitToWidth="true" fitToHeight="false" style="-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0; -fx-border-color: transparent;">

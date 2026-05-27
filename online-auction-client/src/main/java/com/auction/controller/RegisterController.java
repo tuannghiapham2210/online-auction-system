@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -183,7 +184,7 @@ public class RegisterController {
     private void goToLogin() {
         try {
             Parent root = FXMLLoader.load(
-                    getClass().getResource("login.fxml"));
+                    getClass().getResource("/com/auction/login.fxml"));
             usernameField.getScene().setRoot(root);
         } catch (Exception e) {
             logger.error("Failed to navigate to login screen: {}", e.getMessage(), e);

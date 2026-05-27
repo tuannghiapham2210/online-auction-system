@@ -1,6 +1,6 @@
 package com.auction.network;
 
-import com.auction.DashboardController;
+import com.auction.controller.DashboardController;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;

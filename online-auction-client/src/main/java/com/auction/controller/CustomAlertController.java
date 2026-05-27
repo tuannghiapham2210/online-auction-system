@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;

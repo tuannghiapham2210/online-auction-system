@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -157,7 +158,7 @@ public class LoginController {
                             dots.stop();
                             try {
                                 Parent root = FXMLLoader.load(
-                                        getClass().getResource("dashboard.fxml"));
+                                        getClass().getResource("/com/auction/dashboard.fxml"));
                                 usernameField.getScene().setRoot(root);
                             } catch (Exception ex) {
                                 logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
@@ -185,7 +186,7 @@ public class LoginController {
     private void goToRegister() {
         try {
             Parent root = FXMLLoader.load(
-                    getClass().getResource("register.fxml"));
+                    getClass().getResource("/com/auction/register.fxml"));
             usernameField.getScene().setRoot(root);
         } catch (Exception e) {
             logger.error("Failed to navigate to register screen: {}", e.getMessage(), e);
@@ -201,7 +202,7 @@ public class LoginController {
             javafx.scene.Node mainContent = rootPane.getChildren().get(0);
             if (rootPane.lookup("#dark-overlay-forgot") != null) return;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("forgot_password.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/forgot_password.fxml"));
             Parent forgotGroup = loader.load();
             ForgotPasswordController controller = loader.getController();
 

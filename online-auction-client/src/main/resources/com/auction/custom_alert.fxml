@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="alertRoot" alignment="CENTER" spacing="15.0" styleClass="alert-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.CustomAlertController">
+<VBox fx:id="alertRoot" alignment="CENTER" spacing="15.0" styleClass="alert-root" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.CustomAlertController">
    <padding>
       <Insets bottom="20.0" left="25.0" right="25.0" top="25.0" />
    </padding>
