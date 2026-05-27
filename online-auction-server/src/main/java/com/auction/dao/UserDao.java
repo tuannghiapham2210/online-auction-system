@@ -38,31 +38,28 @@ public class UserDao {
         DatabaseConnection.getInstance().getDbWriteLock();
     lock.lock();
     try {
-      String checkSql = "SELECT * FROM users WHERE username=?";
-      String insertSql = "INSERT INTO users(username, password, role, email, phone) "
-          + "VALUES (?, ?, ?, ?, ?)";
+      if (isUsernameExists(username)) {
+        logger.warn("Register failed: Username '{}' already exists.", username);
+        return false;
+      }
 
-      try (PreparedStatement check = getConnection().prepareStatement(checkSql)) {
-        // 1. Kiểm tra sự tồn tại của username
-        check.setString(1, username);
-        try (ResultSet rs = check.executeQuery()) {
-          if (rs.next()) {
-            return false;
-          }
+      String sql = "INSERT INTO users (username, password, role, balance, email, phone) "
+          + "VALUES (?, ?, ?, 0, ?, ?)";
+
+      try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+        stmt.setString(1, username);
+        stmt.setString(2, password);
+        stmt.setString(3, role);
+        stmt.setString(4, email);
+        stmt.setString(5, phone);
+
+        int rows = stmt.executeUpdate();
+        if (rows > 0) {
+          logger.info("User '{}' registered successfully with role {}.", username, role);
+          return true;
         }
-
-        // 2. Nếu chưa có, tiến hành chèn người dùng mới
-        try (PreparedStatement ps = getConnection().prepareStatement(insertSql)) {
-          ps.setString(1, username);
-          ps.setString(2, password);
-          ps.setString(3, role);
-          ps.setString(4, email);
-          ps.setString(5, phone);
-          return ps.executeUpdate() > 0;
-        }
-
       } catch (Exception e) {
-        logger.error("User registration failed: {}", e.getMessage(), e);
+        logger.error("Error inserting new user: {}", e.getMessage(), e);
       }
       return false;
     } finally {
@@ -71,225 +68,165 @@ public class UserDao {
   }
 
   /**
-   * Xác thực thông tin đăng nhập của người dùng.
-   *
-   * @param username Tên đăng nhập.
-   * @param password Mật khẩu.
-   * @return true nếu thông tin chính xác, ngược lại là false.
+   * Kiểm tra xem tên đăng nhập (Username) đã tồn tại trong hệ thống chưa.
    */
-  public boolean login(String username, String password) {
-    String sql = "SELECT * FROM users WHERE username=? AND password=?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setString(2, password);
-
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next();
+  public boolean isUsernameExists(String username) {
+    String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      try (ResultSet rs = stmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getInt(1) > 0;
+        }
       }
-
     } catch (Exception e) {
-      logger.error("Login failed: {}", e.getMessage(), e);
+      logger.error("Check username existence failed: {}", e.getMessage(), e);
     }
     return false;
   }
 
   /**
-   * Lấy vai trò (Role) của người dùng từ Database.
-   *
-   * @param username Tên đăng nhập.
-   * @param password Mật khẩu.
-   * @return Chuỗi mô tả vai trò (ADMIN, SELLER, BIDDER) hoặc null nếu không tìm thấy.
+   * Xác thực thông tin tài khoản và mật khẩu khi đăng nhập.
+   */
+  public boolean login(String username, String password) {
+    String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
+        return rs.next();
+      }
+    } catch (Exception e) {
+      logger.error("Login authentication failed: {}", e.getMessage(), e);
+    }
+    return false;
+  }
+
+  /**
+   * Lấy quyền hạn (Role) của người dùng dựa trên thông tin đăng nhập.
    */
   public String getUserRole(String username, String password) {
-    String sql = "SELECT role FROM users WHERE username=? AND password=?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setString(2, password);
-
-      try (ResultSet rs = ps.executeQuery()) {
+    String sql = "SELECT role FROM users WHERE username = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
           return rs.getString("role");
         }
       }
-
     } catch (Exception e) {
-      logger.error("Failed to get user role: {}", e.getMessage(), e);
+      logger.error("Get user role failed: {}", e.getMessage(), e);
     }
     return null;
   }
 
   /**
-   * Lấy ID duy nhất của người dùng từ Database.
-   *
-   * @param username Tên đăng nhập.
-   * @param password Mật khẩu.
-   * @return ID kiểu số nguyên (int), hoặc 0 nếu không tìm thấy.
+   * Lấy ID người dùng từ cơ sở dữ liệu dựa trên Username và Password.
    */
   public int getUserId(String username, String password) {
-    String sql = "SELECT id FROM users WHERE username=? AND password=?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setString(2, password);
-
-      try (ResultSet rs = ps.executeQuery()) {
+    String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
           return rs.getInt("id");
         }
       }
-
     } catch (Exception e) {
-      logger.error("Failed to get user id: {}", e.getMessage(), e);
+      logger.error("Get user ID failed: {}", e.getMessage(), e);
     }
-    return 0;
+    return -1;
   }
 
   /**
-   * Lấy email của người dùng dựa trên thông tin đăng nhập.
+   * Lấy địa chỉ Email của người dùng.
    */
   public String getUserEmail(String username, String password) {
-    String sql = "SELECT email FROM users WHERE username=? AND password=?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setString(2, password);
-
-      try (ResultSet rs = ps.executeQuery()) {
+    String sql = "SELECT email FROM users WHERE username = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
           return rs.getString("email");
         }
       }
     } catch (Exception e) {
-      logger.error("Failed to get user email: {}", e.getMessage(), e);
+      logger.error("Get user email failed: {}", e.getMessage(), e);
     }
     return null;
   }
 
   /**
-   * Lấy số điện thoại của người dùng dựa trên thông tin đăng nhập.
+   * Lấy số điện thoại của người dùng.
    */
   public String getUserPhone(String username, String password) {
-    String sql = "SELECT phone FROM users WHERE username=? AND password=?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setString(2, password);
-
-      try (ResultSet rs = ps.executeQuery()) {
+    String sql = "SELECT phone FROM users WHERE username = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
           return rs.getString("phone");
         }
       }
     } catch (Exception e) {
-      logger.error("Failed to get user phone: {}", e.getMessage(), e);
+      logger.error("Get user phone failed: {}", e.getMessage(), e);
     }
     return null;
   }
 
   /**
-   * Kiểm tra xem username mới có bị trùng lặp với người dùng khác hay không.
+   * Cập nhật thông tin hồ sơ cá nhân (Email, Số điện thoại) của người dùng.
    */
-  public boolean isUsernameTakenByOther(int userId, String username) {
-    String sql = "SELECT id FROM users WHERE username = ? AND id <> ?";
-
-    try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-      ps.setString(1, username);
-      ps.setInt(2, userId);
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next();
+  public boolean updateProfile(String username, String email, String phone) {
+    java.util.concurrent.locks.ReentrantLock lock =
+        DatabaseConnection.getInstance().getDbWriteLock();
+    lock.lock();
+    try {
+      String sql = "UPDATE users SET email = ?, phone = ? WHERE username = ?";
+      try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+        stmt.setString(1, email);
+        stmt.setString(2, phone);
+        stmt.setString(3, username);
+        return stmt.executeUpdate() > 0;
+      } catch (Exception e) {
+        logger.error("Update profile failed: {}", e.getMessage(), e);
       }
-    } catch (Exception e) {
-      logger.error("Failed to check duplicate username: {}", e.getMessage(), e);
       return false;
-    }
-  }
-
-  /**
-   * Cập nhật thông tin hồ sơ của người dùng (Username, Email, Phone).
-   */
-  public boolean updateUserProfile(int userId, String username, String email, String phone) {
-    java.util.concurrent.locks.ReentrantLock lock =
-        DatabaseConnection.getInstance().getDbWriteLock();
-    lock.lock();
-    try {
-      String sql = "UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?";
-
-      try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-        ps.setString(1, username);
-        ps.setString(2, email != null ? email : "");
-        ps.setString(3, phone != null ? phone : "");
-        ps.setInt(4, userId);
-        return ps.executeUpdate() > 0;
-      } catch (Exception e) {
-        logger.error("Failed to update user profile: {}", e.getMessage(), e);
-        return false;
-      }
     } finally {
       lock.unlock();
     }
   }
 
   /**
-   * Thay đổi mật khẩu người dùng sau khi đã xác thực mật khẩu cũ.
-   */
-  public boolean changePassword(int userId, String oldPassword, String newPassword) {
-    java.util.concurrent.locks.ReentrantLock lock =
-        DatabaseConnection.getInstance().getDbWriteLock();
-    lock.lock();
-    try {
-      String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
-
-      try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-        ps.setString(1, newPassword);
-        ps.setInt(2, userId);
-        ps.setString(3, oldPassword);
-        return ps.executeUpdate() > 0;
-      } catch (Exception e) {
-        logger.error("Failed to change password: {}", e.getMessage(), e);
-        return false;
-      }
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  /**
-   * Đặt lại mật khẩu dựa trên thông tin xác thực (email hoặc phone).
-   *
-   * @param username    Tên đăng nhập.
-   * @param contactInfo Email hoặc Số điện thoại đã đăng ký.
-   * @param newPassword Mật khẩu mới.
-   * @return true nếu thông tin khớp và cập nhật thành công, ngược lại false.
+   * Khôi phục hoặc đặt lại mật khẩu mới khi người dùng cung cấp đúng thông tin xác thực.
    */
   public boolean resetPassword(String username, String contactInfo, String newPassword) {
     java.util.concurrent.locks.ReentrantLock lock =
         DatabaseConnection.getInstance().getDbWriteLock();
     lock.lock();
     try {
-      if (contactInfo == null || contactInfo.trim().isEmpty()) {
-        return false;
-      }
-
       String sql = "UPDATE users SET password = ? WHERE username = ? AND (email = ? OR phone = ?)";
-      try (PreparedStatement ps = getConnection().prepareStatement(sql)) {
-        ps.setString(1, newPassword);
-        ps.setString(2, username);
-        ps.setString(3, contactInfo);
-        ps.setString(4, contactInfo);
-        return ps.executeUpdate() > 0;
+      try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+        stmt.setString(1, newPassword);
+        stmt.setString(2, username);
+        stmt.setString(3, contactInfo);
+        stmt.setString(4, contactInfo);
+        return stmt.executeUpdate() > 0;
       } catch (Exception e) {
-        logger.error("Failed to reset password: {}", e.getMessage(), e);
-        return false;
+        logger.error("Reset password failed: {}", e.getMessage(), e);
       }
+      return false;
     } finally {
       lock.unlock();
     }
   }
 
   /**
-   * Cộng thêm tiền vào số dư ví tài khoản của người dùng (Nạp tiền).
+   * Thực hiện nạp tiền hoặc trừ tiền vào số dư tài khoản của người dùng.
    */
   public boolean depositBalance(String username, int amount) {
     java.util.concurrent.locks.ReentrantLock lock =
@@ -341,7 +278,7 @@ public class UserDao {
         }
       }
     } catch (Exception e) {
-      logger.error("Failed to get username by id: {}", e.getMessage(), e);
+      logger.error("Get username by ID failed: {}", e.getMessage(), e);
     }
     return null;
   }
