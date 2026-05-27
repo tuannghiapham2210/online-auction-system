@@ -1,6 +1,7 @@
 package com.auction;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -43,6 +44,13 @@ public class App extends Application {
         }
         stage.setScene(scene);
         stage.setMaximized(true);
+        
+        // Đóng các kết nối Socket đang mở và dừng luồng khi đóng cửa sổ
+        stage.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
+        
         stage.show();
     }
 
