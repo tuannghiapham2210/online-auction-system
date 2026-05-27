@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.auction.network.PaymentService;
+import com.auction.network.BidRoomSocketManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
