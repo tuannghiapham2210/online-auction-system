@@ -5,6 +5,7 @@ import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
 import com.auction.service.AuctionService;
+import com.auction.service.BiddingService;
 import com.auction.service.PaymentService;
 import com.auction.service.UserService;
 import com.google.gson.Gson;
@@ -48,22 +49,7 @@ public class ClientHandler implements Runnable {
         this.clientSocket = socket;
     }
 
-    /**
-     * Helper class to hold auto-bid configurations for sorting and evaluation.
-     */
-    private static class AutoBidConfig {
-        int userId;
-        double maxBid;
-        double increment;
-        String createdAt; // For tie-breaking
 
-        AutoBidConfig(int userId, double maxBid, double increment, String createdAt) {
-            this.userId = userId;
-            this.maxBid = maxBid;
-            this.increment = increment;
-            this.createdAt = createdAt;
-        }
-    }
 
     /**
      * Vòng lặp thực thi chính của Client Thread.
@@ -273,111 +259,10 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "bidderId", và "bidAmount".
      */
     private void handlePlaceBid(JsonObject request) {
-        try {
-            logger.info("Received PLACE_BID request: {}", request);
-
-            // 1. Trích xuất dữ liệu đặt giá
-            int itemId = request.get("itemId").getAsInt();
-            int bidderId = request.get("bidderId").getAsInt();
-            double bidAmount = request.get("bidAmount").getAsDouble();
-            String username = request.has("username") ? request.get("username").getAsString() : "Khách";
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            if (!"BIDDER".equalsIgnoreCase(role)) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // --- PREVENT SELF-BIDDING ---
-            int currentHighestBidderId = -1;
-            String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) currentHighestBidderId = rs.getInt("bidder_id");
-                }
-            }
-            if (currentHighestBidderId == bidderId) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Bạn đang là người trả giá cao nhất, hãy đợi đối thủ ra giá!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            // -----------------------------
-
-            // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-
-            // --- SECURITY GUARD CLAUSE ---
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            if ("PENDING".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
-                logger.warn("Rejected bid for PENDING item: {}", itemId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // Enforce minimum bid step price
-            double minBid = item.getCurrentPrice() + item.getStepPrice();
-            if (bidAmount < minBid) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Giá đặt tối thiểu phải là: $" + minBid);
-                logger.warn("Rejected bid for item {}: amount ${} is less than minimum bid ${}", itemId, bidAmount, minBid);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            // -----------------------------
-
-            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount, bidderId);
-            boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
-
-            // 3. Broadcast cho tất cả Client nếu thành công
-            if (updateSuccess && logSuccess) {
-                // Kích hoạt kiểm tra Anti-sniping
-                String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
-
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "UPDATE_PRICE");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("newPrice", bidAmount);
-                broadcastMsg.addProperty("bidderId", bidderId);
-                broadcastMsg.addProperty("username", username);
-
-                // Nếu có gia hạn, đính kèm luôn thời gian mới vào loa phát thanh
-                if (extendedTime != null) {
-                    broadcastMsg.addProperty("newEndTime", extendedTime);
-                }
-
-                logger.info("New bid accepted. Broadcasting price update...");
-                broadcast(broadcastMsg);
-
-                // --- TRIGGER THE AUTO-BID ENGINE ---
-                evaluateAutoBids(itemId);
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Lỗi Database khi xử lý đặt giá!");
-                logger.error("Failed to place bid for itemId={}, bidderId={}, bidAmount={}", itemId, bidderId, bidAmount);
-                this.writer.println(errorMsg.toString());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
+        BiddingService biddingService = new BiddingService(this::broadcast);
+        JsonObject response = biddingService.processPlaceBid(request);
+        if (response != null) {
+            writer.println(response.toString());
         }
     }
     
@@ -385,249 +270,14 @@ public class ClientHandler implements Runnable {
      * Đăng ký cấu hình tự động đấu giá (Auto-Bid) cho User vào Database.
      */
     private void handleRegisterAutoBid(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.get("userId").getAsInt();
-            double maxBid = request.get("maxBid").getAsDouble();
-            double increment = request.get("increment").getAsDouble();
-            String username = request.has("username") ? request.get("username").getAsString() : "Khách";
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            if (!"BIDDER".equalsIgnoreCase(role)) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể thiết lập Auto-Bid!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // --- SECURITY GUARD CLAUSE ---
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            if ("PENDING".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently " + item.getStatus() + ".");
-                logger.warn("Rejected Auto-Bid for {} item: {}", item.getStatus(), itemId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // Enforce auto-bid increment and maxBid
-            if (increment < item.getStepPrice()) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Bước giá tự động phải lớn hơn hoặc bằng bước giá của sản phẩm ($" + item.getStepPrice() + ")!");
-                writer.println(response.toString());
-                return;
-            }
-            double minMaxBid = item.getCurrentPrice() + item.getStepPrice();
-            if (maxBid < minMaxBid) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + minMaxBid + ")!");
-                writer.println(response.toString());
-                return;
-            }
-
-            // Enforce that maxBid does not exceed user balance
-            UserDAO dbUserDAO = new UserDAO();
-            int userBalance = dbUserDAO.getBalanceByUsername(username);
-            if (maxBid > userBalance) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Không đủ số dư: Ngân sách tối đa không được vượt quá số dư tài khoản ($" + userBalance + ")!");
-                writer.println(response.toString());
-                return;
-            }
-            // -----------------------------
-
-            logger.info("Received REGISTER_AUTO_BID: user={}, item={}, max={}, inc={}", username, itemId, maxBid, increment);
-
-            // Xóa cấu hình cũ của người dùng này nếu có (Tránh tự đấu giá với chính mình)
-            String deleteOldConfigSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
-            try (java.sql.PreparedStatement deleteStmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteOldConfigSql)) {
-                deleteStmt.setInt(1, itemId);
-                deleteStmt.setInt(2, userId);
-                deleteStmt.executeUpdate();
-            }
-
-            String sql = "INSERT INTO auto_bids (item_id, user_id, max_bid, increment_amount, created_at) VALUES (?, ?, ?, ?, ?)";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
-                pstmt.setInt(1, itemId);
-                pstmt.setInt(2, userId);
-                pstmt.setDouble(3, maxBid);
-                pstmt.setDouble(4, increment);
-                pstmt.setString(5, java.time.LocalDateTime.now().toString());
-                
-                int rows = pstmt.executeUpdate();
-                JsonObject response = new JsonObject();
-                
-                if (rows > 0) {
-                    response.addProperty("status", "SUCCESS");
-                    response.addProperty("message", "Đã thiết lập Auto-Bid thành công!");
-                    writer.println(response.toString());
-                    
-                    // Bắt đầu quét và kích hoạt ngay lập tức nếu cần thiết
-                    evaluateAutoBids(itemId);
-                } else {
-                    response.addProperty("status", "FAIL");
-                    response.addProperty("message", "Lỗi lưu cấu hình Auto-Bid.");
-                    writer.println(response.toString());
-                }
-            }
-        } catch (Exception e) {
-            logger.error("REGISTER_AUTO_BID failed: {}", e.getMessage(), e);
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi Server khi đăng ký Auto-Bid!");
+        BiddingService biddingService = new BiddingService(this::broadcast);
+        JsonObject response = biddingService.processRegisterAutoBid(request);
+        if (response != null) {
             writer.println(response.toString());
         }
     }
 
-    /**
-     * Engine xử lý Auto-Bid theo cơ chế Proxy Bidding (chuẩn eBay).
-     * Thay vì mô phỏng từng bước giá, phương thức này tính toán trực tiếp người thắng
-     * và mức giá cuối cùng trong một lần chạy (O(1)), giúp loại bỏ hoàn toàn tình trạng spam sự kiện và treo UI.
-     */
-    private void evaluateAutoBids(int itemId) {
-        try {
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null || !"ACTIVE".equalsIgnoreCase(item.getStatus())) {
-                return; // Auction not active
-            }
 
-            // 1. TÌM NGƯỜI ĐANG GIỮ GIÁ CAO NHẤT HIỆN TẠI (CRITICAL FIX)
-            // Vì Item model không lưu winner_id, ta query trực tiếp từ lịch sử đặt giá mới nhất
-            int currentHighestBidderId = -1;
-            String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) currentHighestBidderId = rs.getInt("bidder_id");
-                }
-            }
-
-            // 2. Lấy tất cả các cấu hình auto-bid, sắp xếp theo giá tối đa giảm dần
-            List<AutoBidConfig> autoBidders = new ArrayList<>();
-            String getAutoBidsSql = "SELECT user_id, max_bid, increment_amount, created_at FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getAutoBidsSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    while (rs.next()) {
-                        autoBidders.add(new AutoBidConfig(rs.getInt("user_id"), rs.getDouble("max_bid"), rs.getDouble("increment_amount"), rs.getString("created_at")));
-                    }
-                }
-            }
-
-            if (autoBidders.isEmpty()) return; // Không có ai đặt auto-bid
-
-            AutoBidConfig topBidder = autoBidders.get(0);
-
-            // 3. Xác định mức giá "thách thức" mà topBidder cần phải vượt qua.
-            // Mức giá này là giá trị cao hơn giữa (giá hiện tại) và (giá max của người auto-bid thứ 2).
-            double challengePrice = item.getCurrentPrice();
-            if (autoBidders.size() > 1) {
-                challengePrice = Math.max(challengePrice, autoBidders.get(1).maxBid);
-            }
-
-            // 4. LOGIC CHỐNG TỰ NÂNG GIÁ CHÍNH MÌNH (Self-bidding)
-            if (topBidder.userId == currentHighestBidderId) {
-                // Đã là người dẫn đầu, chỉ phản đòn nếu có đối thủ auto-bid ép giá cao hơn giá hiện tại.
-                if (challengePrice <= item.getCurrentPrice()) {
-                    return;
-                }
-            }
-
-            // 5. Tính toán mức giá mới.
-            // Giá mới = Mức giá thách thức + 1 bước giá tùy chỉnh của người dùng.
-            double newPrice = challengePrice + topBidder.increment;
-            
-            // Ngoại lệ: Nếu là người đặt Auto-Bid đầu tiên (chưa có ai bid) và không có đối thủ cạnh tranh
-            if (currentHighestBidderId == -1 && autoBidders.size() == 1) {
-                newPrice = item.getCurrentPrice();
-            }
-
-            // Giá mới không được vượt quá giới hạn của người thắng.
-            if (newPrice > topBidder.maxBid) {
-                newPrice = topBidder.maxBid;
-            }
-
-            // Giá mới không thể thấp hơn giá hiện tại. 
-            // Nếu bằng giá hiện tại, người đặt sớm ưu tiên hơn nên vẫn được phép "cướp cờ" (trừ khi chính họ đang dẫn đầu).
-            if (newPrice < item.getCurrentPrice()) {
-                return;
-            }
-            if (newPrice == item.getCurrentPrice() && topBidder.userId == currentHighestBidderId) {
-                return;
-            }
-
-            // --- KIỂM TRA SỐ DƯ TRƯỚC KHI ĐẶT GIÁ ---
-            UserDAO userDAO = new UserDAO();
-            String username = getUsernameById(topBidder.userId);
-            int balance = userDAO.getBalanceByUsername(username);
-            if (balance < newPrice) {
-                logger.warn("[PROXY ENGINE] User {} has insufficient balance (${}) for Auto-Bid ${}. Deactivating their Auto-Bid.", username, balance, newPrice);
-                // Vô hiệu hóa cấu hình Auto-Bid của người dùng này
-                String deleteAutoBidSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
-                try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteAutoBidSql)) {
-                    pstmt.setInt(1, itemId);
-                    pstmt.setInt(2, topBidder.userId);
-                    pstmt.executeUpdate();
-                }
-                
-                // Đệ quy để bộ máy tự đánh giá lại với những người còn lại
-                evaluateAutoBids(itemId);
-                return;
-            }
-            // ----------------------------------------
-
-            // 6. Cập nhật CSDL và phát sóng sự kiện DUY NHẤT.
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-            boolean updateSuccess = itemDAO.updateProxyPrice(itemId, newPrice, topBidder.userId);
-            boolean logSuccess = bidDAO.insertBidTransaction(itemId, topBidder.userId, newPrice);
-
-            if (updateSuccess && logSuccess) {
-                String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
-
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "UPDATE_PRICE");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("newPrice", newPrice);
-                broadcastMsg.addProperty("bidderId", topBidder.userId);
-                broadcastMsg.addProperty("username", username);
-                broadcastMsg.addProperty("isAutoBid", true);
-
-                if (extendedTime != null) {
-                    broadcastMsg.addProperty("newEndTime", extendedTime);
-                }
-
-                logger.info("[PROXY ENGINE] O(1) CALCULATION: New winner for item {} is {} with price ${}", itemId, username, newPrice);
-                broadcast(broadcastMsg);
-            }
-        } catch (Exception e) {
-            logger.error("[PROXY ENGINE] O(1) Error evaluating auto-bids for item {}: {}", itemId, e.getMessage(), e);
-        }
-    }
-
-    private String getUsernameById(int userId) {
-        String sql = "SELECT username FROM users WHERE id = ?";
-        try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
-            pstmt.setInt(1, userId);
-            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) return rs.getString("username");
-            }
-        } catch (Exception ignored) {}
-        return "Robot";
-    }
     private void handleDeposit(JsonObject request) {
         try {
             String username = request.get("username").getAsString();
@@ -788,31 +438,5 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-    /**
-     * Kiểm tra xem phiên đấu giá có đang ở 10 giây cuối không.
-     * Nếu có, tự động cộng thêm 10 giây và lưu vào Database.
-     */
-    private String checkAndExtendAuctionTime(int itemId, ItemDAO itemDAO) {
-        try {
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) return null;
 
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-
-            long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
-
-            // Nếu thời gian còn lại <= 10 giây (và phiên chưa kết thúc)
-            if (secondsLeft <= 10 && secondsLeft >= 0) {
-                String extendedTime = endTime.plusSeconds(10).format(formatter);
-                itemDAO.updateEndTime(itemId, extendedTime);
-                logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);
-                return extendedTime; // Trả về thời gian mới để báo cho các Client
-            }
-        } catch (Exception ex) {
-            logger.error("Lỗi tính toán thời gian gia hạn: {}", ex.getMessage());
-        }
-        return null;
-    }
 }
