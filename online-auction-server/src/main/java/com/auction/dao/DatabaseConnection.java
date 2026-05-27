@@ -15,6 +15,9 @@ import org.slf4j.LoggerFactory;
  * nếu chưa tồn tại, và bơm dữ liệu test (seed data) vào hệ thống lúc khởi động ban đầu.
  */
 public class DatabaseConnection {
+  /**
+   * Logger ghi log cho các hoạt động thao tác với CSDL.
+   */
   private static final Logger logger = LoggerFactory.getLogger(DatabaseConnection.class);
 
   /**
@@ -23,6 +26,9 @@ public class DatabaseConnection {
    */
   private static volatile DatabaseConnection instance;
 
+  /**
+   * Đối tượng Connection (đường ống kết nối) của JDBC tới SQLite.
+   */
   private Connection connection;
 
   /**
@@ -184,6 +190,10 @@ public class DatabaseConnection {
     ensureUserEmailPhoneColumns();
   }
 
+  /**
+   * Đảm bảo bảng items có đầy đủ các cột winner_id và final_price.
+   * Cập nhật lược đồ (schema) CSDL nếu các cột này chưa tồn tại.
+   */
   private void ensureItemWinnerColumns() {
     try (java.sql.Statement stmt = connection.createStatement();
          java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(items);")) {
@@ -205,6 +215,10 @@ public class DatabaseConnection {
     }
   }
 
+  /**
+   * Đảm bảo bảng users có đầy đủ các cột email và phone.
+   * Cập nhật lược đồ (schema) CSDL nếu các cột này chưa tồn tại.
+   */
   private void ensureUserEmailPhoneColumns() {
     try (java.sql.Statement stmt = connection.createStatement();
          java.sql.ResultSet rs = stmt.executeQuery("PRAGMA table_info(users);")) {
