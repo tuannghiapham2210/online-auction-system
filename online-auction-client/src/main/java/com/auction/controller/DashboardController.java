@@ -1,6 +1,9 @@
 package com.auction.controller;
 
 import com.auction.*;
+import com.auction.network.NetworkService;
+import com.auction.controller.helper.DialogManager;
+import com.auction.controller.helper.DashboardTimerManager;
 
 import com.auction.model.Item;
 import com.auction.model.User;
@@ -105,9 +108,7 @@ public class DashboardController {
     @FXML
     private Button btnFilterFinished;
 
-    private Timeline dashboardTimeline;
-    private Map<Label, LocalDateTime> timerMap = new HashMap<>();
-    private Map<Label, Label> liveBadgeMap = new HashMap<>();
+    private final DashboardTimerManager timerManager = new DashboardTimerManager();
     @FXML
     private VBox profileDropdown;
     @FXML
@@ -275,69 +276,15 @@ public class DashboardController {
     }
 
     private void openAccountInfoPopup() {
-        try {
-            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-            Node mainContent = rootPane.getChildren().get(0);
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/account_info.fxml"));
-            Parent accountInfoGroup = loader.load();
-            AccountInfoController controller = loader.getController();
-
-            mainContent.getStyleClass().add("blurred-content");
-
-            if (darkOverlay != null) {
-                darkOverlay.setVisible(true);
-                darkOverlay.setOnMouseClicked(e -> controller.handleClose());
-            }
-
-            controller.setOnCloseCallback(() -> {
-                mainContent.getStyleClass().remove("blurred-content");
-                if (darkOverlay != null)
-                    darkOverlay.setVisible(false);
-                rootPane.getChildren().remove(accountInfoGroup);
-            });
-
-            controller.setOnSaveCallback(() -> {
-                refreshUserProfile();
-                mainContent.getStyleClass().remove("blurred-content");
-                if (darkOverlay != null)
-                    darkOverlay.setVisible(false);
-                rootPane.getChildren().remove(accountInfoGroup);
-            });
-
-            rootPane.getChildren().add(accountInfoGroup);
-        } catch (Exception e) {
-            logger.error("Lỗi khi mở popup thông tin cá nhân: {}", e.getMessage());
-        }
+        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+        Node mainContent = rootPane.getChildren().get(0);
+        DialogManager.showAccountInfoDialog(rootPane, darkOverlay, mainContent, null, this::refreshUserProfile);
     }
 
     private void openChangePasswordPopup() {
-        try {
-            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-            Node mainContent = rootPane.getChildren().get(0);
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/password_change.fxml"));
-            Parent passwordChangeGroup = loader.load();
-            PasswordChangeController controller = loader.getController();
-
-            mainContent.getStyleClass().add("blurred-content");
-
-            if (darkOverlay != null) {
-                darkOverlay.setVisible(true);
-                darkOverlay.setOnMouseClicked(e -> controller.handleClose());
-            }
-
-            controller.setOnCloseCallback(() -> {
-                mainContent.getStyleClass().remove("blurred-content");
-                if (darkOverlay != null)
-                    darkOverlay.setVisible(false);
-                rootPane.getChildren().remove(passwordChangeGroup);
-            });
-
-            rootPane.getChildren().add(passwordChangeGroup);
-        } catch (Exception e) {
-            logger.error("Lỗi khi mở popup đổi mật khẩu: {}", e.getMessage());
-        }
+        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+        Node mainContent = rootPane.getChildren().get(0);
+        DialogManager.showPasswordChangeDialog(rootPane, darkOverlay, mainContent, null);
     }
 
     private void refreshUserProfile() {
@@ -444,102 +391,91 @@ public class DashboardController {
      * Sử dụng luồng riêng (Thread) để tránh làm đóng băng giao diện người dùng.
      */
     private void loadDataFromServer() {
-        new Thread(() -> {
-            try (Socket socket = new Socket("localhost", 8080);
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-                JsonObject request = new JsonObject();
-                request.addProperty("action", "GET_ALL_ITEMS");
-                out.println(request.toString());
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "GET_ALL_ITEMS");
 
-                String responseStr;
-                while ((responseStr = in.readLine()) != null) {
-                    JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
-                    if (!response.has("status")) {
-                        logger.info("Ignoring broadcast/non-status message on temporary socket: " + responseStr);
-                        continue;
-                    }
-                    if (response.get("status").getAsString().equals("SUCCESS")) {
-                        JsonArray dataArray = response.getAsJsonArray("data");
-                        List<Item> items = new ArrayList<>();
+        NetworkService.sendRequestAsync(request)
+            .thenAccept(response -> {
+                if (response.get("status").getAsString().equals("SUCCESS")) {
+                    JsonArray dataArray = response.getAsJsonArray("data");
+                    List<Item> items = new ArrayList<>();
 
-                        // Ánh xạ các trường đặc trưng để xác định loại sản phẩm
-                        Map<String, String> typeMap = new LinkedHashMap<>();
-                        typeMap.put("warrantyMonths", "ELECTRONICS");
-                        typeMap.put("engineType", "VEHICLE");
-                        typeMap.put("artistName", "ART");
-                        typeMap.put("generalInfo", "OTHER");
+                    // Ánh xạ các trường đặc trưng để xác định loại sản phẩm
+                    Map<String, String> typeMap = new LinkedHashMap<>();
+                    typeMap.put("warrantyMonths", "ELECTRONICS");
+                    typeMap.put("engineType", "VEHICLE");
+                    typeMap.put("artistName", "ART");
+                    typeMap.put("generalInfo", "OTHER");
 
-                        for (int i = 0; i < dataArray.size(); i++) {
-                            JsonObject obj = dataArray.get(i).getAsJsonObject();
-                            String type = "OTHER";
-                            String extraInfo = "N/A";
+                    for (int i = 0; i < dataArray.size(); i++) {
+                        JsonObject obj = dataArray.get(i).getAsJsonObject();
+                        String type = "OTHER";
+                        String extraInfo = "N/A";
 
-                            for (Map.Entry<String, String> entry : typeMap.entrySet()) {
-                                if (obj.has(entry.getKey())) {
-                                    type = entry.getValue();
-                                    extraInfo = obj.get(entry.getKey()).getAsString();
-                                    break;
-                                }
+                        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
+                            if (obj.has(entry.getKey())) {
+                                type = entry.getValue();
+                                extraInfo = obj.get(entry.getKey()).getAsString();
+                                break;
                             }
-
-                            String endTime = "";
-
-                            if (obj.has("endTime") && !obj.get("endTime").isJsonNull()) {
-                                endTime = obj.get("endTime").getAsString();
-                            }
-
-                            Item item = com.auction.factory.ItemFactory.createItem(
-                                    type,
-                                    obj.get("name").getAsString(),
-                                    obj.get("startingPrice").getAsDouble(),
-                                    endTime,
-                                    obj.get("sellerId").getAsInt(),
-                                    extraInfo);
-
-                            item.setId(obj.get("id").getAsInt());
-                            if (obj.has("currentPrice"))
-                                item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
-                            if (obj.has("stepPrice") && !obj.get("stepPrice").isJsonNull()) {
-                                item.setStepPrice(obj.get("stepPrice").getAsDouble());
-                            }
-                            if (obj.has("imageUrl"))
-                                item.setImageUrl(obj.get("imageUrl").getAsString());
-                            if (obj.has("description") && !obj.get("description").isJsonNull()) {
-                                item.setDescription(obj.get("description").getAsString());
-                            }
-                            if (obj.has("durationHours") && !obj.get("durationHours").isJsonNull()) {
-                                item.setDurationHours(obj.get("durationHours").getAsInt());
-                            }
-                            if (obj.has("status") && !obj.get("status").isJsonNull()) {
-                                item.setStatus(obj.get("status").getAsString());
-                            }
-                            if (obj.has("winnerId") && !obj.get("winnerId").isJsonNull()) {
-                                item.setWinnerId(obj.get("winnerId").getAsInt());
-                            }
-                            if (obj.has("finalPrice") && !obj.get("finalPrice").isJsonNull()) {
-                                item.setFinalPrice(obj.get("finalPrice").getAsDouble());
-                            }
-                            if (obj.has("winnerUsername") && !obj.get("winnerUsername").isJsonNull()) {
-                                item.setWinnerUsername(obj.get("winnerUsername").getAsString());
-                            }
-                            if (obj.has("viewerCount") && !obj.get("viewerCount").isJsonNull()) {
-                                item.setViewerCount(obj.get("viewerCount").getAsInt());
-                            }
-
-                            items.add(item);
                         }
 
-                        // Lưu trữ vào kho dữ liệu và hiển thị lên UI
-                        this.allItems = items;
-                        Platform.runLater(() -> filterItems(searchField.getText()));
+                        String endTime = "";
+
+                        if (obj.has("endTime") && !obj.get("endTime").isJsonNull()) {
+                            endTime = obj.get("endTime").getAsString();
+                        }
+
+                        Item item = com.auction.factory.ItemFactory.createItem(
+                                type,
+                                obj.get("name").getAsString(),
+                                obj.get("startingPrice").getAsDouble(),
+                                endTime,
+                                obj.get("sellerId").getAsInt(),
+                                extraInfo);
+
+                        item.setId(obj.get("id").getAsInt());
+                        if (obj.has("currentPrice"))
+                            item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
+                        if (obj.has("stepPrice") && !obj.get("stepPrice").isJsonNull()) {
+                            item.setStepPrice(obj.get("stepPrice").getAsDouble());
+                        }
+                        if (obj.has("imageUrl"))
+                            item.setImageUrl(obj.get("imageUrl").getAsString());
+                        if (obj.has("description") && !obj.get("description").isJsonNull()) {
+                            item.setDescription(obj.get("description").getAsString());
+                        }
+                        if (obj.has("durationHours") && !obj.get("durationHours").isJsonNull()) {
+                            item.setDurationHours(obj.get("durationHours").getAsInt());
+                        }
+                        if (obj.has("status") && !obj.get("status").isJsonNull()) {
+                            item.setStatus(obj.get("status").getAsString());
+                        }
+                        if (obj.has("winnerId") && !obj.get("winnerId").isJsonNull()) {
+                            item.setWinnerId(obj.get("winnerId").getAsInt());
+                        }
+                        if (obj.has("finalPrice") && !obj.get("finalPrice").isJsonNull()) {
+                            item.setFinalPrice(obj.get("finalPrice").getAsDouble());
+                        }
+                        if (obj.has("winnerUsername") && !obj.get("winnerUsername").isJsonNull()) {
+                            item.setWinnerUsername(obj.get("winnerUsername").getAsString());
+                        }
+                        if (obj.has("viewerCount") && !obj.get("viewerCount").isJsonNull()) {
+                            item.setViewerCount(obj.get("viewerCount").getAsInt());
+                        }
+
+                        items.add(item);
                     }
-                    break; // exit loop after reading our status response
+
+                    // Lưu trữ vào kho dữ liệu và hiển thị lên UI
+                    this.allItems = items;
+                    Platform.runLater(() -> filterItems(searchField.getText()));
                 }
-            } catch (IOException e) {
-                logger.error("Lỗi kết nối khi tải danh sách sản phẩm: {}", e.getMessage());
-            }
-        }).start();
+            })
+            .exceptionally(ex -> {
+                logger.error("Lỗi kết nối khi tải danh sách sản phẩm: {}", ex.getMessage());
+                return null;
+            });
     }
 
     /**
@@ -550,11 +486,7 @@ public class DashboardController {
     private void displayItems(List<Item> itemsToDisplay) {
         // 1. Dọn dẹp lưới cũ và dừng các bộ đếm đang chạy
         itemGrid.getChildren().clear();
-        if (dashboardTimeline != null) {
-            dashboardTimeline.stop();
-        }
-        timerMap.clear();
-        liveBadgeMap.clear();
+        timerManager.stop();
 
         if (lblItemCount != null) {
             lblItemCount.setText(String.valueOf(itemsToDisplay.size()));
@@ -581,15 +513,7 @@ public class DashboardController {
 
                 if (!"PENDING".equalsIgnoreCase(item.getStatus()) && !"FINISHED".equalsIgnoreCase(item.getStatus())
                         && !"CLOSED".equalsIgnoreCase(item.getStatus())) {
-                    if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-                        try {
-                            timerMap.put(controller.getTimerLabel(), LocalDateTime.parse(item.getEndTime(),
-                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                            liveBadgeMap.put(controller.getTimerLabel(), controller.getBadgeLabel());
-                        } catch (Exception e) {
-                            logger.warn("Lỗi parse thời gian: {}", item.getId());
-                        }
-                    }
+                    timerManager.registerTimer(controller.getTimerLabel(), controller.getBadgeLabel(), item.getEndTime());
                 }
             } catch (Exception e) {
                 logger.error("Lỗi khi load item card FXML cho sản phẩm: " + item.getName(), e);
@@ -601,52 +525,7 @@ public class DashboardController {
         }
 
         // 3. Khởi động luồng đếm ngược thời gian thực cho các thẻ mới
-        dashboardTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
-            LocalDateTime now = LocalDateTime.now();
-            boolean needRefresh = false;
-
-            // Kiểm tra xem có sản phẩm nào vừa hết hạn tự nhiên không
-            for (Item item : itemsToDisplay) {
-                if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus()))
-                        && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-                    try {
-                        LocalDateTime end = LocalDateTime.parse(item.getEndTime(),
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                        if (!now.isBefore(end)) {
-                            item.setStatus("FINISHED");
-                            needRefresh = true;
-                        }
-                    } catch (Exception ex) {
-                    }
-                }
-            }
-
-            // Nếu có thẻ vừa hết hạn, vẽ lại giao diện để tự động cập nhật nút và màu sắc
-            // "ĐÃ KẾT THÚC"
-            if (needRefresh) {
-                filterItems(searchField.getText());
-                return;
-            }
-
-            for (Map.Entry<Label, LocalDateTime> entry : timerMap.entrySet()) {
-                Label lbl = entry.getKey();
-                LocalDateTime end = entry.getValue();
-                if (now.isAfter(end)) {
-                    lbl.setText("ĐÃ KẾT THÚC");
-                    lbl.getStyleClass().add("timer-expired-label");
-                    Label b = liveBadgeMap.get(lbl);
-                    if (b != null) {
-                        b.setVisible(false);
-                    }
-                } else {
-                    java.time.Duration duration = java.time.Duration.between(now, end);
-                    lbl.setText(String.format("⏳ %02d:%02d:%02d",
-                            duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
-                }
-            }
-        }));
-        dashboardTimeline.setCycleCount(Timeline.INDEFINITE);
-        dashboardTimeline.play();
+        timerManager.start(itemsToDisplay, () -> filterItems(searchField.getText()));
     }
 
     private void updateFilterButtonsStyle(Button activeButton) {
@@ -706,35 +585,11 @@ public class DashboardController {
 
     @FXML
     private void handleDeposit() {
-        try {
-            StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-            Node mainContent = rootPane.getChildren().get(0);
-            if (darkOverlay != null && darkOverlay.isVisible())
-                return;
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/deposit.fxml"));
-            Parent depositGroup = loader.load();
-            DepositController depositController = loader.getController();
-
-            mainContent.getStyleClass().add("blurred-content");
-
-            if (darkOverlay != null) {
-                darkOverlay.setVisible(true);
-                darkOverlay.setOnMouseClicked(e -> depositController.closePopup());
-            }
-
-            depositController.setOnCloseCallback(() -> {
-                mainContent.getStyleClass().remove("blurred-content");
-                if (darkOverlay != null)
-                    darkOverlay.setVisible(false);
-                rootPane.getChildren().remove(depositGroup);
-                lblBalance.setText("$" + NumberUtil.format(Session.balance));
-            });
-
-            rootPane.getChildren().add(depositGroup);
-        } catch (Exception e) {
-            logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
-        }
+        StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+        Node mainContent = rootPane.getChildren().get(0);
+        DialogManager.showDepositDialog(rootPane, darkOverlay, mainContent, () -> {
+            lblBalance.setText("$" + NumberUtil.format(Session.balance));
+        });
     }
 
     /**
@@ -742,37 +597,13 @@ public class DashboardController {
      */
     @FXML
     private void handleAddItem() {
-        try {
-            StackPane rootPane = (StackPane) btnAddItem.getScene().getRoot();
-            Node mainContent = rootPane.getChildren().get(0);
-            if (darkOverlay != null && darkOverlay.isVisible())
-                return;
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/add_item.fxml"));
-            Parent addItemGroup = loader.load();
-            AddItemController addItemCtrl = loader.getController();
-
-            mainContent.getStyleClass().add("blurred-content");
-
-            if (darkOverlay != null) {
-                darkOverlay.setVisible(true);
-                darkOverlay.setOnMouseClicked(e -> addItemCtrl.closePopup());
-            }
-
-            isAddItemPopupOpen = true;
-
-            rootPane.getChildren().add(addItemGroup);
-            addItemCtrl.setOnCloseCallback(() -> {
-                isAddItemPopupOpen = false;
-                mainContent.getStyleClass().remove("blurred-content");
-                if (darkOverlay != null)
-                    darkOverlay.setVisible(false);
-                rootPane.getChildren().remove(addItemGroup);
-                loadDataFromServer();
-            });
-        } catch (Exception e) {
-            logger.error("Lỗi khi mở cửa sổ thêm sản phẩm: {}", e.getMessage());
-        }
+        StackPane rootPane = (StackPane) btnAddItem.getScene().getRoot();
+        Node mainContent = rootPane.getChildren().get(0);
+        isAddItemPopupOpen = true;
+        DialogManager.showAddItemDialog(rootPane, darkOverlay, mainContent, () -> {
+            isAddItemPopupOpen = false;
+            loadDataFromServer();
+        });
     }
 
     /**
@@ -780,8 +611,7 @@ public class DashboardController {
      */
     private void openBidRoom(Item item) {
         try {
-            if (dashboardTimeline != null)
-                dashboardTimeline.stop();
+            timerManager.stop();
             closeListener(); // Đóng kết nối socket cũ trước khi chuyển trang
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/bid_room.fxml"));
@@ -807,30 +637,8 @@ public class DashboardController {
 
     private void showCustomAlert(String title, String message, String iconText, String confirmText, boolean isError,
             Runnable onConfirm) {
-        try {
-            Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
-            Stage dialogStage = new Stage();
-            dialogStage.initOwner(ownerStage);
-            dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-            dialogStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/custom_alert.fxml"));
-            Parent root = loader.load();
-
-            javafx.scene.Scene scene = new javafx.scene.Scene(root);
-            scene.setFill(Color.TRANSPARENT);
-            dialogStage.setScene(scene);
-
-            CustomAlertController controller = loader.getController();
-            controller.setData(title, message, iconText, confirmText, isError, onConfirm);
-
-            dialogStage.showAndWait();
-        } catch (Exception e) {
-            logger.error("Lỗi khi hiển thị Custom Alert FXML: {}", e.getMessage(), e);
-            if (onConfirm != null && !isError) {
-                onConfirm.run();
-            }
-        }
+        Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
+        DialogManager.showCustomAlert(ownerStage, title, message, iconText, confirmText, isError, onConfirm);
     }
 
     private void confirmAndDelete(Item item) {
@@ -841,8 +649,7 @@ public class DashboardController {
     @FXML
     public void handleLogout() {
         try {
-            if (dashboardTimeline != null)
-                dashboardTimeline.stop();
+            timerManager.stop();
             closeListener(); // Đóng kết nối socket khi đăng xuất
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("/com/auction/login.fxml")));
@@ -856,37 +663,30 @@ public class DashboardController {
      * Gửi yêu cầu gỡ bỏ/xóa sản phẩm trực tuyến lên máy chủ Server thời gian thực.
      */
     private void sendDeleteRequestToServer(int itemId) {
-        new Thread(() -> {
-            try (Socket socket = new Socket("localhost", 8080);
-                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-                JsonObject request = new JsonObject();
-                request.addProperty("action", "CANCEL_AUCTION_REQUEST");
-                request.addProperty("itemId", itemId);
-                request.addProperty("userId", Session.userId);
-                request.addProperty("role", Session.role);
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "CANCEL_AUCTION_REQUEST");
+        request.addProperty("itemId", itemId);
+        request.addProperty("userId", Session.userId);
+        request.addProperty("role", Session.role);
 
-                out.println(request.toString());
-                logger.info("Sent CANCEL_AUCTION_REQUEST for itemId: {}", itemId);
+        logger.info("Sent CANCEL_AUCTION_REQUEST for itemId: {}", itemId);
 
-                String responseStr = in.readLine();
-                if (responseStr != null) {
-                    JsonObject responseJson = JsonParser.parseString(responseStr).getAsJsonObject();
-
-                    Platform.runLater(() -> {
-                        if (responseJson.has("action") && "ERROR".equals(responseJson.get("action").getAsString())) {
-                            String errorMsg = responseJson.has("message") ? responseJson.get("message").getAsString()
-                                    : "Lỗi hệ thống khi gỡ sản phẩm!";
-                            showCustomAlert("TỪ CHỐI THAO TÁC", errorMsg, "⚠️", "Đã hiểu", true, null);
-                        } else {
-                            loadDataFromServer();
-                        }
-                    });
-                }
-            } catch (IOException e) {
-                logger.error("Lỗi kết nối Socket khi gửi yêu cầu gỡ sản phẩm: {}", e.getMessage());
-            }
-        }).start();
+        NetworkService.sendRequestAsync(request)
+            .thenAccept(responseJson -> {
+                Platform.runLater(() -> {
+                    if (responseJson.has("action") && "ERROR".equals(responseJson.get("action").getAsString())) {
+                        String errorMsg = responseJson.has("message") ? responseJson.get("message").getAsString()
+                                : "Lỗi hệ thống khi gỡ sản phẩm!";
+                        showCustomAlert("TỪ CHỐI THAO TÁC", errorMsg, "⚠️", "Đã hiểu", true, null);
+                    } else {
+                        loadDataFromServer();
+                    }
+                });
+            })
+            .exceptionally(ex -> {
+                logger.error("Lỗi kết nối Socket khi gửi yêu cầu gỡ sản phẩm: {}", ex.getMessage());
+                return null;
+            });
     }
 
     /**
