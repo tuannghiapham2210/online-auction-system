@@ -5,7 +5,7 @@
 <?import javafx.scene.control.Tooltip?>
 
 <!-- Tách biệt hoàn toàn giao diện điểm biểu đồ (Chart Node) ra khỏi Java Code -->
-<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.ChartNodeController" styleClass="chart-node-pane">
+<StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.ChartNodeController" styleClass="chart-node-pane">
     <!-- Khai báo Tooltip ngầm (tuân thủ MVC, không cần dùng Label đệm) -->
     <fx:define>
         <Tooltip fx:id="dotTooltip" styleClass="chart-tooltip"/>

@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.auction.model.Item;
 import com.auction.model.User;
@@ -163,7 +164,7 @@ public class DashboardController {
                     }
                     try {
                         StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-                        FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/sale_notification.fxml"));
                         Parent saleNode = loader.load();
                         SaleNotificationController ctrl = loader.getController();
                         
@@ -183,7 +184,7 @@ public class DashboardController {
     private void showWinNotification(String message, int balance) {
         try {
             StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("win_notification.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/win_notification.fxml"));
             Parent winNode = loader.load();
             WinNotificationController ctrl = loader.getController();
             
@@ -202,7 +203,7 @@ public class DashboardController {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("profile_dropdown.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/profile_dropdown.fxml"));
             profileDropdown = loader.load();
             ProfileDropdownController controller = loader.getController();
             controller.setCallbacks(
@@ -257,7 +258,7 @@ public class DashboardController {
             StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
             Node mainContent = rootPane.getChildren().get(0);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("account_info.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/account_info.fxml"));
             Parent accountInfoGroup = loader.load();
             AccountInfoController controller = loader.getController();
 
@@ -295,7 +296,7 @@ public class DashboardController {
             StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
             Node mainContent = rootPane.getChildren().get(0);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("password_change.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/password_change.fxml"));
             Parent passwordChangeGroup = loader.load();
             PasswordChangeController controller = loader.getController();
 
@@ -535,7 +536,7 @@ public class DashboardController {
         // 2. Tạo và thêm các thẻ sản phẩm mới
         for (Item item : itemsToDisplay) {
             try {
-                java.net.URL fxmlUrl = getClass().getResource("item_card.fxml");
+                java.net.URL fxmlUrl = getClass().getResource("/com/auction/item_card.fxml");
                 if (fxmlUrl == null) {
                     logger.error("Không tìm thấy file item_card.fxml! Vui lòng Rebuild/Compile lại project.");
                     Label err = new Label("Lỗi: Không tìm thấy file item_card.fxml\n(Vui lòng Rebuild project)");
@@ -672,7 +673,7 @@ public class DashboardController {
             Node mainContent = rootPane.getChildren().get(0);
             if (rootPane.lookup("#dark-overlay") != null) return;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("deposit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/deposit.fxml"));
             Parent depositGroup = loader.load();
             DepositController depositController = loader.getController();
 
@@ -706,7 +707,7 @@ public class DashboardController {
             Node mainContent = rootPane.getChildren().get(0);
             if (rootPane.lookup("#dark-overlay") != null) return;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("add_item.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/add_item.fxml"));
             Parent addItemGroup = loader.load();
             AddItemController addItemCtrl = loader.getController();
 
@@ -740,7 +741,7 @@ public class DashboardController {
             if (dashboardTimeline != null) dashboardTimeline.stop();
             closeListener(); // Đóng kết nối socket cũ trước khi chuyển trang
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("bid_room.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/bid_room.fxml"));
             Parent root = loader.load();
 
             String desc = item.getDescription();
@@ -769,7 +770,7 @@ public class DashboardController {
             dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             dialogStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("custom_alert.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/custom_alert.fxml"));
             Parent root = loader.load();
 
             javafx.scene.Scene scene = new javafx.scene.Scene(root);
@@ -798,7 +799,7 @@ public class DashboardController {
             if (dashboardTimeline != null) dashboardTimeline.stop();
             closeListener(); // Đóng kết nối socket khi đăng xuất
             Stage stage = (Stage) btnLogout.getScene().getWindow();
-            btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("login.fxml")));
+            btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("/com/auction/login.fxml")));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
         } catch (IOException e) {
             logger.error("Lỗi đăng xuất: {}", e.getMessage());
@@ -1050,7 +1051,7 @@ public class DashboardController {
                 }
                 try {
                     StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("sale_notification.fxml"));
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/sale_notification.fxml"));
                     Parent saleNode = loader.load();
                     SaleNotificationController ctrl = loader.getController();
                     

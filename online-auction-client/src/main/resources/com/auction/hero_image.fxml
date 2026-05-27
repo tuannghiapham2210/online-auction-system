@@ -7,7 +7,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.control.Label?>
 
-<StackPane fx:id="heroImageContainer" minHeight="320.0" prefHeight="320.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.HeroImageController">
+<StackPane fx:id="heroImageContainer" minHeight="320.0" prefHeight="320.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.HeroImageController">
    <children>
       <Rectangle fx:id="heroImageRect" height="250.0" />
       <Region style="-fx-background-color: linear-gradient(to bottom, transparent, -fx-base-panel-color); -fx-background-radius: 12 12 0 0;" />

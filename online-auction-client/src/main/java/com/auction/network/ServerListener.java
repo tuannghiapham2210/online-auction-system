@@ -1,6 +1,6 @@
 package com.auction.network;
 
-import com.auction.BidRoomController;
+import com.auction.controller.BidRoomController;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.slf4j.Logger;

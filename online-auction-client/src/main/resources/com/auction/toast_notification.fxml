@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<HBox fx:id="toastRoot" managed="false" opacity="0.0" visible="false" maxHeight="-Infinity" maxWidth="-Infinity" styleClass="toast-notification" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.ToastNotificationController">
+<HBox fx:id="toastRoot" managed="false" opacity="0.0" visible="false" maxHeight="-Infinity" maxWidth="-Infinity" styleClass="toast-notification" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.ToastNotificationController">
    <children>
       <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="WHITE" />
       <Label fx:id="toastLabel" styleClass="toast-label" text="Phiên đấu giá chính thức mở cửa!" />

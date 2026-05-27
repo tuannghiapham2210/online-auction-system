@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx/17.0.2" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.auction.AccountInfoController"
+      fx:controller="com.auction.controller.AccountInfoController"
       stylesheets="@style.css"
       alignment="CENTER"
       spacing="18"

@@ -1,6 +1,7 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
-import com.auction.BidRoomController.BidEvent;
+import com.auction.controller.BidRoomController.BidEvent;
 import com.auction.util.NumberUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -31,7 +32,7 @@ public class BidHistoryCell extends ListCell<BidEvent> {
             getStyleClass().remove("active-bid-row");
         } else {
             if (loader == null) {
-                loader = new FXMLLoader(getClass().getResource("bid_history_cell.fxml"));
+                loader = new FXMLLoader(getClass().getResource("/com/auction/bid_history_cell.fxml"));
                 loader.setController(this);
                 try {
                     loader.load();

@@ -10,7 +10,7 @@
 <?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.shape.SVGPath?>
 
-<VBox fx:id="cardRoot" prefWidth="280.0" spacing="0" styleClass="item-card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.ItemCardController">
+<VBox fx:id="cardRoot" prefWidth="280.0" spacing="0" styleClass="item-card" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.ItemCardController">
     <children>
         <StackPane fx:id="imageContainer" maxHeight="180.0" minHeight="180.0" prefHeight="180.0" styleClass="item-card-image-container">
             <children>

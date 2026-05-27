@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;

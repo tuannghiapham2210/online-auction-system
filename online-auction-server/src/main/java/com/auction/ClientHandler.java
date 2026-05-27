@@ -4,6 +4,10 @@ import com.auction.dao.UserDAO;
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
+import com.auction.service.AuctionService;
+import com.auction.service.BiddingService;
+import com.auction.service.PaymentService;
+import com.auction.service.UserService;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -45,22 +49,7 @@ public class ClientHandler implements Runnable {
         this.clientSocket = socket;
     }
 
-    /**
-     * Helper class to hold auto-bid configurations for sorting and evaluation.
-     */
-    private static class AutoBidConfig {
-        int userId;
-        double maxBid;
-        double increment;
-        String createdAt; // For tie-breaking
 
-        AutoBidConfig(int userId, double maxBid, double increment, String createdAt) {
-            this.userId = userId;
-            this.maxBid = maxBid;
-            this.increment = increment;
-            this.createdAt = createdAt;
-        }
-    }
 
     /**
      * Vòng lặp thực thi chính của Client Thread.
@@ -165,7 +154,6 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-
     /**
      * Xử lý request đăng nhập.
      * Xác thực thông tin với Database và trả về role cùng userId nếu thành công.
@@ -174,32 +162,8 @@ public class ClientHandler implements Runnable {
     private void handleLogin(JsonObject request) {
         String user = request.get("username").getAsString();
         String pass = request.get("password").getAsString();
-
-        UserDAO dao = new UserDAO();
-        boolean isOk = dao.login(user, pass);
-
-        JsonObject response = new JsonObject();
-
-        if (isOk) {
-            String role = dao.getUserRole(user, pass);
-            int userId = dao.getUserId(user, pass);
-            int balance = dao.getBalanceByUsername(user);
-            String email = dao.getUserEmail(user, pass);
-            String phone = dao.getUserPhone(user, pass);
-
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Đăng nhập thành công!");
-            response.addProperty("role", role);
-            response.addProperty("userId", userId);
-            response.addProperty("username", user);
-            response.addProperty("balance", balance);
-            response.addProperty("email", email != null ? email : "");
-            response.addProperty("phone", phone != null ? phone : "");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processLogin(user, pass);
         writer.println(response.toString());
     }
 
@@ -208,37 +172,8 @@ public class ClientHandler implements Runnable {
         String newUsername = request.has("username") ? request.get("username").getAsString().trim() : "";
         String email = request.has("email") ? request.get("email").getAsString().trim() : "";
         String phone = request.has("phone") ? request.get("phone").getAsString().trim() : "";
-
-        JsonObject response = new JsonObject();
-
-        if (newUsername.isEmpty()) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Tên người dùng không được để trống.");
-            writer.println(response.toString());
-            return;
-        }
-
-        UserDAO userDAO = new UserDAO();
-        if (userDAO.isUsernameTakenByOther(userId, newUsername)) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.");
-            writer.println(response.toString());
-            return;
-        }
-
-        boolean success = userDAO.updateUserProfile(userId, newUsername, email, phone);
-
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Cập nhật thông tin thành công.");
-            response.addProperty("username", newUsername);
-            response.addProperty("email", email != null ? email : "");
-            response.addProperty("phone", phone != null ? phone : "");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Không thể cập nhật hồ sơ. Vui lòng thử lại sau.");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processUpdateProfile(userId, newUsername, email, phone);
         writer.println(response.toString());
     }
 
@@ -246,27 +181,8 @@ public class ClientHandler implements Runnable {
         int userId = request.get("userId").getAsInt();
         String oldPassword = request.has("oldPassword") ? request.get("oldPassword").getAsString() : "";
         String newPassword = request.has("newPassword") ? request.get("newPassword").getAsString() : "";
-
-        JsonObject response = new JsonObject();
-
-        if (oldPassword.isEmpty() || newPassword.isEmpty()) {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
-            writer.println(response.toString());
-            return;
-        }
-
-        UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.changePassword(userId, oldPassword, newPassword);
-
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Đổi mật khẩu thành công.");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
-        }
-
+        UserService userService = new UserService();
+        JsonObject response = userService.processChangePassword(userId, oldPassword, newPassword);
         writer.println(response.toString());
     }
 
@@ -274,18 +190,8 @@ public class ClientHandler implements Runnable {
         String username = request.get("username").getAsString();
         String contactInfo = request.has("contactInfo") ? request.get("contactInfo").getAsString() : "";
         String newPassword = request.get("newPassword").getAsString();
-
-        UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.resetPassword(username, contactInfo, newPassword);
-
-        JsonObject response = new JsonObject();
-        if (success) {
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("message", "Khôi phục mật khẩu thành công!");
-        } else {
-            response.addProperty("status", "FAIL");
-            response.addProperty("message", "Sai tài khoản hoặc thông tin xác thực!");
-        }
+        UserService userService = new UserService();
+        JsonObject response = userService.processResetPassword(username, contactInfo, newPassword);
         writer.println(response.toString());
     }
 
@@ -294,35 +200,14 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "username", "password", và "role".
      */
     private void handleRegister(JsonObject request) {
-        try {
-            String username = request.get("username").getAsString();
-            String password = request.get("password").getAsString();
-            String role = request.get("role").getAsString();
-            String email = request.has("email") ? request.get("email").getAsString() : "";
-            String phone = request.has("phone") ? request.get("phone").getAsString() : "";
-
-            UserDAO userDAO = new UserDAO();
-            boolean isSuccess = userDAO.registerUser(username, password, role, email, phone);
-
-            JsonObject response = new JsonObject();
-
-            if (isSuccess) {
-                response.addProperty("status", "SUCCESS");
-                response.addProperty("message", "Đăng ký thành công!");
-            } else {
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Tài khoản đã tồn tại hoặc có lỗi xảy ra!");
-            }
-
-            writer.println(response.toString());
-
-        } catch (Exception e) {
-            logger.error("REGISTER failed: {}", e.getMessage(), e);
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi Server!");
-            writer.println(response.toString());
-        }
+        String username = request.get("username").getAsString();
+        String password = request.get("password").getAsString();
+        String role = request.get("role").getAsString();
+        String email = request.has("email") ? request.get("email").getAsString() : "";
+        String phone = request.has("phone") ? request.get("phone").getAsString() : "";
+        UserService userService = new UserService();
+        JsonObject response = userService.processRegister(username, password, role, email, phone);
+        writer.println(response.toString());
     }
 
     /**
@@ -331,96 +216,22 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa chi tiết sản phẩm (name, price, duration...).
      */
     private void handleAddItem(JsonObject request) {
-        logger.info("Processing ADD_ITEM request...");
-        try {
-            // 1. Trích xuất dữ liệu cơ bản
-            String name = request.get("name").getAsString();
-            String type = request.get("type").getAsString();
-            double startingPrice = request.get("startingPrice").getAsDouble();
-            int sellerId = request.get("sellerId").getAsInt();
-
-            // 2. Trích xuất dữ liệu bổ sung (có thể trống)
-            String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
-            String description = request.has("description") ? request.get("description").getAsString() : "";
-            double stepPrice = request.get("stepPrice").getAsDouble();
-            double durationHours = request.get("durationHours").getAsDouble();
-
-            // 3. Tính toán EndTime
-            // 3. Chưa bắt đầu đấu giá -> chưa set thời gian thật
-            String endTime = null;
-
-            // 4. Khởi tạo đối tượng Item
-            Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, "");
-            newItem.setStepPrice(stepPrice);
-            newItem.setDurationHours(durationHours);
-            newItem.setImageUrl(imageUrl);
-            newItem.setDescription(description);
-
-            // 5. Lưu vào Database
-            ItemDAO itemDAO = new ItemDAO();
-            boolean isSuccess = itemDAO.insertItem(newItem);
-
-            JsonObject response = new JsonObject();
-            if (isSuccess) {
-                    logger.info("Saved item successfully [{}] into items table.", name);
-
-                    // 6a. Lấy item mới nhất để lấy ID
-                    List<Item> allItems = itemDAO.getAllItems();
-                    int insertedId = -1;
-                    if (!allItems.isEmpty()) {
-                        insertedId = allItems.get(allItems.size() - 1).getId();
-                    }
-
-                    response.addProperty("status", "SUCCESS");
-                    response.addProperty("itemId", insertedId);
-                    response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
-
-                    writer.println(response.toString());
-                    return;
-            } else {
-                logger.error("Failed to save item [{}] into items table.", name);
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Lỗi Database khi lưu sản phẩm.");
-            }
-            writer.println(response.toString());
-
-        } catch (Exception e) {
-            JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("status", "ERROR");
-            errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
-            logger.error("ADD_ITEM failed: {}", e.getMessage(), e);
-            writer.println(errorResponse.toString());
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processAddItem(request);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
     private void handlePublishItem(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            logger.info("Processing PUBLISH_ITEM request for itemId={}...", itemId);
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item != null) {
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "NEW_ITEM_ADDED");
-                broadcastMsg.addProperty("id", item.getId());
-                broadcastMsg.addProperty("name", item.getName());
-                broadcastMsg.addProperty("itemType", item.getItemType());
-                broadcastMsg.addProperty("startingPrice", item.getStartingPrice());
-                broadcastMsg.addProperty("currentPrice", item.getCurrentPrice());
-                broadcastMsg.addProperty("stepPrice", item.getStepPrice());
-                broadcastMsg.addProperty("durationHours", item.getDurationHours());
-                broadcastMsg.addProperty("imageUrl", item.getImageUrl());
-                broadcastMsg.addProperty("description", item.getDescription());
-                broadcastMsg.addProperty("extraInfo", item.getExtraInfo());
-                broadcastMsg.addProperty("sellerId", item.getSellerId());
-                broadcastMsg.addProperty("status", item.getStatus());
-                broadcastMsg.addProperty("endTime", item.getEndTime() != null ? item.getEndTime() : "");
-
-                logger.info("Broadcasting NEW_ITEM_ADDED event for published itemId={}", item.getId());
-                broadcast(broadcastMsg);
-            }
-        } catch (Exception e) {
-            logger.error("PUBLISH_ITEM failed: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processPublishItem(itemId);
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -429,20 +240,16 @@ public class ClientHandler implements Runnable {
      * @param request Request GET_ALL_ITEMS dạng JSON.
      */
     private void handleGetAllItems(JsonObject request) {
-        ItemDAO itemDAO = new ItemDAO();
-        List<Item> items = itemDAO.getAllItems();
-
+        AuctionService auctionService = new AuctionService();
+        List<Item> items = auctionService.getAllItems();
         for (Item item : items) {
             item.setViewerCount(getViewerCountForItem(item.getId()));
         }
-
         Gson gson = new Gson();
         JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
-
         JsonObject response = new JsonObject();
         response.addProperty("status", "SUCCESS");
         response.add("data", arr);
-
         writer.println(response.toString());
     }
 
@@ -452,111 +259,10 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "bidderId", và "bidAmount".
      */
     private void handlePlaceBid(JsonObject request) {
-        try {
-            logger.info("Received PLACE_BID request: {}", request);
-
-            // 1. Trích xuất dữ liệu đặt giá
-            int itemId = request.get("itemId").getAsInt();
-            int bidderId = request.get("bidderId").getAsInt();
-            double bidAmount = request.get("bidAmount").getAsDouble();
-            String username = request.has("username") ? request.get("username").getAsString() : "Khách";
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            if (!"BIDDER".equalsIgnoreCase(role)) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // --- PREVENT SELF-BIDDING ---
-            int currentHighestBidderId = -1;
-            String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) currentHighestBidderId = rs.getInt("bidder_id");
-                }
-            }
-            if (currentHighestBidderId == bidderId) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Bạn đang là người trả giá cao nhất, hãy đợi đối thủ ra giá!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            // -----------------------------
-
-            // 2. Cập nhật giá và lưu lịch sử giao dịch vào DB
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-
-            // --- SECURITY GUARD CLAUSE ---
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            if ("PENDING".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
-                logger.warn("Rejected bid for PENDING item: {}", itemId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // Enforce minimum bid step price
-            double minBid = item.getCurrentPrice() + item.getStepPrice();
-            if (bidAmount < minBid) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Giá đặt tối thiểu phải là: $" + minBid);
-                logger.warn("Rejected bid for item {}: amount ${} is less than minimum bid ${}", itemId, bidAmount, minBid);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            // -----------------------------
-
-            boolean updateSuccess = itemDAO.updateCurrentPrice(itemId, bidAmount, bidderId);
-            boolean logSuccess = bidDAO.insertBidTransaction(itemId, bidderId, bidAmount);
-
-            // 3. Broadcast cho tất cả Client nếu thành công
-            if (updateSuccess && logSuccess) {
-                // Kích hoạt kiểm tra Anti-sniping
-                String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
-
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "UPDATE_PRICE");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("newPrice", bidAmount);
-                broadcastMsg.addProperty("bidderId", bidderId);
-                broadcastMsg.addProperty("username", username);
-
-                // Nếu có gia hạn, đính kèm luôn thời gian mới vào loa phát thanh
-                if (extendedTime != null) {
-                    broadcastMsg.addProperty("newEndTime", extendedTime);
-                }
-
-                logger.info("New bid accepted. Broadcasting price update...");
-                broadcast(broadcastMsg);
-
-                // --- TRIGGER THE AUTO-BID ENGINE ---
-                evaluateAutoBids(itemId);
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Lỗi Database khi xử lý đặt giá!");
-                logger.error("Failed to place bid for itemId={}, bidderId={}, bidAmount={}", itemId, bidderId, bidAmount);
-                this.writer.println(errorMsg.toString());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
+        BiddingService biddingService = new BiddingService(this::broadcast);
+        JsonObject response = biddingService.processPlaceBid(request);
+        if (response != null) {
+            writer.println(response.toString());
         }
     }
     
@@ -564,330 +270,28 @@ public class ClientHandler implements Runnable {
      * Đăng ký cấu hình tự động đấu giá (Auto-Bid) cho User vào Database.
      */
     private void handleRegisterAutoBid(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.get("userId").getAsInt();
-            double maxBid = request.get("maxBid").getAsDouble();
-            double increment = request.get("increment").getAsDouble();
-            String username = request.has("username") ? request.get("username").getAsString() : "Khách";
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            if (!"BIDDER".equalsIgnoreCase(role)) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể thiết lập Auto-Bid!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // --- SECURITY GUARD CLAUSE ---
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            if ("PENDING".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("status", "ERROR");
-                errorMsg.addProperty("message", "Auto-Bid rejected: Auction is currently " + item.getStatus() + ".");
-                logger.warn("Rejected Auto-Bid for {} item: {}", item.getStatus(), itemId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-            
-            // Enforce auto-bid increment and maxBid
-            if (increment < item.getStepPrice()) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Bước giá tự động phải lớn hơn hoặc bằng bước giá của sản phẩm ($" + item.getStepPrice() + ")!");
-                writer.println(response.toString());
-                return;
-            }
-            double minMaxBid = item.getCurrentPrice() + item.getStepPrice();
-            if (maxBid < minMaxBid) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + minMaxBid + ")!");
-                writer.println(response.toString());
-                return;
-            }
-
-            // Enforce that maxBid does not exceed user balance
-            UserDAO dbUserDAO = new UserDAO();
-            int userBalance = dbUserDAO.getBalanceByUsername(username);
-            if (maxBid > userBalance) {
-                JsonObject response = new JsonObject();
-                response.addProperty("status", "ERROR");
-                response.addProperty("message", "Không đủ số dư: Ngân sách tối đa không được vượt quá số dư tài khoản ($" + userBalance + ")!");
-                writer.println(response.toString());
-                return;
-            }
-            // -----------------------------
-
-            logger.info("Received REGISTER_AUTO_BID: user={}, item={}, max={}, inc={}", username, itemId, maxBid, increment);
-
-            // Xóa cấu hình cũ của người dùng này nếu có (Tránh tự đấu giá với chính mình)
-            String deleteOldConfigSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
-            try (java.sql.PreparedStatement deleteStmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteOldConfigSql)) {
-                deleteStmt.setInt(1, itemId);
-                deleteStmt.setInt(2, userId);
-                deleteStmt.executeUpdate();
-            }
-
-            String sql = "INSERT INTO auto_bids (item_id, user_id, max_bid, increment_amount, created_at) VALUES (?, ?, ?, ?, ?)";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
-                pstmt.setInt(1, itemId);
-                pstmt.setInt(2, userId);
-                pstmt.setDouble(3, maxBid);
-                pstmt.setDouble(4, increment);
-                pstmt.setString(5, java.time.LocalDateTime.now().toString());
-                
-                int rows = pstmt.executeUpdate();
-                JsonObject response = new JsonObject();
-                
-                if (rows > 0) {
-                    response.addProperty("status", "SUCCESS");
-                    response.addProperty("message", "Đã thiết lập Auto-Bid thành công!");
-                    writer.println(response.toString());
-                    
-                    // Bắt đầu quét và kích hoạt ngay lập tức nếu cần thiết
-                    evaluateAutoBids(itemId);
-                } else {
-                    response.addProperty("status", "FAIL");
-                    response.addProperty("message", "Lỗi lưu cấu hình Auto-Bid.");
-                    writer.println(response.toString());
-                }
-            }
-        } catch (Exception e) {
-            logger.error("REGISTER_AUTO_BID failed: {}", e.getMessage(), e);
-            JsonObject response = new JsonObject();
-            response.addProperty("status", "ERROR");
-            response.addProperty("message", "Lỗi Server khi đăng ký Auto-Bid!");
+        BiddingService biddingService = new BiddingService(this::broadcast);
+        JsonObject response = biddingService.processRegisterAutoBid(request);
+        if (response != null) {
             writer.println(response.toString());
         }
     }
 
-    /**
-     * Engine xử lý Auto-Bid theo cơ chế Proxy Bidding (chuẩn eBay).
-     * Thay vì mô phỏng từng bước giá, phương thức này tính toán trực tiếp người thắng
-     * và mức giá cuối cùng trong một lần chạy (O(1)), giúp loại bỏ hoàn toàn tình trạng spam sự kiện và treo UI.
-     */
-    private void evaluateAutoBids(int itemId) {
-        try {
-            com.auction.dao.ItemDAO itemDAO = new com.auction.dao.ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null || !"ACTIVE".equalsIgnoreCase(item.getStatus())) {
-                return; // Auction not active
-            }
 
-            // 1. TÌM NGƯỜI ĐANG GIỮ GIÁ CAO NHẤT HIỆN TẠI (CRITICAL FIX)
-            // Vì Item model không lưu winner_id, ta query trực tiếp từ lịch sử đặt giá mới nhất
-            int currentHighestBidderId = -1;
-            String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) currentHighestBidderId = rs.getInt("bidder_id");
-                }
-            }
-
-            // 2. Lấy tất cả các cấu hình auto-bid, sắp xếp theo giá tối đa giảm dần
-            List<AutoBidConfig> autoBidders = new ArrayList<>();
-            String getAutoBidsSql = "SELECT user_id, max_bid, increment_amount, created_at FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
-            try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getAutoBidsSql)) {
-                pstmt.setInt(1, itemId);
-                try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                    while (rs.next()) {
-                        autoBidders.add(new AutoBidConfig(rs.getInt("user_id"), rs.getDouble("max_bid"), rs.getDouble("increment_amount"), rs.getString("created_at")));
-                    }
-                }
-            }
-
-            if (autoBidders.isEmpty()) return; // Không có ai đặt auto-bid
-
-            AutoBidConfig topBidder = autoBidders.get(0);
-
-            // 3. Xác định mức giá "thách thức" mà topBidder cần phải vượt qua.
-            // Mức giá này là giá trị cao hơn giữa (giá hiện tại) và (giá max của người auto-bid thứ 2).
-            double challengePrice = item.getCurrentPrice();
-            if (autoBidders.size() > 1) {
-                challengePrice = Math.max(challengePrice, autoBidders.get(1).maxBid);
-            }
-
-            // 4. LOGIC CHỐNG TỰ NÂNG GIÁ CHÍNH MÌNH (Self-bidding)
-            if (topBidder.userId == currentHighestBidderId) {
-                // Đã là người dẫn đầu, chỉ phản đòn nếu có đối thủ auto-bid ép giá cao hơn giá hiện tại.
-                if (challengePrice <= item.getCurrentPrice()) {
-                    return;
-                }
-            }
-
-            // 5. Tính toán mức giá mới.
-            // Giá mới = Mức giá thách thức + 1 bước giá tùy chỉnh của người dùng.
-            double newPrice = challengePrice + topBidder.increment;
-            
-            // Ngoại lệ: Nếu là người đặt Auto-Bid đầu tiên (chưa có ai bid) và không có đối thủ cạnh tranh
-            if (currentHighestBidderId == -1 && autoBidders.size() == 1) {
-                newPrice = item.getCurrentPrice();
-            }
-
-            // Giá mới không được vượt quá giới hạn của người thắng.
-            if (newPrice > topBidder.maxBid) {
-                newPrice = topBidder.maxBid;
-            }
-
-            // Giá mới không thể thấp hơn giá hiện tại. 
-            // Nếu bằng giá hiện tại, người đặt sớm ưu tiên hơn nên vẫn được phép "cướp cờ" (trừ khi chính họ đang dẫn đầu).
-            if (newPrice < item.getCurrentPrice()) {
-                return;
-            }
-            if (newPrice == item.getCurrentPrice() && topBidder.userId == currentHighestBidderId) {
-                return;
-            }
-
-            // --- KIỂM TRA SỐ DƯ TRƯỚC KHI ĐẶT GIÁ ---
-            UserDAO userDAO = new UserDAO();
-            String username = getUsernameById(topBidder.userId);
-            int balance = userDAO.getBalanceByUsername(username);
-            if (balance < newPrice) {
-                logger.warn("[PROXY ENGINE] User {} has insufficient balance (${}) for Auto-Bid ${}. Deactivating their Auto-Bid.", username, balance, newPrice);
-                // Vô hiệu hóa cấu hình Auto-Bid của người dùng này
-                String deleteAutoBidSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
-                try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteAutoBidSql)) {
-                    pstmt.setInt(1, itemId);
-                    pstmt.setInt(2, topBidder.userId);
-                    pstmt.executeUpdate();
-                }
-                
-                // Đệ quy để bộ máy tự đánh giá lại với những người còn lại
-                evaluateAutoBids(itemId);
-                return;
-            }
-            // ----------------------------------------
-
-            // 6. Cập nhật CSDL và phát sóng sự kiện DUY NHẤT.
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-            boolean updateSuccess = itemDAO.updateProxyPrice(itemId, newPrice, topBidder.userId);
-            boolean logSuccess = bidDAO.insertBidTransaction(itemId, topBidder.userId, newPrice);
-
-            if (updateSuccess && logSuccess) {
-                String extendedTime = checkAndExtendAuctionTime(itemId, itemDAO);
-
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "UPDATE_PRICE");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("newPrice", newPrice);
-                broadcastMsg.addProperty("bidderId", topBidder.userId);
-                broadcastMsg.addProperty("username", username);
-                broadcastMsg.addProperty("isAutoBid", true);
-
-                if (extendedTime != null) {
-                    broadcastMsg.addProperty("newEndTime", extendedTime);
-                }
-
-                logger.info("[PROXY ENGINE] O(1) CALCULATION: New winner for item {} is {} with price ${}", itemId, username, newPrice);
-                broadcast(broadcastMsg);
-            }
-        } catch (Exception e) {
-            logger.error("[PROXY ENGINE] O(1) Error evaluating auto-bids for item {}: {}", itemId, e.getMessage(), e);
-        }
-    }
-
-    private String getUsernameById(int userId) {
-        String sql = "SELECT username FROM users WHERE id = ?";
-        try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(sql)) {
-            pstmt.setInt(1, userId);
-            try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) return rs.getString("username");
-            }
-        } catch (Exception ignored) {}
-        return "Robot";
-    }
     private void handleDeposit(JsonObject request) {
-
         try {
+            String username = request.get("username").getAsString();
+            int amount = request.get("amount").getAsInt();
 
-            String username =
-                    request.get("username").getAsString();
+            PaymentService paymentService = new PaymentService();
+            PaymentService.PaymentResult result = paymentService.processDeposit(username, amount);
 
-            int amount =
-                    request.get("amount").getAsInt();
-
-            logger.info(
-                    "Deposit request from {} amount {}",
-                    username,
-                    amount
-            );
-
-            // ================= UPDATE DATABASE =================
-            UserDAO userDAO = new UserDAO();
-
-            boolean success =
-                    userDAO.depositBalance(username, amount);
-
-            // ================= RESPONSE =================
-            JsonObject response = new JsonObject();
-
-            if (success) {
-
-        // lấy balance mới từ DB
-                int newBalance = userDAO.getBalanceByUsername(username);
-
-                response.addProperty("status", "SUCCESS");
-
-                response.addProperty(
-                "message",
-                "Deposit successful"
-                );
-
-        // QUAN TRỌNG
-                response.addProperty(
-                        "newBalance",
-                        newBalance
-                );
-
-                logger.info(
-                        "Deposit successful for {}. New balance={}",
-                        username,
-                        newBalance
-                );
-
-            } else {
-
-                response.addProperty("status", "FAIL");
-                response.addProperty(
-                        "message",
-                        "Deposit failed"
-                );
-
-                logger.error(
-                        "Deposit failed for {}",
-                        username
-                );
-            }
-
-            writer.println(response.toString());
-
+            writer.println(result.response.toString());
         } catch (Exception e) {
-
-            logger.error(
-                    "DEPOSIT failed: {}",
-                    e.getMessage(),
-                    e
-            );
-
+            logger.error("DEPOSIT failed: {}", e.getMessage(), e);
             JsonObject response = new JsonObject();
-
             response.addProperty("status", "ERROR");
-            response.addProperty(
-                    "message",
-                    "Server error"
-            );
-
+            response.addProperty("message", "Server error");
             writer.println(response.toString());
         }
     }
@@ -899,51 +303,13 @@ public class ClientHandler implements Runnable {
             int amount = request.get("amount").getAsInt();
             int sellerId = request.get("sellerId").getAsInt();
 
-            logger.info("Processing winner payment for item {}: bidder={}, amount={}, sellerId={}",
-                    itemId, bidderUsername, amount, sellerId);
+            PaymentService paymentService = new PaymentService();
+            PaymentService.PaymentResult result = paymentService.processWinnerPayment(itemId, bidderUsername, amount, sellerId);
 
-            UserDAO userDAO = new UserDAO();
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            String itemName = (item != null) ? item.getName() : "sản phẩm";
-
-            // 1. Deduct bidder's balance (subtract amount)
-            boolean deductSuccess = userDAO.depositBalance(bidderUsername, -amount);
-
-            // 2. Add balance to seller (add amount)
-            String sellerUsername = userDAO.getUsernameById(sellerId);
-            boolean creditSuccess = false;
-            if (sellerUsername != null) {
-                creditSuccess = userDAO.depositBalance(sellerUsername, amount);
+            if (result.broadcastMessage != null) {
+                broadcast(result.broadcastMessage);
             }
-
-            JsonObject response = new JsonObject();
-            if (deductSuccess) {
-                int newBidderBalance = userDAO.getBalanceByUsername(bidderUsername);
-                response.addProperty("status", "SUCCESS");
-                response.addProperty("newBalance", newBidderBalance);
-
-                // Broadcast payment processed event to all active clients
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "PAYMENT_PROCESSED");
-                broadcastMsg.addProperty("itemId", itemId);
-                broadcastMsg.addProperty("itemName", itemName);
-                broadcastMsg.addProperty("amount", amount);
-                broadcastMsg.addProperty("winnerUsername", bidderUsername);
-                broadcastMsg.addProperty("sellerId", sellerId);
-                if (sellerUsername != null) {
-                    broadcastMsg.addProperty("sellerUsername", sellerUsername);
-                    broadcastMsg.addProperty("newSellerBalance", userDAO.getBalanceByUsername(sellerUsername));
-                }
-
-                logger.info("Winner payment processed successfully. Broadcasting PAYMENT_PROCESSED...");
-                broadcast(broadcastMsg);
-            } else {
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Deduction failed");
-            }
-            writer.println(response.toString());
-
+            writer.println(result.response.toString());
         } catch (Exception e) {
             logger.error("PROCESS_WINNER_PAYMENT failed", e);
             JsonObject response = new JsonObject();
@@ -959,64 +325,16 @@ public class ClientHandler implements Runnable {
      * @param request JSON chứa "itemId", "userId", và "role".
      */
     private void handleOpenAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // Verify user is ADMIN or the actual seller
-            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-                // Tính thời gian kết thúc khi bắt đầu đấu giá
-                double durationHours = item.getDurationHours();
-
-                long totalSeconds = (long) (durationHours * 3600);
-
-                java.time.LocalDateTime endTarget =
-                        java.time.LocalDateTime.now().plusSeconds(totalSeconds);
-
-                java.time.format.DateTimeFormatter formatter =
-                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-                String endTime = endTarget.format(formatter);
-
-                // Update status + end_time
-                boolean success =
-                        itemDAO.startAuction(itemId, endTime);
-                if (success) {
-                    JsonObject broadcastMsg = new JsonObject();
-                    broadcastMsg.addProperty("action", "AUCTION_STARTED");
-                    broadcastMsg.addProperty("itemId", itemId);
-                    broadcastMsg.addProperty("message", "Phiên đấu giá đã chính thức bắt đầu!");
-                    broadcastMsg.addProperty("endTime", endTime);
-                    
-                    logger.info("Auction {} status updated to ACTIVE by userId={}", itemId, userId);
-                    broadcast(broadcastMsg); // Broadcast to all connected clients
-                } else {
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái!");
-                    this.writer.println(errorMsg.toString());
-                }
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền mở phiên đấu giá này!");
-                logger.warn("Unauthorized OPEN_AUCTION_REQUEST for itemId={} by userId={}, role={}", itemId, userId, role);
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error handling OPEN_AUCTION_REQUEST: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processOpenAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -1026,93 +344,16 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
      */
     private void handleCancelAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại trên hệ thống!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // =========================================================================
-            // CRITICAL BUG FIX: Kiểm tra trạng thái kèm đối chiếu thời gian kết thúc thực tế
-            // =========================================================================
-            boolean isLive = false; // Biến cờ xác định xem phiên có đang chạy THẬT SỰ hay không
-
-            if ("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) {
-                try {
-                    // Lấy thời gian kết thúc của phiên thầu từ Database
-                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
-
-                    // Nếu thời gian hiện tại (now) vẫn nằm TRƯỚC thời gian kết thúc -> Đang chạy thật sự
-                    if (java.time.LocalDateTime.now().isBefore(endTime)) {
-                        isLive = true;
-                    } else {
-                        // Hết giờ rồi mà DB vẫn kẹt chữ ACTIVE -> Cập nhật thành FINISHED để đồng bộ
-                        itemDAO.updateAuctionStatus(itemId, "FINISHED");
-                        logger.info("[SERVER] Đã tự động chốt trạng thái FINISHED cho itemId={} do hết hạn.", itemId);
-                    }
-                } catch (Exception e) {
-                    // Nếu cấu trúc chuỗi thời gian bị lỗi, an toàn nhất là chặn xóa
-                    logger.error("[SERVER] Lỗi parse thời gian khi xóa: {}", e.getMessage());
-                    isLive = true;
-                }
-            }
-
-            // Nếu phiên đang chạy thật sự (isLive == true) thì mới quăng lỗi từ chối xóa
-            if (isLive) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Không được phép gỡ bỏ sản phẩm khi phiên đấu giá đang diễn ra trực tiếp!");
-                logger.warn("[SERVER] Chặn hành vi gỡ sản phẩm đang đấu giá: itemId={}, bởi userId={}", itemId, userId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // KIỂM TRA PHÂN QUYỀN: Chỉ ADMIN hoặc chính chủ SELLER tạo ra món đồ mới được phép gỡ
-            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-
-                // THỰC THI XÓA: Gọi ItemDAO thực hiện lệnh DELETE xóa bản ghi khỏi SQLite CSDL
-                boolean success = itemDAO.deleteItem(itemId);
-
-                if (success) {
-                    JsonObject broadcastMsg = new JsonObject();
-                    broadcastMsg.addProperty("action", "AUCTION_CANCELLED");
-                    broadcastMsg.addProperty("itemId", itemId);
-                    broadcastMsg.addProperty("message", "Sản phẩm '" + item.getName() + "' đã bị gỡ bỏ khỏi hệ thống.");
-
-                    logger.info("Product ID {} successfully removed by userId={}, role={}", itemId, userId, role);
-
-                    // Phát loa phát thanh (Broadcast) báo hiệu cho tất cả client đang online đồng loạt dọn dẹp sảnh chờ
-                    broadcast(broadcastMsg);
-
-                    // Phản hồi kết quả thành công cho Client gửi yêu cầu
-                    JsonObject response = new JsonObject();
-                    response.addProperty("status", "SUCCESS");
-                    this.writer.println(response.toString());
-                } else {
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Lỗi cơ sở dữ liệu khi thực hiện xóa sản phẩm!");
-                    this.writer.println(errorMsg.toString());
-                }
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền gỡ sản phẩm này!");
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error inside handleCancelAuction: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processCancelAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -1122,84 +363,16 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
      */
     private void handleStopAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            logger.info("[SERVER] Nhận yêu cầu dừng phiên khẩn cấp từ client: itemId={}, userId={}, role={}", itemId, userId, role);
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // PHÂN QUYỀN HỆ THỐNG: Kiểm tra xem có phải ADMIN hay chủ sở hữu món hàng không
-            if (!"ADMIN".equalsIgnoreCase(role) && item.getSellerId() != userId) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có thẩm quyền đóng phiên đấu giá này!");
-                logger.warn("[SERVER] Yêu cầu dừng phiên bị từ chối do sai phân quyền: userId={}", userId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // KIỂM TRA TRẠNG THÁI: Chỉ có thể ép dừng khi phiên thầu đang hoạt động trực tiếp (ACTIVE)
-            if (!"ACTIVE".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Phiên đấu giá hiện không ở trạng thái chạy trực tiếp!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // Tiến hành cập nhật trạng thái kết thúc "FINISHED" vào Database
-            boolean statusUpdated = itemDAO.updateAuctionStatus(itemId, "FINISHED");
-            if (statusUpdated) {
-                // =====================================================================
-                // FIX BUG ĐỒNG HỒ DASHBOARD: Ép thời gian kết thúc về đúng thời điểm bấm nút
-                // Để khi Client tải lại trang, thuật toán đếm ngược thấy hết giờ sẽ tự dừng.
-                // =====================================================================
-                String nowStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                itemDAO.updateEndTime(itemId, nowStr);
-
-                logger.info("[SERVER] Cập nhật CSDL: Chuyển item {} sang FINISHED và chốt giờ về {}", itemId, nowStr);
-
-                // Truy vấn thông tin người trả giá cao nhất tại thời điểm bấm nút để chốt người chiến thắng
-                com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-                java.util.Map<String, Object> highestBid = bidDAO.getHighestBidder(itemId);
-
-                String winnerUsername = (String) highestBid.get("username");
-                double finalPrice = (double) highestBid.get("bidAmount");
-
-                // Nếu chưa có ai đặt giá, mức giá chốt sẽ quay về giá khởi điểm ban đầu
-                if (finalPrice == 0) {
-                    finalPrice = item.getStartingPrice();
-                }
-
-                // Phát tín hiệu Broadcast "AUCTION_FINISHED" cho toàn bộ Client đang kết nối thời gian thực
-                JsonObject finishBroadcast = new JsonObject();
-                finishBroadcast.addProperty("action", "AUCTION_FINISHED");
-                finishBroadcast.addProperty("itemId", itemId);
-                finishBroadcast.addProperty("winnerUsername", winnerUsername);
-                finishBroadcast.addProperty("finalPrice", finalPrice);
-
-                logger.info("[SERVER] Broadcast sự kiện kết thúc thầu sớm: Item={}, Winner={}, Price=${}", itemId, winnerUsername, finalPrice);
-                broadcast(finishBroadcast);
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái kết thúc!");
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error inside handleStopAuction: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processStopAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -1208,29 +381,20 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId".
      */
     private void handleFetchBidHistory(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            this.currentItemId = itemId;
-            
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-            java.util.List<java.util.Map<String, Object>> history = bidDAO.getBidHistory(itemId);
-            
-            Gson gson = new Gson();
-            JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
-            
-            JsonObject response = new JsonObject();
-            response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("itemId", itemId);
-            response.add("history", arr);
-            
-            writer.println(response.toString());
-            logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
-            
-            broadcastViewerCount(itemId);
-        } catch (Exception e) {
-            logger.error("Error handling FETCH_BID_HISTORY_REQUEST: {}", e.getMessage(), e);
-        }
+        int itemId = request.get("itemId").getAsInt();
+        this.currentItemId = itemId;
+        AuctionService auctionService = new AuctionService();
+        java.util.List<java.util.Map<String, Object>> history = auctionService.getBidHistory(itemId);
+        Gson gson = new Gson();
+        JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
+        JsonObject response = new JsonObject();
+        response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
+        response.addProperty("status", "SUCCESS");
+        response.addProperty("itemId", itemId);
+        response.add("history", arr);
+        writer.println(response.toString());
+        logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
+        broadcastViewerCount(itemId);
     }
 
     public static int getViewerCountForItem(int itemId) {
@@ -1274,31 +438,5 @@ public class ClientHandler implements Runnable {
             }
         }
     }
-    /**
-     * Kiểm tra xem phiên đấu giá có đang ở 10 giây cuối không.
-     * Nếu có, tự động cộng thêm 10 giây và lưu vào Database.
-     */
-    private String checkAndExtendAuctionTime(int itemId, ItemDAO itemDAO) {
-        try {
-            Item item = itemDAO.getItemById(itemId);
-            if (item == null) return null;
 
-            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
-            java.time.LocalDateTime now = java.time.LocalDateTime.now();
-
-            long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
-
-            // Nếu thời gian còn lại <= 10 giây (và phiên chưa kết thúc)
-            if (secondsLeft <= 10 && secondsLeft >= 0) {
-                String extendedTime = endTime.plusSeconds(10).format(formatter);
-                itemDAO.updateEndTime(itemId, extendedTime);
-                logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);
-                return extendedTime; // Trả về thời gian mới để báo cho các Client
-            }
-        } catch (Exception ex) {
-            logger.error("Lỗi tính toán thời gian gia hạn: {}", ex.getMessage());
-        }
-        return null;
-    }
 }

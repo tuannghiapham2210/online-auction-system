@@ -1,13 +1,14 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,50 +19,50 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class PasswordChangeController {
+public class ForgotPasswordController {
 
-    private static final Logger logger = LoggerFactory.getLogger(PasswordChangeController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordController.class);
 
-    @FXML private PasswordField tfOldPassword;
+    @FXML private TextField tfUsername;
+    @FXML private TextField tfContactInfo;
     @FXML private PasswordField tfNewPassword;
     @FXML private PasswordField tfConfirmPassword;
     @FXML private Label lblMessage;
-    @FXML private Button btnCancel;
-    @FXML private Button btnSave;
 
     private Runnable onCloseCallback;
 
     @FXML
-    public void handleSave() {
+    public void handleReset() {
         try {
-            String oldPassword = tfOldPassword.getText().trim();
+            String username = tfUsername.getText().trim();
+            String contactInfo = tfContactInfo.getText().trim();
             String newPassword = tfNewPassword.getText().trim();
             String confirmPassword = tfConfirmPassword.getText().trim();
 
-            if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
+            if (username.isEmpty() || contactInfo.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
                 showMessage("Vui lòng nhập đầy đủ thông tin.", true);
                 return;
             }
             if (!newPassword.equals(confirmPassword)) {
-                showMessage("Mật khẩu mới và xác nhận phải giống nhau.", true);
+                showMessage("Mật khẩu mới không khớp.", true);
                 return;
             }
 
-            showMessage("Đang đổi mật khẩu...", false);
+            showMessage("Đang xử lý...", false);
             JsonObject request = new JsonObject();
-            request.addProperty("action", "CHANGE_PASSWORD");
-            request.addProperty("userId", Session.userId);
-            request.addProperty("oldPassword", oldPassword);
+            request.addProperty("action", "RESET_PASSWORD");
+            request.addProperty("username", username);
+            request.addProperty("contactInfo", contactInfo);
             request.addProperty("newPassword", newPassword);
 
-            new Thread(() -> sendChangePasswordRequest(request.toString())).start();
+            new Thread(() -> sendResetRequest(request.toString())).start();
         } catch (Exception e) {
-            logger.error("Lỗi khi đổi mật khẩu: {}", e.getMessage(), e);
-            showMessage("Đã có lỗi. Vui lòng thử lại.", true);
+            logger.error("Lỗi khi khôi phục mật khẩu: {}", e.getMessage(), e);
+            showMessage("Đã có lỗi xảy ra.", true);
         }
     }
 
-    private void sendChangePasswordRequest(String requestJson) {
+    private void sendResetRequest(String requestJson) {
         try (Socket socket = new Socket("127.0.0.1", 8080);
              PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
@@ -75,22 +76,18 @@ public class PasswordChangeController {
             JsonObject response = JsonParser.parseString(responseLine).getAsJsonObject();
             Platform.runLater(() -> {
                 String status = response.has("status") ? response.get("status").getAsString() : "FAIL";
-                String message = response.has("message") ? response.get("message").getAsString() : "Lỗi đổi mật khẩu.";
+                String message = response.has("message") ? response.get("message").getAsString() : "Lỗi không xác định.";
                 if ("SUCCESS".equals(status)) {
                     showMessage(message, false);
-                    PauseTransition delay = new PauseTransition(Duration.seconds(1));
-                    delay.setOnFinished(event -> {
-                        if (onCloseCallback != null) {
-                            onCloseCallback.run();
-                        }
-                    });
+                    PauseTransition delay = new PauseTransition(Duration.seconds(2));
+                    delay.setOnFinished(event -> handleClose());
                     delay.play();
                 } else {
                     showMessage(message, true);
                 }
             });
         } catch (Exception e) {
-            logger.error("Lỗi gửi yêu cầu đổi mật khẩu: {}", e.getMessage(), e);
+            logger.error("Lỗi gửi yêu cầu khôi phục: {}", e.getMessage(), e);
             Platform.runLater(() -> showMessage("Mất kết nối tới Server!", true));
         }
     }
@@ -108,7 +105,8 @@ public class PasswordChangeController {
 
     private void showMessage(String message, boolean isError) {
         lblMessage.setText(message);
-        lblMessage.getStyleClass().setAll("label", "password-change-msg", isError ? "msg-error" : "msg-success");
+        lblMessage.getStyleClass().setAll("label", "forgot-password-msg", isError ? "msg-error" : "msg-success");
+        lblMessage.setManaged(true);
         lblMessage.setVisible(true);
     }
 }

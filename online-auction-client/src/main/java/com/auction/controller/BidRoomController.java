@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.auction.util.NumberUtil;
 import com.google.gson.JsonObject;
@@ -171,7 +172,7 @@ public class BidRoomController {
 
         // --- KHỞI TẠO TOAST NOTIFICATION ---
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("toast_notification.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/toast_notification.fxml"));
             HBox toastNode = loader.load();
             toastNotificationController = loader.getController();
 
@@ -598,7 +599,7 @@ public class BidRoomController {
             }
 
             // 2. Tải lại giao diện Dashboard
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("dashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/dashboard.fxml"));
             Parent root = loader.load();
 
             // 3. Thực hiện chuyển cảnh (Scene)
@@ -637,7 +638,7 @@ public class BidRoomController {
 
         try {
             isNotificationShowing = true;
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("live_notification.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/live_notification.fxml"));
             HBox notification = loader.load();
             LiveNotificationController controller = loader.getController();
 
@@ -686,7 +687,7 @@ private void hideNotification(HBox notification) {
             // Lưu lại vị trí cuộn hiện tại của ScrollPane để giữ nguyên màn hình khi quay lại
             final double currentVvalue = (mainScrollPane != null) ? mainScrollPane.getVvalue() : 0.0;
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("deposit.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/deposit.fxml"));
             Parent depositGroup = loader.load();
             DepositController depositController = loader.getController();
 
@@ -1138,7 +1139,7 @@ private void hideNotification(HBox notification) {
 
         Runnable showOverlayRunnable = () -> {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("winner_overlay.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/winner_overlay.fxml"));
                 Parent overlay = loader.load();
                 WinnerOverlayController controller = loader.getController();
                 
@@ -1183,7 +1184,7 @@ private void hideNotification(HBox notification) {
             dialogStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             dialogStage.initStyle(javafx.stage.StageStyle.TRANSPARENT);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("custom_alert.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/custom_alert.fxml"));
             Parent root = loader.load();
 
             javafx.scene.Scene scene = new javafx.scene.Scene(root);
@@ -1357,7 +1358,7 @@ private void hideNotification(HBox notification) {
 
     private StackPane createChartNode(double price) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("chart_node.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/chart_node.fxml"));
             StackPane customNode = loader.load();
             ChartNodeController controller = loader.getController();
             if (controller != null) {

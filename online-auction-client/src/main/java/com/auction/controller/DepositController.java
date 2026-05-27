@@ -1,4 +1,5 @@
-package com.auction;
+package com.auction.controller;
+import com.auction.*;
 
 import com.auction.util.NumberUtil;
 import com.google.gson.JsonObject;
