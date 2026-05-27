@@ -11,11 +11,11 @@ import java.sql.ResultSet;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Lớp kiểm thử cho ItemDAO.
+ * Lớp kiểm thử cho ItemDao.
  * Đảm bảo tạo User giả làm Seller để không bị lỗi Khóa ngoại (Foreign Key).
  */
-class ItemDAOTest {
-    private ItemDAO itemDAO;
+class ItemDaoTest {
+    private ItemDao itemDAO;
     private UserDAO userDAO;
 
     private static final String TEST_SELLER = "seller_test_9999";
@@ -24,7 +24,7 @@ class ItemDAOTest {
 
     @BeforeEach
     void setUp() {
-        itemDAO = new ItemDAO();
+        itemDAO = new ItemDao();
         userDAO = new UserDAO();
         cleanupData();
 

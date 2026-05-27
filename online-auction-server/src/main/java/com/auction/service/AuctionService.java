@@ -1,7 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.BidTransactionDao;
-import com.auction.dao.ItemDAO;
+import com.auction.dao.ItemDao;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
@@ -42,7 +42,7 @@ public class AuctionService {
             newItem.setImageUrl(imageUrl);
             newItem.setDescription(description);
 
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             boolean isSuccess = itemDAO.insertItem(newItem);
             JsonObject response = new JsonObject();
 
@@ -74,7 +74,7 @@ public class AuctionService {
     public AuctionResult processPublishItem(int itemId) {
         try {
             logger.info("Processing PUBLISH_ITEM request for itemId={}...", itemId);
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
             if (item != null) {
                 JsonObject broadcastMsg = new JsonObject();
@@ -102,13 +102,13 @@ public class AuctionService {
     }
 
     public List<Item> getAllItems() {
-        ItemDAO itemDAO = new ItemDAO();
+        ItemDao itemDAO = new ItemDao();
         return itemDAO.getAllItems();
     }
 
     public AuctionResult processOpenAuction(int itemId, int userId, String role) {
         try {
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
             if (item == null) {
                 JsonObject errorMsg = new JsonObject();
@@ -154,7 +154,7 @@ public class AuctionService {
 
     public AuctionResult processCancelAuction(int itemId, int userId, String role) {
         try {
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
 
             if (item == null) {
@@ -222,7 +222,7 @@ public class AuctionService {
     public AuctionResult processStopAuction(int itemId, int userId, String role) {
         try {
             logger.info("[SERVER] Nhận yêu cầu dừng phiên khẩn cấp từ client: itemId={}, userId={}, role={}", itemId, userId, role);
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
 
             if (item == null) {

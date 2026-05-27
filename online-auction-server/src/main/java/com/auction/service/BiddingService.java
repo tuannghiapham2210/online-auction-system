@@ -1,7 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.BidTransactionDao;
-import com.auction.dao.ItemDAO;
+import com.auction.dao.ItemDao;
 import com.auction.dao.UserDAO;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
@@ -68,7 +68,7 @@ public class BiddingService {
                 return errorMsg;
             }
 
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             BidTransactionDao bidDAO = new BidTransactionDao();
 
             Item item = itemDAO.getItemById(itemId);
@@ -150,7 +150,7 @@ public class BiddingService {
                 return errorMsg;
             }
 
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
             if (item == null) {
                 JsonObject errorMsg = new JsonObject();
@@ -228,7 +228,7 @@ public class BiddingService {
 
     private void evaluateAutoBids(int itemId) {
         try {
-            ItemDAO itemDAO = new ItemDAO();
+            ItemDao itemDAO = new ItemDao();
             Item item = itemDAO.getItemById(itemId);
             if (item == null || !"ACTIVE".equalsIgnoreCase(item.getStatus())) {
                 return;
@@ -339,7 +339,7 @@ public class BiddingService {
         return "Robot";
     }
 
-    private String checkAndExtendAuctionTime(int itemId, ItemDAO itemDAO) {
+    private String checkAndExtendAuctionTime(int itemId, ItemDao itemDAO) {
         try {
             Item item = itemDAO.getItemById(itemId);
             if (item == null) return null;

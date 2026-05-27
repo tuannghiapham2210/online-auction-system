@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dao.ItemDAO;
+import com.auction.dao.ItemDao;
 import com.auction.dao.UserDAO;
 import com.auction.model.Item;
 import com.google.gson.JsonObject;
@@ -54,7 +54,7 @@ public class PaymentService {
                 itemId, bidderUsername, amount, sellerId);
 
         UserDAO userDAO = new UserDAO();
-        ItemDAO itemDAO = new ItemDAO();
+        ItemDao itemDAO = new ItemDao();
         Item item = itemDAO.getItemById(itemId);
         String itemName = (item != null) ? item.getName() : "sản phẩm";
 

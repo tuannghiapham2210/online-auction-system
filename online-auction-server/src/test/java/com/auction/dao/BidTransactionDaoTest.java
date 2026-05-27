@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BidTransactionDaoTest {
     private BidTransactionDao bidDAO;
     private UserDAO userDAO;
-    private ItemDAO itemDAO;
+    private ItemDao itemDAO;
 
     private static final String TEST_USER = "bidder_test_9999";
     private static final String TEST_ITEM = "TEST_ITEM_BID_9999";
@@ -28,7 +28,7 @@ class BidTransactionDaoTest {
     void setUp() {
         bidDAO = new BidTransactionDao();
         userDAO = new UserDAO();
-        itemDAO = new ItemDAO();
+        itemDAO = new ItemDao();
         cleanupData();
 
         // 1. Tạo User
