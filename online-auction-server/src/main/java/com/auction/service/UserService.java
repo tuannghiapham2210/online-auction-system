@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Lớp dịch vụ quản lý các nghiệp vụ xác thực và thông tin người dùng (UserService).
- * Bao gồm các chức năng: Đăng nhập, đăng ký, cập nhật hồ sơ và khôi phục mật khẩu.
  */
 public class UserService {
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
@@ -48,23 +47,61 @@ public class UserService {
 
   /**
    * Xử lý nghiệp vụ cập nhật thông tin cá nhân (Email và Số điện thoại).
-   *
-   * @param username Tên tài khoản cần cập nhật thông tin.
-   * @param email    Địa chỉ email mới.
-   * @param phone    Số điện thoại mới.
-   * @return Đối tượng {@link JsonObject} phản hồi kết quả cập nhật (SUCCESS/FAIL).
    */
-  public JsonObject processUpdateProfile(String username, String email, String phone) {
-    UserDao userDao = new UserDao();
-    boolean success = userDao.updateProfile(username, email, phone);
-
+  public JsonObject processUpdateProfile(
+      int userId, String newUsername, String email, String phone) {
     JsonObject response = new JsonObject();
+
+    if (newUsername == null || newUsername.isEmpty()) {
+      response.addProperty("status", "FAIL");
+      response.addProperty("message", "Tên người dùng không được để trống.");
+      return response;
+    }
+
+    UserDao userDao = new UserDao();
+    if (userDao.isUsernameTakenByOther(userId, newUsername)) {
+      response.addProperty("status", "FAIL");
+      response.addProperty("message", "Tên đăng nhập đã được sử dụng. Vui lòng chọn tên khác.");
+      return response;
+    }
+
+    boolean success = userDao.updateUserProfile(userId, newUsername, email, phone);
+
     if (success) {
       response.addProperty("status", "SUCCESS");
-      response.addProperty("message", "Cập nhật thông tin tài khoản thành công!");
+      response.addProperty("message", "Cập nhật thông tin thành công.");
+      response.addProperty("username", newUsername);
+      response.addProperty("email", email != null ? email : "");
+      response.addProperty("phone", phone != null ? phone : "");
     } else {
       response.addProperty("status", "FAIL");
-      response.addProperty("message", "Thông tin không đúng hoặc không thể thay đổi.");
+      response.addProperty("message", "Không thể cập nhật hồ sơ. Vui lòng thử lại sau.");
+    }
+    return response;
+  }
+
+  /**
+   * Thay đổi mật khẩu tài khoản người dùng công khai.
+   */
+  public JsonObject processChangePassword(int userId, String oldPassword, String newPassword) {
+    JsonObject response = new JsonObject();
+
+    if (oldPassword == null || oldPassword.isEmpty()
+        || newPassword == null || newPassword.isEmpty()) {
+      response.addProperty("status", "FAIL");
+      response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
+      return response;
+    }
+
+    UserDao userDao = new UserDao();
+    boolean success = userDao.changePassword(userId, oldPassword, newPassword);
+
+    if (success) {
+      response.addProperty("status", "SUCCESS");
+      response.addProperty("message", "Đổi mật khẩu thành công.");
+    } else {
+      response.addProperty("status", "FAIL");
+      response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
     }
     return response;
   }
@@ -118,8 +155,8 @@ public class UserService {
       }
     } catch (Exception e) {
       logger.error("REGISTER failed: {}", e.getMessage(), e);
-      response.addProperty("status", "FAIL");
-      response.addProperty("message", "Lỗi hệ thống: " + e.getMessage());
+      response.addProperty("status", "ERROR");
+      response.addProperty("message", "Lỗi Server!");
     }
     return response;
   }

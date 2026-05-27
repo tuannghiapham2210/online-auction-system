@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Lớp DAO quản lý các thao tác Database liên quan đến người dùng (User).
- * Phụ trách các tính năng: Đăng ký, Đăng nhập, lấy vai trò (Role) và ID của người dùng.
+ * Phụ trách các tính năng: Đăng ký, Đăng nhập, lấy vai trò (Role), ID và cập nhật hồ sơ.
  */
 public class UserDao {
 
@@ -81,6 +81,26 @@ public class UserDao {
       }
     } catch (Exception e) {
       logger.error("Check username existence failed: {}", e.getMessage(), e);
+    }
+    return false;
+  }
+
+  /**
+   * Kiểm tra xem Username mới có bị trùng với tài khoản của người khác
+   * hay không (dùng khi cập nhật Profile).
+   */
+  public boolean isUsernameTakenByOther(int userId, String username) {
+    String sql = "SELECT COUNT(*) FROM users WHERE username = ? AND id != ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setString(1, username);
+      stmt.setInt(2, userId);
+      try (ResultSet rs = stmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getInt(1) > 0;
+        }
+      }
+    } catch (Exception e) {
+      logger.error("Check username taken by other failed: {}", e.getMessage(), e);
     }
     return false;
   }
@@ -179,21 +199,22 @@ public class UserDao {
   }
 
   /**
-   * Cập nhật thông tin hồ sơ cá nhân (Email, Số điện thoại) của người dùng.
+   * Cập nhật thông tin hồ sơ cá nhân (Username mới, Email, Số điện thoại) theo ID người dùng.
    */
-  public boolean updateProfile(String username, String email, String phone) {
+  public boolean updateUserProfile(int userId, String newUsername, String email, String phone) {
     java.util.concurrent.locks.ReentrantLock lock =
         DatabaseConnection.getInstance().getDbWriteLock();
     lock.lock();
     try {
-      String sql = "UPDATE users SET email = ?, phone = ? WHERE username = ?";
+      String sql = "UPDATE users SET username = ?, email = ?, phone = ? WHERE id = ?";
       try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
-        stmt.setString(1, email);
-        stmt.setString(2, phone);
-        stmt.setString(3, username);
+        stmt.setString(1, newUsername);
+        stmt.setString(2, email);
+        stmt.setString(3, phone);
+        stmt.setInt(4, userId);
         return stmt.executeUpdate() > 0;
       } catch (Exception e) {
-        logger.error("Update profile failed: {}", e.getMessage(), e);
+        logger.error("Update user profile failed: {}", e.getMessage(), e);
       }
       return false;
     } finally {
@@ -202,7 +223,30 @@ public class UserDao {
   }
 
   /**
-   * Khôi phục hoặc đặt lại mật khẩu mới khi người dùng cung cấp đúng thông tin xác thực.
+   * Đổi mật khẩu tài khoản (Kiểm tra xem mật khẩu cũ nhập vào có đúng không).
+   */
+  public boolean changePassword(int userId, String oldPassword, String newPassword) {
+    java.util.concurrent.locks.ReentrantLock lock =
+        DatabaseConnection.getInstance().getDbWriteLock();
+    lock.lock();
+    try {
+      String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
+      try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+        stmt.setString(1, newPassword);
+        stmt.setInt(2, userId);
+        stmt.setString(3, oldPassword);
+        return stmt.executeUpdate() > 0;
+      } catch (Exception e) {
+        logger.error("Change password failed: {}", e.getMessage(), e);
+      }
+      return false;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
+   * Khôi phục hoặc đặt lại mật khẩu mới thông qua chức năng Quên mật khẩu.
    */
   public boolean resetPassword(String username, String contactInfo, String newPassword) {
     java.util.concurrent.locks.ReentrantLock lock =
