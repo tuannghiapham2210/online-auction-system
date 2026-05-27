@@ -13,7 +13,7 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.shape.StrokeLineCap?>
 
-<HBox fx:id="notificationRoot" alignment="CENTER_LEFT" maxHeight="85.0" maxWidth="-Infinity" prefHeight="85.0" prefWidth="520.0" spacing="20.0" styleClass="live-notification" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.LiveNotificationController">
+<HBox fx:id="notificationRoot" alignment="CENTER_LEFT" maxHeight="85.0" maxWidth="-Infinity" prefHeight="85.0" prefWidth="520.0" spacing="20.0" styleClass="live-notification" stylesheets="@style.css" translateY="-120.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.LiveNotificationController">
    <children>
       <StackPane maxHeight="50.0" maxWidth="50.0" prefHeight="50.0" prefWidth="50.0">
          <children>
