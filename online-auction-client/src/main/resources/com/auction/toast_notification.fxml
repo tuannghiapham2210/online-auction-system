@@ -3,8 +3,13 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.shape.SVGPath?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.StackPane?>
 
 <HBox fx:id="toastRoot" managed="false" opacity="0.0" visible="false" maxHeight="-Infinity" maxWidth="-Infinity" styleClass="toast-notification" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.auction.controller.ToastNotificationController">
+   <StackPane.margin>
+      <Insets top="20.0" right="0.0" bottom="0.0" left="0.0"/>
+   </StackPane.margin>
    <children>
       <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="WHITE" />
       <Label fx:id="toastLabel" styleClass="toast-label" text="Phiên đấu giá chính thức mở cửa!" />

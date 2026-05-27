@@ -14,7 +14,7 @@
     -fx-background-color: #0f172a;
     -fx-background-radius: 30;
     -fx-padding: 40;
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.35), 50, 0.3, 0, 15);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.35), 50, 0.3, 0, 15);
 }
 
 /* ================= TITLE ================= */
@@ -73,7 +73,7 @@
     -fx-padding: 14;
     -fx-cursor: hand;
 
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0.3, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 8, 0.3, 0, 4);
 }
 
 .main-btn:hover {
@@ -84,7 +84,7 @@
 .main-btn:pressed {
     -fx-translate-y: 2;
     -fx-background-color: linear-gradient(to right, #d97706, #ea580c);
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0.2, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0.2, 0, 1);
 }
 
 /* ================= MESSAGE ================= */
@@ -124,7 +124,7 @@
     -fx-background-radius: 15;
 
     /* bóng cho đẹp */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0.3, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 20, 0.3, 0, 5);
 }
 
 /* item */
@@ -150,10 +150,11 @@
 /* CARD TO HƠN + CENTER ĐẸP */
 .card {
     /* Đã XÓA -fx-max-width: 650; tại đây để container tự do giãn nở */
-    -fx-padding: 25; /* GIẢM từ 50 xuống 25 để tránh chiếm hết không gian màn nhỏ */
+    -fx-padding: 25;
+    /* GIẢM từ 50 xuống 25 để tránh chiếm hết không gian màn nhỏ */
 
     /* glow mạnh hơn */
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.45), 70, 0.35, 0, 20);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.45), 70, 0.35, 0, 20);
 }
 
 /* TITLE TO + SANG */
@@ -174,7 +175,7 @@
 
 /* FOCUS PHÁT SÁNG */
 .input:focused {
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.4), 15, 0.3, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.4), 15, 0.3, 0, 0);
 }
 
 /* BUTTON XỊN HƠN */
@@ -184,11 +185,11 @@
     -fx-padding: 16;
 
     /* glow nhẹ */
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0.3, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0.3, 0, 5);
 }
 
 .main-btn:hover {
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.6), 25, 0.4, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.6), 25, 0.4, 0, 5);
 }
 
 /* SWITCH NHƯ TAB (LOGIN) */
@@ -211,28 +212,32 @@
 
 /* CARD HOVER NHẸ (RẤT NGẦU) */
 .card:hover {
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.6), 90, 0.4, 0, 25);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.6), 90, 0.4, 0, 25);
 }
 
 #messageLabel {
     -fx-text-fill: #fbbf24;
     -fx-font-weight: bold;
 }
+
 #messageLabel.msg-success {
     -fx-text-fill: #00ff99;
 }
+
 #messageLabel.msg-error {
     -fx-text-fill: #ff4d4d;
 }
+
 #messageLabel.msg-warning {
     -fx-text-fill: #f59e0b;
 }
+
 /* ================= PREMIUM TITLE ================= */
 
 .title {
     -fx-font-size: 52px;
     -fx-text-fill: linear-gradient(to right, #ffffff, #cbd5f5);
-    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.15), 10, 0.3, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.15), 10, 0.3, 0, 2);
 }
 
 .title-accent {
@@ -240,8 +245,9 @@
     -fx-text-fill: linear-gradient(to right, #f59e0b, #f97316);
 
     /* glow vàng mạnh */
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.8), 25, 0.4, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.8), 25, 0.4, 0, 5);
 }
+
 /* ================= TAB CONTAINER (GIỐNG BROWSER) ================= */
 
 .tab-container {
@@ -272,6 +278,7 @@
     -fx-background-color: #1e293b;
     -fx-text-fill: #f59e0b;
 }
+
 /* ================= INPUT WITH ICON ================= */
 
 .input-box {
@@ -285,7 +292,7 @@
 
 .input-box:focused-within {
     -fx-border-color: #f59e0b;
-    -fx-effect: dropshadow(gaussian, rgba(245,166,35,0.4), 15, 0.3, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(245, 166, 35, 0.4), 15, 0.3, 0, 0);
 }
 
 .input-icon {
@@ -302,6 +309,7 @@
     -fx-border-width: 0;
     -fx-padding: 14 10;
 }
+
 /* ================= PREMIUM HEADER ================= */
 .header-sub {
     -fx-text-fill: #94a3b8;
@@ -310,7 +318,7 @@
 
 /* ================= GLASS EFFECT ================= */
 .card {
-    -fx-background-color: rgba(15,23,42,0.85);
+    -fx-background-color: rgba(15, 23, 42, 0.85);
 }
 
 /* ================= ICON HEADER ================= */
@@ -329,6 +337,7 @@
     -fx-background-color: transparent;
     -fx-padding: 0;
 }
+
 .premium-scroll-pane .viewport {
     -fx-background-color: transparent;
 }
@@ -342,6 +351,7 @@
     -fx-border-width: 1;
     -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.08), 20, 0, 0, 5);
 }
+
 .item-card:hover {
     -fx-background-color: linear-gradient(to bottom right, #162447, rgba(22, 36, 71, 0.95));
     -fx-border-color: rgba(255, 255, 255, 0.15);
@@ -355,6 +365,7 @@
     -fx-font-size: 16px;
     -fx-font-weight: bold;
 }
+
 .card-price {
     -fx-text-fill: #39FF14;
     -fx-font-size: 20px;
@@ -372,6 +383,7 @@
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.3), 10, 0, 0, 2);
 }
+
 .btn-orange:hover {
     -fx-background-color: linear-gradient(to right, #FBBF24, #F59E0B);
     -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.5), 15, 0, 0, 3);
@@ -386,6 +398,7 @@
     -fx-padding: 3 8 3 8;
     -fx-background-radius: 10;
 }
+
 /* ================= TARGET UI CLONE ================= */
 
 /* Form nền xanh đen tối */
@@ -408,6 +421,7 @@
     -fx-min-height: 30;
     -fx-cursor: hand;
 }
+
 .btn-close-circle:hover {
     -fx-background-color: #4A5568;
     -fx-text-fill: white;
@@ -429,6 +443,7 @@
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 0 10 0 15;
 }
+
 .target-input-box:focused-within {
     -fx-border-color: #F39C12;
 }
@@ -442,14 +457,16 @@
 }
 
 /* TextField và TextArea bên trong */
-.target-textfield, .target-textarea {
+.target-textfield,
+.target-textarea {
     -fx-background-color: transparent;
     -fx-text-fill: white;
     -fx-prompt-text-fill: #5E6A7D;
     -fx-padding: 12;
 }
 
-.target-textfield:focused, .target-textarea:focused {
+.target-textfield:focused,
+.target-textarea:focused {
     -fx-background-color: transparent;
 }
 
@@ -480,6 +497,7 @@
     -fx-border-radius: 8;
     -fx-padding: 4 8;
 }
+
 .target-combo-box .list-cell {
     -fx-text-fill: white;
 }
@@ -494,6 +512,7 @@
     -fx-background-radius: 8;
     -fx-cursor: hand;
 }
+
 .btn-target-cancel:hover {
     -fx-background-color: #4B5563;
 }
@@ -507,6 +526,7 @@
     -fx-background-radius: 8;
     -fx-cursor: hand;
 }
+
 .btn-target-submit:hover {
     -fx-background-color: #FBBF24;
 }
@@ -546,6 +566,7 @@
     -fx-background-color: transparent;
     -fx-padding: 0;
 }
+
 /* ================= EVENT LOG LISTVIEW ================= */
 .log-list {
     -fx-background-color: transparent;
@@ -706,12 +727,14 @@
 
 .deposit-confirm-btn {
     -fx-background-color: #27d79a;
-    -fx-text-fill: white; /* Chữ trắng */
+    -fx-text-fill: white;
+    /* Chữ trắng */
     -fx-background-radius: 12;
     -fx-font-size: 18px;
     -fx-font-weight: 700;
     -fx-cursor: hand;
-    -fx-pref-width: 350; /* Đồng bộ chiều rộng với input */
+    -fx-pref-width: 350;
+    /* Đồng bộ chiều rộng với input */
     -fx-pref-height: 55;
 }
 
@@ -877,7 +900,8 @@
 
 .profile-role-badge-admin {
     -fx-background-color: rgba(239, 68, 68, 0.12);
-    -fx-text-fill: #F87171; /* red-400 */
+    -fx-text-fill: #F87171;
+    /* red-400 */
     -fx-font-size: 10px;
     -fx-font-weight: 900;
     -fx-padding: 3 6;
@@ -900,24 +924,28 @@
     -fx-background-radius: 20;
     -fx-cursor: hand;
 }
+
 .profile-avatar.avatar-admin:hover {
     -fx-border-color: #EF4444;
     -fx-border-width: 2px;
     -fx-border-radius: 22px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
+
 .profile-avatar.avatar-bidder:hover {
     -fx-border-color: #3B82F6;
     -fx-border-width: 2px;
     -fx-border-radius: 22px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
+
 .profile-avatar.avatar-seller:hover {
     -fx-border-color: #F59E0B;
     -fx-border-width: 2px;
     -fx-border-radius: 22px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 8, 0, 0, 2);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 8, 0, 0, 2);
 }
+
 .dialog-overlay {
     -fx-background-color: rgba(0, 0, 0, 0.6);
 }
@@ -1082,17 +1110,22 @@
 
 /* ================= DANH MỤC CONTAINER (GIỐNG ẢNH 2) ================= */
 .category-container-premium {
-    -fx-background-color: rgba(255, 255, 255, 0.02); /* Nền mờ để phân biệt với background chính */
+    -fx-background-color: rgba(255, 255, 255, 0.02);
+    /* Nền mờ để phân biệt với background chính */
     -fx-background-radius: 16;
-    -fx-border-color: rgba(255, 255, 255, 0.08); /* Viền mờ viền xám nhạt */
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    /* Viền mờ viền xám nhạt */
     -fx-border-radius: 16;
-    -fx-padding: 15 10 15 10; /* Khoảng cách lề bên trong container */
+    -fx-padding: 15 10 15 10;
+    /* Khoảng cách lề bên trong container */
 }
 
 /* Fix nhẹ lại padding của menu item cho gọn gàng trong container mới */
-.menu-item-active, .menu-item-inactive {
+.menu-item-active,
+.menu-item-inactive {
     -fx-padding: 10 16;
 }
+
 /* ================= CUSTOM SCROLLBAR CHO DARK THEME ================= */
 
 /* Làm trong suốt nền của thanh cuộn */
@@ -1119,7 +1152,8 @@
 /* Hiệu ứng hover cho thanh kéo: đổi sang màu Cam tiệp với Theme */
 .scroll-bar:vertical .thumb:hover,
 .scroll-bar:horizontal .thumb:hover {
-    -fx-background-color: rgba(245, 158, 11, 0.5); /* Màu cam mờ */
+    -fx-background-color: rgba(245, 158, 11, 0.5);
+    /* Màu cam mờ */
 }
 
 /* Hiệu ứng click (pressed) cho thanh kéo */
@@ -1175,7 +1209,7 @@
     -fx-border-radius: 18;
     -fx-background-radius: 18;
     -fx-padding: 10;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 16, 0, 0, 6);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 16, 0, 0, 6);
 }
 
 .dropdown-btn {
@@ -1185,15 +1219,15 @@
     -fx-alignment: CENTER_LEFT;
     -fx-padding: 10 14;
     -fx-background-radius: 16;
-    -fx-border-color: rgba(255,255,255,0.14);
+    -fx-border-color: rgba(255, 255, 255, 0.14);
     -fx-border-width: 1;
     -fx-border-radius: 16;
 }
 
 .dropdown-btn:hover {
-    -fx-background-color: rgba(245,159,11,0.12);
+    -fx-background-color: rgba(245, 159, 11, 0.12);
     -fx-text-fill: #F59E0B;
-    -fx-border-color: rgba(245,159,11,0.4);
+    -fx-border-color: rgba(245, 159, 11, 0.4);
 }
 
 /* ================= DEPOSIT MESSAGE COLORS ================= */
@@ -1320,13 +1354,16 @@
 .alert-success {
     -fx-border-color: #F59E0B;
 }
+
 .alert-success .alert-icon {
     -fx-text-fill: #F59E0B;
     -fx-font-size: 60px;
 }
+
 .alert-success .alert-title {
     -fx-text-fill: #F59E0B;
 }
+
 .alert-success .alert-btn-confirm {
     -fx-background-color: #F59E0B;
 }
@@ -1335,13 +1372,16 @@
 .alert-error {
     -fx-border-color: #EF4444;
 }
+
 .alert-error .alert-icon {
     -fx-text-fill: #EF4444;
     -fx-font-size: 50px;
 }
+
 .alert-error .alert-title {
     -fx-text-fill: #EF4444;
 }
+
 .alert-error .alert-btn-confirm {
     -fx-background-color: #EF4444;
 }
@@ -1639,6 +1679,7 @@
     -fx-cursor: hand;
     -fx-font-size: 13px;
 }
+
 .autobid-btn:hover {
     -fx-background-color: #059669;
 }
@@ -1700,7 +1741,7 @@
     -fx-background-color: #00BFA5;
     -fx-background-radius: 8px;
     -fx-padding: 10px 20px;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 4);
     -fx-spacing: 10px;
     -fx-alignment: center-left;
 }
@@ -1718,7 +1759,7 @@
     -fx-border-radius: 18px;
     -fx-border-width: 1.5px;
     -fx-padding: 0px 25px 0px 25px;
-    -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 15, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.3), 15, 0, 0, 0);
 }
 
 .live-notification-warning-icon {
@@ -1780,8 +1821,10 @@
     -fx-font-weight: bold;
 }
 
-.chart-tooltip { -fx-background-color: #1A1D27; -fx-text-fill: #FFA500; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 5px; }
-
-.blurred-content {
-    -fx-effect: gaussian-blur(15);
+.chart-tooltip {
+    -fx-background-color: #1A1D27;
+    -fx-text-fill: #FFA500;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 5px;
 }

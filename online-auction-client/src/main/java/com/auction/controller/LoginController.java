@@ -1,4 +1,5 @@
 package com.auction.controller;
+
 import com.auction.*;
 
 import com.google.gson.JsonObject;
@@ -26,27 +27,34 @@ import org.slf4j.LoggerFactory;
  * Controller quản lý giao diện Đăng nhập (Login).
  * <p>
  * Chịu trách nhiệm xác thực thông tin người dùng với Server,
- * lưu trữ phiên đăng nhập (Session) và chuyển hướng sang màn hình Dashboard nếu thành công.
+ * lưu trữ phiên đăng nhập (Session) và chuyển hướng sang màn hình Dashboard nếu
+ * thành công.
  */
 public class LoginController {
 
     private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
-    @FXML private Button loginButton;
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private Label messageLabel;
-    @FXML private StackPane rootPane;
-    @FXML private javafx.scene.layout.VBox cardVBox;
-    @FXML private javafx.scene.layout.HBox titleHBox;
+    @FXML
+    private Button loginButton;
+    @FXML
+    private TextField usernameField;
+    @FXML
+    private PasswordField passwordField;
+    @FXML
+    private Label messageLabel;
+    @FXML
+    private StackPane rootPane;
+    @FXML
+    private javafx.scene.layout.VBox cardVBox;
+    @FXML
+    private javafx.scene.layout.HBox titleHBox;
 
     @FXML
     public void initialize() {
         cardVBox.setMinWidth(420);
         cardVBox.maxWidthProperty().bind(Bindings.min(
                 Bindings.max(titleHBox.widthProperty().add(60), 420),
-                rootPane.widthProperty().multiply(0.8)
-        ));
+                rootPane.widthProperty().multiply(0.8)));
         cardVBox.prefWidthProperty().bind(cardVBox.maxWidthProperty());
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
@@ -59,7 +67,7 @@ public class LoginController {
                         loginButton.pseudoClassStateChanged(pressedClass, true); // Ép trạng thái đồ họa CSS :pressed
                     }
                 });
-                
+
                 newScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
                     if (event.getCode() == KeyCode.ENTER) {
                         loginButton.pseudoClassStateChanged(pressedClass, false); // Gỡ trạng thái đồ họa CSS :pressed
@@ -71,7 +79,8 @@ public class LoginController {
 
     /**
      * Xử lý sự kiện khi người dùng nhấn nút Đăng nhập.
-     * Kiểm tra tính hợp lệ của dữ liệu đầu vào và mở kết nối Socket để gửi yêu cầu xác thực.
+     * Kiểm tra tính hợp lệ của dữ liệu đầu vào và mở kết nối Socket để gửi yêu cầu
+     * xác thực.
      */
     @FXML
     private void handleLogin() {
@@ -92,10 +101,10 @@ public class LoginController {
         // 2. Tạo Thread mới để giao tiếp với Server (tránh làm đóng băng UI)
         new Thread(() -> {
             try (Socket socket = new Socket("127.0.0.1", 8080);
-                 PrintWriter writer = new PrintWriter(
-                         new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-                 BufferedReader reader = new BufferedReader(
-                         new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
+                    PrintWriter writer = new PrintWriter(
+                            new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
 
                 // 3. Đóng gói và gửi yêu cầu đăng nhập (Payload JSON)
                 JsonObject req = new JsonObject();
@@ -107,7 +116,8 @@ public class LoginController {
 
                 // 4. Chờ luồng đọc phản hồi từ Server
                 String line = reader.readLine();
-                if (line == null) throw new Exception("No response");
+                if (line == null)
+                    throw new Exception("No response");
 
                 JsonObject res = JsonParser.parseString(line).getAsJsonObject();
 
@@ -147,8 +157,7 @@ public class LoginController {
                                     } else {
                                         messageLabel.setText(text + ".");
                                     }
-                                })
-                        );
+                                }));
                         dots.setCycleCount(Timeline.INDEFINITE);
                         dots.play();
 
@@ -173,8 +182,7 @@ public class LoginController {
                 });
 
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() ->
-                        messageLabel.setText("Không kết nối server!"));
+                javafx.application.Platform.runLater(() -> messageLabel.setText("Không kết nối server!"));
             }
         }).start();
     }
@@ -200,7 +208,8 @@ public class LoginController {
     private void openChangePassword() {
         try {
             javafx.scene.Node mainContent = rootPane.getChildren().get(0);
-            if (rootPane.lookup("#dark-overlay-forgot") != null) return;
+            if (rootPane.lookup("#dark-overlay-forgot") != null)
+                return;
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/forgot_password.fxml"));
             Parent forgotGroup = loader.load();
