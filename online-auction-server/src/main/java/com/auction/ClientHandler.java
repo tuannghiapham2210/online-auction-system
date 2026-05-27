@@ -4,6 +4,7 @@ import com.auction.dao.UserDAO;
 import com.auction.dao.ItemDAO;
 import com.auction.factory.ItemFactory;
 import com.auction.model.Item;
+import com.auction.service.AuctionService;
 import com.auction.service.PaymentService;
 import com.auction.service.UserService;
 import com.google.gson.Gson;
@@ -229,96 +230,22 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa chi tiết sản phẩm (name, price, duration...).
      */
     private void handleAddItem(JsonObject request) {
-        logger.info("Processing ADD_ITEM request...");
-        try {
-            // 1. Trích xuất dữ liệu cơ bản
-            String name = request.get("name").getAsString();
-            String type = request.get("type").getAsString();
-            double startingPrice = request.get("startingPrice").getAsDouble();
-            int sellerId = request.get("sellerId").getAsInt();
-
-            // 2. Trích xuất dữ liệu bổ sung (có thể trống)
-            String imageUrl = request.has("imageUrl") ? request.get("imageUrl").getAsString() : "";
-            String description = request.has("description") ? request.get("description").getAsString() : "";
-            double stepPrice = request.get("stepPrice").getAsDouble();
-            double durationHours = request.get("durationHours").getAsDouble();
-
-            // 3. Tính toán EndTime
-            // 3. Chưa bắt đầu đấu giá -> chưa set thời gian thật
-            String endTime = null;
-
-            // 4. Khởi tạo đối tượng Item
-            Item newItem = ItemFactory.createItem(type, name, startingPrice, endTime, sellerId, "");
-            newItem.setStepPrice(stepPrice);
-            newItem.setDurationHours(durationHours);
-            newItem.setImageUrl(imageUrl);
-            newItem.setDescription(description);
-
-            // 5. Lưu vào Database
-            ItemDAO itemDAO = new ItemDAO();
-            boolean isSuccess = itemDAO.insertItem(newItem);
-
-            JsonObject response = new JsonObject();
-            if (isSuccess) {
-                    logger.info("Saved item successfully [{}] into items table.", name);
-
-                    // 6a. Lấy item mới nhất để lấy ID
-                    List<Item> allItems = itemDAO.getAllItems();
-                    int insertedId = -1;
-                    if (!allItems.isEmpty()) {
-                        insertedId = allItems.get(allItems.size() - 1).getId();
-                    }
-
-                    response.addProperty("status", "SUCCESS");
-                    response.addProperty("itemId", insertedId);
-                    response.addProperty("message", "Tạo sản phẩm đấu giá thành công!");
-
-                    writer.println(response.toString());
-                    return;
-            } else {
-                logger.error("Failed to save item [{}] into items table.", name);
-                response.addProperty("status", "FAIL");
-                response.addProperty("message", "Lỗi Database khi lưu sản phẩm.");
-            }
-            writer.println(response.toString());
-
-        } catch (Exception e) {
-            JsonObject errorResponse = new JsonObject();
-            errorResponse.addProperty("status", "ERROR");
-            errorResponse.addProperty("message", "Lỗi dữ liệu: " + e.getMessage());
-            logger.error("ADD_ITEM failed: {}", e.getMessage(), e);
-            writer.println(errorResponse.toString());
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processAddItem(request);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
     private void handlePublishItem(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            logger.info("Processing PUBLISH_ITEM request for itemId={}...", itemId);
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-            if (item != null) {
-                JsonObject broadcastMsg = new JsonObject();
-                broadcastMsg.addProperty("action", "NEW_ITEM_ADDED");
-                broadcastMsg.addProperty("id", item.getId());
-                broadcastMsg.addProperty("name", item.getName());
-                broadcastMsg.addProperty("itemType", item.getItemType());
-                broadcastMsg.addProperty("startingPrice", item.getStartingPrice());
-                broadcastMsg.addProperty("currentPrice", item.getCurrentPrice());
-                broadcastMsg.addProperty("stepPrice", item.getStepPrice());
-                broadcastMsg.addProperty("durationHours", item.getDurationHours());
-                broadcastMsg.addProperty("imageUrl", item.getImageUrl());
-                broadcastMsg.addProperty("description", item.getDescription());
-                broadcastMsg.addProperty("extraInfo", item.getExtraInfo());
-                broadcastMsg.addProperty("sellerId", item.getSellerId());
-                broadcastMsg.addProperty("status", item.getStatus());
-                broadcastMsg.addProperty("endTime", item.getEndTime() != null ? item.getEndTime() : "");
-
-                logger.info("Broadcasting NEW_ITEM_ADDED event for published itemId={}", item.getId());
-                broadcast(broadcastMsg);
-            }
-        } catch (Exception e) {
-            logger.error("PUBLISH_ITEM failed: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processPublishItem(itemId);
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -327,20 +254,16 @@ public class ClientHandler implements Runnable {
      * @param request Request GET_ALL_ITEMS dạng JSON.
      */
     private void handleGetAllItems(JsonObject request) {
-        ItemDAO itemDAO = new ItemDAO();
-        List<Item> items = itemDAO.getAllItems();
-
+        AuctionService auctionService = new AuctionService();
+        List<Item> items = auctionService.getAllItems();
         for (Item item : items) {
             item.setViewerCount(getViewerCountForItem(item.getId()));
         }
-
         Gson gson = new Gson();
         JsonArray arr = gson.toJsonTree(items).getAsJsonArray();
-
         JsonObject response = new JsonObject();
         response.addProperty("status", "SUCCESS");
         response.add("data", arr);
-
         writer.println(response.toString());
     }
 
@@ -752,64 +675,16 @@ public class ClientHandler implements Runnable {
      * @param request JSON chứa "itemId", "userId", và "role".
      */
     private void handleOpenAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // Verify user is ADMIN or the actual seller
-            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-                // Tính thời gian kết thúc khi bắt đầu đấu giá
-                double durationHours = item.getDurationHours();
-
-                long totalSeconds = (long) (durationHours * 3600);
-
-                java.time.LocalDateTime endTarget =
-                        java.time.LocalDateTime.now().plusSeconds(totalSeconds);
-
-                java.time.format.DateTimeFormatter formatter =
-                        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-                String endTime = endTarget.format(formatter);
-
-                // Update status + end_time
-                boolean success =
-                        itemDAO.startAuction(itemId, endTime);
-                if (success) {
-                    JsonObject broadcastMsg = new JsonObject();
-                    broadcastMsg.addProperty("action", "AUCTION_STARTED");
-                    broadcastMsg.addProperty("itemId", itemId);
-                    broadcastMsg.addProperty("message", "Phiên đấu giá đã chính thức bắt đầu!");
-                    broadcastMsg.addProperty("endTime", endTime);
-                    
-                    logger.info("Auction {} status updated to ACTIVE by userId={}", itemId, userId);
-                    broadcast(broadcastMsg); // Broadcast to all connected clients
-                } else {
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái!");
-                    this.writer.println(errorMsg.toString());
-                }
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền mở phiên đấu giá này!");
-                logger.warn("Unauthorized OPEN_AUCTION_REQUEST for itemId={} by userId={}, role={}", itemId, userId, role);
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error handling OPEN_AUCTION_REQUEST: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processOpenAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -819,93 +694,16 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
      */
     private void handleCancelAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại trên hệ thống!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // =========================================================================
-            // CRITICAL BUG FIX: Kiểm tra trạng thái kèm đối chiếu thời gian kết thúc thực tế
-            // =========================================================================
-            boolean isLive = false; // Biến cờ xác định xem phiên có đang chạy THẬT SỰ hay không
-
-            if ("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus())) {
-                try {
-                    // Lấy thời gian kết thúc của phiên thầu từ Database
-                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
-
-                    // Nếu thời gian hiện tại (now) vẫn nằm TRƯỚC thời gian kết thúc -> Đang chạy thật sự
-                    if (java.time.LocalDateTime.now().isBefore(endTime)) {
-                        isLive = true;
-                    } else {
-                        // Hết giờ rồi mà DB vẫn kẹt chữ ACTIVE -> Cập nhật thành FINISHED để đồng bộ
-                        itemDAO.updateAuctionStatus(itemId, "FINISHED");
-                        logger.info("[SERVER] Đã tự động chốt trạng thái FINISHED cho itemId={} do hết hạn.", itemId);
-                    }
-                } catch (Exception e) {
-                    // Nếu cấu trúc chuỗi thời gian bị lỗi, an toàn nhất là chặn xóa
-                    logger.error("[SERVER] Lỗi parse thời gian khi xóa: {}", e.getMessage());
-                    isLive = true;
-                }
-            }
-
-            // Nếu phiên đang chạy thật sự (isLive == true) thì mới quăng lỗi từ chối xóa
-            if (isLive) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Không được phép gỡ bỏ sản phẩm khi phiên đấu giá đang diễn ra trực tiếp!");
-                logger.warn("[SERVER] Chặn hành vi gỡ sản phẩm đang đấu giá: itemId={}, bởi userId={}", itemId, userId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // KIỂM TRA PHÂN QUYỀN: Chỉ ADMIN hoặc chính chủ SELLER tạo ra món đồ mới được phép gỡ
-            if ("ADMIN".equalsIgnoreCase(role) || item.getSellerId() == userId) {
-
-                // THỰC THI XÓA: Gọi ItemDAO thực hiện lệnh DELETE xóa bản ghi khỏi SQLite CSDL
-                boolean success = itemDAO.deleteItem(itemId);
-
-                if (success) {
-                    JsonObject broadcastMsg = new JsonObject();
-                    broadcastMsg.addProperty("action", "AUCTION_CANCELLED");
-                    broadcastMsg.addProperty("itemId", itemId);
-                    broadcastMsg.addProperty("message", "Sản phẩm '" + item.getName() + "' đã bị gỡ bỏ khỏi hệ thống.");
-
-                    logger.info("Product ID {} successfully removed by userId={}, role={}", itemId, userId, role);
-
-                    // Phát loa phát thanh (Broadcast) báo hiệu cho tất cả client đang online đồng loạt dọn dẹp sảnh chờ
-                    broadcast(broadcastMsg);
-
-                    // Phản hồi kết quả thành công cho Client gửi yêu cầu
-                    JsonObject response = new JsonObject();
-                    response.addProperty("status", "SUCCESS");
-                    this.writer.println(response.toString());
-                } else {
-                    JsonObject errorMsg = new JsonObject();
-                    errorMsg.addProperty("action", "ERROR");
-                    errorMsg.addProperty("message", "Lỗi cơ sở dữ liệu khi thực hiện xóa sản phẩm!");
-                    this.writer.println(errorMsg.toString());
-                }
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có quyền gỡ sản phẩm này!");
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error inside handleCancelAuction: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processCancelAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -915,84 +713,16 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId", "userId", và "role".
      */
     private void handleStopAuction(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
-            String role = request.has("role") ? request.get("role").getAsString() : "";
-
-            logger.info("[SERVER] Nhận yêu cầu dừng phiên khẩn cấp từ client: itemId={}, userId={}, role={}", itemId, userId, role);
-
-            ItemDAO itemDAO = new ItemDAO();
-            Item item = itemDAO.getItemById(itemId);
-
-            if (item == null) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // PHÂN QUYỀN HỆ THỐNG: Kiểm tra xem có phải ADMIN hay chủ sở hữu món hàng không
-            if (!"ADMIN".equalsIgnoreCase(role) && item.getSellerId() != userId) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Từ chối: Bạn không có thẩm quyền đóng phiên đấu giá này!");
-                logger.warn("[SERVER] Yêu cầu dừng phiên bị từ chối do sai phân quyền: userId={}", userId);
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // KIỂM TRA TRẠNG THÁI: Chỉ có thể ép dừng khi phiên thầu đang hoạt động trực tiếp (ACTIVE)
-            if (!"ACTIVE".equalsIgnoreCase(item.getStatus())) {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Phiên đấu giá hiện không ở trạng thái chạy trực tiếp!");
-                this.writer.println(errorMsg.toString());
-                return;
-            }
-
-            // Tiến hành cập nhật trạng thái kết thúc "FINISHED" vào Database
-            boolean statusUpdated = itemDAO.updateAuctionStatus(itemId, "FINISHED");
-            if (statusUpdated) {
-                // =====================================================================
-                // FIX BUG ĐỒNG HỒ DASHBOARD: Ép thời gian kết thúc về đúng thời điểm bấm nút
-                // Để khi Client tải lại trang, thuật toán đếm ngược thấy hết giờ sẽ tự dừng.
-                // =====================================================================
-                String nowStr = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                itemDAO.updateEndTime(itemId, nowStr);
-
-                logger.info("[SERVER] Cập nhật CSDL: Chuyển item {} sang FINISHED và chốt giờ về {}", itemId, nowStr);
-
-                // Truy vấn thông tin người trả giá cao nhất tại thời điểm bấm nút để chốt người chiến thắng
-                com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-                java.util.Map<String, Object> highestBid = bidDAO.getHighestBidder(itemId);
-
-                String winnerUsername = (String) highestBid.get("username");
-                double finalPrice = (double) highestBid.get("bidAmount");
-
-                // Nếu chưa có ai đặt giá, mức giá chốt sẽ quay về giá khởi điểm ban đầu
-                if (finalPrice == 0) {
-                    finalPrice = item.getStartingPrice();
-                }
-
-                // Phát tín hiệu Broadcast "AUCTION_FINISHED" cho toàn bộ Client đang kết nối thời gian thực
-                JsonObject finishBroadcast = new JsonObject();
-                finishBroadcast.addProperty("action", "AUCTION_FINISHED");
-                finishBroadcast.addProperty("itemId", itemId);
-                finishBroadcast.addProperty("winnerUsername", winnerUsername);
-                finishBroadcast.addProperty("finalPrice", finalPrice);
-
-                logger.info("[SERVER] Broadcast sự kiện kết thúc thầu sớm: Item={}, Winner={}, Price=${}", itemId, winnerUsername, finalPrice);
-                broadcast(finishBroadcast);
-            } else {
-                JsonObject errorMsg = new JsonObject();
-                errorMsg.addProperty("action", "ERROR");
-                errorMsg.addProperty("message", "Lỗi CSDL khi cập nhật trạng thái kết thúc!");
-                this.writer.println(errorMsg.toString());
-            }
-        } catch (Exception e) {
-            logger.error("Error inside handleStopAuction: {}", e.getMessage(), e);
+        int itemId = request.get("itemId").getAsInt();
+        int userId = request.has("userId") ? request.get("userId").getAsInt() : -1;
+        String role = request.has("role") ? request.get("role").getAsString() : "";
+        AuctionService auctionService = new AuctionService();
+        AuctionService.AuctionResult result = auctionService.processStopAuction(itemId, userId, role);
+        if (result.response != null) {
+            writer.println(result.response.toString());
+        }
+        if (result.broadcastMessage != null) {
+            broadcast(result.broadcastMessage);
         }
     }
 
@@ -1001,29 +731,20 @@ public class ClientHandler implements Runnable {
      * @param request Đối tượng JSON chứa "itemId".
      */
     private void handleFetchBidHistory(JsonObject request) {
-        try {
-            int itemId = request.get("itemId").getAsInt();
-            this.currentItemId = itemId;
-            
-            com.auction.dao.BidTransactionDAO bidDAO = new com.auction.dao.BidTransactionDAO();
-            java.util.List<java.util.Map<String, Object>> history = bidDAO.getBidHistory(itemId);
-            
-            Gson gson = new Gson();
-            JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
-            
-            JsonObject response = new JsonObject();
-            response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
-            response.addProperty("status", "SUCCESS");
-            response.addProperty("itemId", itemId);
-            response.add("history", arr);
-            
-            writer.println(response.toString());
-            logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
-            
-            broadcastViewerCount(itemId);
-        } catch (Exception e) {
-            logger.error("Error handling FETCH_BID_HISTORY_REQUEST: {}", e.getMessage(), e);
-        }
+        int itemId = request.get("itemId").getAsInt();
+        this.currentItemId = itemId;
+        AuctionService auctionService = new AuctionService();
+        java.util.List<java.util.Map<String, Object>> history = auctionService.getBidHistory(itemId);
+        Gson gson = new Gson();
+        JsonArray arr = gson.toJsonTree(history).getAsJsonArray();
+        JsonObject response = new JsonObject();
+        response.addProperty("action", "FETCH_BID_HISTORY_RESPONSE");
+        response.addProperty("status", "SUCCESS");
+        response.addProperty("itemId", itemId);
+        response.add("history", arr);
+        writer.println(response.toString());
+        logger.info("Sent FETCH_BID_HISTORY_RESPONSE for item: {} with {} records", itemId, history.size());
+        broadcastViewerCount(itemId);
     }
 
     public static int getViewerCountForItem(int itemId) {
