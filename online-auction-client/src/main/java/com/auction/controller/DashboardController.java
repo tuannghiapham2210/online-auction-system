@@ -302,7 +302,7 @@ public class DashboardController {
             return false;
         }
         javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
-        return bounds.contains(event.getSceneX(), event.getSceneY());
+        return bounds != null && bounds.contains(event.getSceneX(), event.getSceneY());
     }
 
     private boolean isFinished(Item item) {
