@@ -4,26 +4,25 @@ import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.PreparedStatement;
 import java.sql.Connection;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Lớp kiểm thử cho UserDAO.
+ * Lớp kiểm thử cho UserDao.
  * Bao phủ các tính năng: Đăng ký, Đăng nhập, Nạp tiền, Kiểm tra số dư.
  */
-class UserDAOTest {
+class UserDaoTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserDAOTest.class);
-    private UserDAO userDAO;
+    private static final Logger logger = LoggerFactory.getLogger(UserDaoTest.class);
+    private UserDao userDAO;
 
     private static final String TEST_USER = "test_user_9999";
     private static final String TEST_PASS = "123456";
 
     @BeforeEach
     void setUp() {
-        userDAO = new UserDAO();
+        userDAO = new UserDao();
         cleanupTestUser();
     }
 
