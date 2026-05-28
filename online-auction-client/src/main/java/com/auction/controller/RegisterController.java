@@ -53,20 +53,22 @@ public class RegisterController {
 
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
-        // Bắt sự kiện phím Enter để làm hiệu ứng lún nút đồ họa CSS
-        registerButton.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        registerButton.pseudoClassStateChanged(pressedClass, true);
-                    }
-                });
-                
-                newScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        registerButton.pseudoClassStateChanged(pressedClass, false);
-                    }
-                });
+        // Dùng EventFilter trên rootPane để bắt sự kiện phím Enter
+        // và tự động được giải phóng khi chuyển cảnh (tránh rò rỉ bộ nhớ / xung đột bộ lọc trên Scene)
+        rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                javafx.scene.Node focus = rootPane.getScene() != null ? rootPane.getScene().getFocusOwner() : null;
+                registerButton.pseudoClassStateChanged(pressedClass, true);
+                if (focus instanceof TextInputControl || focus instanceof ToggleButton) {
+                    registerButton.fire();
+                    event.consume();
+                }
+            }
+        });
+        
+        rootPane.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                registerButton.pseudoClassStateChanged(pressedClass, false);
             }
         });
     }

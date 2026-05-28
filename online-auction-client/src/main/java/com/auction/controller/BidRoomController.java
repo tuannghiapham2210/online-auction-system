@@ -816,7 +816,9 @@ public class BidRoomController {
         boolean noWinner = winnerUsername == null
                 || winnerUsername.trim().isEmpty()
                 || winnerUsername.equalsIgnoreCase("Chưa có")
-                || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có");
+                || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Chưa có")
+                || winnerUsername.equalsIgnoreCase("Không có")
+                || winnerUsername.equalsIgnoreCase("Dẫn đầu bởi: Không có");
 
         boolean isWinner = !noWinner && Session.username != null && winnerUsername != null
                 && winnerUsername.equalsIgnoreCase(Session.username);

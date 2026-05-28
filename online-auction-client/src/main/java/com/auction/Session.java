@@ -31,4 +31,7 @@ public class Session {
     
     // Track which itemIds have already had their payment processed for this session
     public static java.util.Set<Integer> processedPayments = new java.util.HashSet<>();
+    
+    // Track selected category on Dashboard to avoid screen jump
+    public static String selectedCategory = "ALL";
 }
