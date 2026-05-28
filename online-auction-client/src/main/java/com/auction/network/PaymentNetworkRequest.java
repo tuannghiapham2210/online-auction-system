@@ -12,8 +12,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class PaymentService {
-    private static final Logger logger = LoggerFactory.getLogger(PaymentService.class);
+public class PaymentNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(PaymentNetworkRequest.class);
 
     /**
      * Gửi yêu cầu thanh toán (trừ tiền người chiến thắng) lên Server trên một luồng riêng.

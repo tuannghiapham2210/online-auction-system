@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.AddItemService;
+import com.auction.service.AddItemService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -100,91 +100,24 @@ public class AddItemController {
         String stepStr = stepPriceField.getText();
         String durationStr = durationField.getText();
 
-        // 2. Kiểm tra Validation cơ bản (chặn bỏ trống)
-        if (name == null || name.trim().isEmpty() || type == null ||
-                priceStr == null || priceStr.trim().isEmpty() ||
-                stepStr == null || stepStr.trim().isEmpty() ||
-                durationStr == null || durationStr.trim().isEmpty()) {
-            messageLabel.setText("Vui lòng điền đủ các trường bắt buộc (*)");
-            if (btnSubmit != null) btnSubmit.setDisable(false);
-            return;
-        }
-
-        try {
-            // 3. Ép kiểu các dữ liệu dạng chuỗi sang số
-            double startingPrice = NumberUtil.parse(priceStr).doubleValue();
-            double stepPrice = NumberUtil.parse(stepStr).doubleValue();
-
-            // Parse thời gian HH:mm:ss
-            String[] timeParts = durationStr.trim().split(":");
-
-            if (timeParts.length != 3) {
-                messageLabel.setText("Thời gian phải đúng định dạng HH:mm:ss");
-                if (btnSubmit != null) btnSubmit.setDisable(false);
-                return;
-            }
-
-            int hours = Integer.parseInt(timeParts[0]);
-            int minutes = Integer.parseInt(timeParts[1]);
-            int seconds = Integer.parseInt(timeParts[2]);
-
-            // Validate thời gian
-            if (hours < 0 || minutes < 0 || seconds < 0 ||
-                    minutes >= 60 || seconds >= 60) {
-
-                messageLabel.setText("Thời gian không hợp lệ!");
-                if (btnSubmit != null) btnSubmit.setDisable(false);
-                return;
-            }
-
-            // Tổng thời gian theo giờ (double)
-            double durationHours =
-                    hours +
-                    (minutes / 60.0) +
-                    (seconds / 3600.0);
-
-            // Kiểm tra logic
-            if(startingPrice <= 0 || stepPrice <= 0 || durationHours <= 0) {
-                messageLabel.setText("Giá tiền và thời gian phải lớn hơn 0");
-                if (btnSubmit != null) btnSubmit.setDisable(false);
-                return;
-            }
-
-            // 5. Đóng gói dữ liệu gửi đi (Payload JSON)
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "ADD_ITEM");
-            request.addProperty("name", name);
-            request.addProperty("type", type);
-            request.addProperty("imageUrl", imageUrl != null ? imageUrl : "");
-            request.addProperty("description", description != null ? description : "");
-            request.addProperty("startingPrice", startingPrice);
-            request.addProperty("stepPrice", stepPrice);
-            request.addProperty("durationHours", durationHours);
-            request.addProperty("sellerId", currentSellerId);
-
-            // 6. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
-            AddItemService.sendAddItemRequestAsync(request.toString(), (response) -> {
-                if (response.get("status").getAsString().equals("SUCCESS")) {
-                    if (response.has("itemId")) {
-                        createdItemId = response.get("itemId").getAsInt();
+        AddItemService.validateAndSubmit(name, type, imageUrl, description, priceStr, stepStr, durationStr, currentSellerId, (isSuccess, itemId, message) -> {
+            javafx.application.Platform.runLater(() -> {
+                if (isSuccess) {
+                    if (itemId != -1) {
+                        createdItemId = itemId;
                     }
                     messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-success");
-                    messageLabel.setText("Đăng bán thành công!");
+                    messageLabel.setText(message);
 
-                    // Tạo độ trễ 1.5s (PauseTransition) rồi mới đóng Popup
                     PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
                     delay.setOnFinished(e -> closePopup());
                     delay.play();
                 } else {
-                    messageLabel.setText("Lỗi: " + response.get("message").getAsString());
+                    messageLabel.setText(message);
                     if (btnSubmit != null) btnSubmit.setDisable(false);
                 }
             });
-
-        } catch (NumberFormatException e) {
-            messageLabel.setText("Giá, Bước giá và Thời gian phải là số hợp lệ!");
-            if (btnSubmit != null) btnSubmit.setDisable(false);
-        }
+        });
     }
 
     private Runnable onCloseCallback;
@@ -221,7 +154,7 @@ public class AddItemController {
     }
 
     private void publishItemToServer(int itemId) {
-        AddItemService.sendPublishItemRequestAsync(itemId);
+        com.auction.network.AddItemNetworkRequest.sendPublishItemRequestAsync(itemId);
     }
 
     /**

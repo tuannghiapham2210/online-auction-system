@@ -1,7 +1,6 @@
 package com.auction.controller;
 import com.auction.*;
-import com.auction.network.PasswordChangeService;
-
+import com.auction.service.PasswordChangeService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -32,29 +31,18 @@ public class PasswordChangeController {
             String newPassword = tfNewPassword.getText().trim();
             String confirmPassword = tfConfirmPassword.getText().trim();
 
-            if (oldPassword.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                showMessage("Vui lòng nhập đầy đủ thông tin.", true);
-                return;
-            }
-            if (!newPassword.equals(confirmPassword)) {
-                showMessage("Mật khẩu mới và xác nhận phải giống nhau.", true);
-                return;
-            }
-
-            showMessage("Đang đổi mật khẩu...", false);
-            PasswordChangeService.sendChangePasswordRequestAsync(Session.userId, oldPassword, newPassword, (status, message) -> {
-                if ("SUCCESS".equals(status)) {
-                    showMessage(message, false);
-                    PauseTransition delay = new PauseTransition(Duration.seconds(1));
-                    delay.setOnFinished(event -> {
-                        if (onCloseCallback != null) {
-                            onCloseCallback.run();
-                        }
-                    });
-                    delay.play();
-                } else {
-                    showMessage(message, true);
-                }
+            showMessage("Đang xử lý...", false);
+            PasswordChangeService.validateAndChange(Session.userId, oldPassword, newPassword, confirmPassword, (status, message) -> {
+                Platform.runLater(() -> {
+                    if ("SUCCESS".equals(status)) {
+                        showMessage(message, false);
+                        PauseTransition delay = new PauseTransition(Duration.seconds(1));
+                        delay.setOnFinished(event -> handleClose());
+                        delay.play();
+                    } else {
+                        showMessage(message, true);
+                    }
+                });
             });
         } catch (Exception e) {
             logger.error("Lỗi khi đổi mật khẩu: {}", e.getMessage(), e);

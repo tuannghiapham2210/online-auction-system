@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
  * Dịch vụ mạng quản lý các kết nối Socket TCP một lần (one-off request-response)
  * và gửi tin nhắn dạng bắn-và-quên (fire-and-forget).
  */
-public class NetworkService {
+public class BaseNetworkRequest {
     private static final String HOST = "localhost";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

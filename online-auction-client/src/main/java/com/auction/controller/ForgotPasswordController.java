@@ -1,7 +1,6 @@
 package com.auction.controller;
 import com.auction.*;
-import com.auction.network.ForgotPasswordService;
-
+import com.auction.service.ForgotPasswordService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -32,25 +31,18 @@ public class ForgotPasswordController {
             String newPassword = tfNewPassword.getText().trim();
             String confirmPassword = tfConfirmPassword.getText().trim();
 
-            if (username.isEmpty() || contactInfo.isEmpty() || newPassword.isEmpty() || confirmPassword.isEmpty()) {
-                showMessage("Vui lòng nhập đầy đủ thông tin.", true);
-                return;
-            }
-            if (!newPassword.equals(confirmPassword)) {
-                showMessage("Mật khẩu mới không khớp.", true);
-                return;
-            }
-
             showMessage("Đang xử lý...", false);
-            ForgotPasswordService.sendResetRequestAsync(username, contactInfo, newPassword, (status, message) -> {
-                if ("SUCCESS".equals(status)) {
-                    showMessage(message, false);
-                    PauseTransition delay = new PauseTransition(Duration.seconds(2));
-                    delay.setOnFinished(event -> handleClose());
-                    delay.play();
-                } else {
-                    showMessage(message, true);
-                }
+            ForgotPasswordService.validateAndReset(username, contactInfo, newPassword, confirmPassword, (status, message) -> {
+                Platform.runLater(() -> {
+                    if ("SUCCESS".equals(status)) {
+                        showMessage(message, false);
+                        PauseTransition delay = new PauseTransition(Duration.seconds(2));
+                        delay.setOnFinished(event -> handleClose());
+                        delay.play();
+                    } else {
+                        showMessage(message, true);
+                    }
+                });
             });
         } catch (Exception e) {
             logger.error("Lỗi khi khôi phục mật khẩu: {}", e.getMessage(), e);
