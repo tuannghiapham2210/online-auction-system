@@ -59,7 +59,12 @@ public class LoginController {
         // và tự động được giải phóng khi chuyển cảnh (tránh rò rỉ bộ nhớ / xung đột bộ lọc trên Scene)
         rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER && loginButton.isDefaultButton()) {
+                javafx.scene.Node focus = rootPane.getScene() != null ? rootPane.getScene().getFocusOwner() : null;
                 loginButton.pseudoClassStateChanged(pressedClass, true); // Ép trạng thái đồ họa CSS :pressed
+                if (focus instanceof TextInputControl) {
+                    loginButton.fire();
+                    event.consume();
+                }
             }
         });
 

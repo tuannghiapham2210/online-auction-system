@@ -58,8 +58,10 @@ public class RegisterController {
         rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 javafx.scene.Node focus = rootPane.getScene() != null ? rootPane.getScene().getFocusOwner() : null;
-                if (!(focus instanceof ToggleButton)) {
-                    registerButton.pseudoClassStateChanged(pressedClass, true);
+                registerButton.pseudoClassStateChanged(pressedClass, true);
+                if (focus instanceof TextInputControl || focus instanceof ToggleButton) {
+                    registerButton.fire();
+                    event.consume();
                 }
             }
         });
