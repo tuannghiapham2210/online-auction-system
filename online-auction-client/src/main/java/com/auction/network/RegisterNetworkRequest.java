@@ -16,8 +16,8 @@ import java.util.function.BiConsumer;
 /**
  * Dịch vụ mạng chuyên biệt xử lý yêu cầu đăng ký tài khoản.
  */
-public class RegisterService {
-    private static final Logger logger = LoggerFactory.getLogger(RegisterService.class);
+public class RegisterNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(RegisterNetworkRequest.class);
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

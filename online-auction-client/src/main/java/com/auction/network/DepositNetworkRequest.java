@@ -16,8 +16,8 @@ import java.util.function.Consumer;
 /**
  * Dịch vụ mạng chuyên biệt xử lý yêu cầu nạp tiền.
  */
-public class DepositService {
-    private static final Logger logger = LoggerFactory.getLogger(DepositService.class);
+public class DepositNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(DepositNetworkRequest.class);
     private static final String HOST = "localhost";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

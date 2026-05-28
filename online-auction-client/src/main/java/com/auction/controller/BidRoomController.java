@@ -32,7 +32,7 @@ import javafx.scene.transform.Scale;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-import com.auction.network.PaymentService;
+import com.auction.network.PaymentNetworkRequest;
 import com.auction.network.BidRoomSocketManager;
 import com.auction.controller.helper.BidRoomTimerManager;
 import com.auction.controller.helper.BidRoomChartManager;
@@ -849,7 +849,7 @@ public class BidRoomController {
             } catch (Exception ignored) {
             }
 
-            PaymentService.processWinnerPaymentAsync(
+            PaymentNetworkRequest.processWinnerPaymentAsync(
                     this.currentItemId,
                     Session.username,
                     (int) Math.round(finalPrice),

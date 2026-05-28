@@ -16,8 +16,8 @@ import java.util.function.Consumer;
 /**
  * Dịch vụ mạng chuyên biệt xử lý yêu cầu đăng nhập.
  */
-public class LoginService {
-    private static final Logger logger = LoggerFactory.getLogger(LoginService.class);
+public class LoginNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(LoginNetworkRequest.class);
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

@@ -16,8 +16,8 @@ import java.util.function.Consumer;
 /**
  * Dịch vụ mạng chuyên biệt xử lý yêu cầu cập nhật thông tin tài khoản.
  */
-public class AccountInfoService {
-    private static final Logger logger = LoggerFactory.getLogger(AccountInfoService.class);
+public class AccountInfoNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(AccountInfoNetworkRequest.class);
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

@@ -16,8 +16,8 @@ import java.util.function.Consumer;
 /**
  * Dịch vụ mạng chuyên biệt để thêm sản phẩm đấu giá mới và công bố sản phẩm.
  */
-public class AddItemService {
-    private static final Logger logger = LoggerFactory.getLogger(AddItemService.class);
+public class AddItemNetworkRequest {
+    private static final Logger logger = LoggerFactory.getLogger(AddItemNetworkRequest.class);
     private static final String HOST = "localhost";
     private static final int PORT = 8080;
     private static final String ENCODING = "UTF-8";

@@ -1,6 +1,6 @@
 package com.auction.controller;
 import com.auction.*;
-import com.auction.network.RegisterService;
+import com.auction.network.RegisterNetworkRequest;
 
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
@@ -105,7 +105,7 @@ public class RegisterController {
         messageLabel.setText("Đang đăng ký...");
 
         // 3. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
-        RegisterService.sendRegisterRequestAsync(username, password, role, email, phone, (status, message) -> {
+        RegisterNetworkRequest.sendRegisterRequestAsync(username, password, role, email, phone, (status, message) -> {
             if ("SUCCESS".equals(status)) {
                 messageLabel.getStyleClass().setAll("label", "msg-success");
                 messageLabel.setText("✔ " + message + " Đang chuyển");

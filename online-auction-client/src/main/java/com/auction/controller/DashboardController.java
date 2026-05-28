@@ -1,8 +1,8 @@
 package com.auction.controller;
 
 import com.auction.*;
-import com.auction.network.NetworkService;
-import com.auction.network.PaymentService;
+import com.auction.network.BaseNetworkRequest;
+import com.auction.network.PaymentNetworkRequest;
 import com.auction.controller.helper.DialogManager;
 import com.auction.controller.helper.DashboardTimerManager;
 
@@ -396,7 +396,7 @@ public class DashboardController {
         JsonObject request = new JsonObject();
         request.addProperty("action", "GET_ALL_ITEMS");
 
-        NetworkService.sendRequestAsync(request)
+        BaseNetworkRequest.sendRequestAsync(request)
             .thenAccept(response -> {
                 if (response.get("status").getAsString().equals("SUCCESS")) {
                     JsonArray dataArray = response.getAsJsonArray("data");
@@ -696,7 +696,7 @@ public class DashboardController {
 
         logger.info("Sent CANCEL_AUCTION_REQUEST for itemId: {}", itemId);
 
-        NetworkService.sendRequestAsync(request)
+        BaseNetworkRequest.sendRequestAsync(request)
             .thenAccept(responseJson -> {
                 Platform.runLater(() -> {
                     if (responseJson.has("action") && "ERROR".equals(responseJson.get("action").getAsString())) {
@@ -861,7 +861,7 @@ public class DashboardController {
                 }
             } catch (Exception ignored) {}
 
-            PaymentService.processWinnerPaymentAsync(
+            PaymentNetworkRequest.processWinnerPaymentAsync(
                 item.getId(),
                 Session.username,
                 (int) Math.round(item.getCurrentPrice()),

@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.DepositService;
+import com.auction.network.DepositNetworkRequest;
 import com.google.gson.JsonObject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -125,7 +125,7 @@ public class DepositController {
             }
 
             // Sử dụng dịch vụ mạng bất đồng bộ
-            DepositService.sendDepositRequestAsync(Session.username, amount, (response) -> {
+            DepositNetworkRequest.sendDepositRequestAsync(Session.username, amount, (response) -> {
                 String status = response.get("status").getAsString();
 
                 if ("SUCCESS".equals(status)) {

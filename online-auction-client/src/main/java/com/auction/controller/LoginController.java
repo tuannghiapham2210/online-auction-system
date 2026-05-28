@@ -1,7 +1,7 @@
 package com.auction.controller;
 
 import com.auction.*;
-import com.auction.network.LoginService;
+import com.auction.network.LoginNetworkRequest;
 
 import com.google.gson.JsonObject;
 import javafx.animation.*;
@@ -97,7 +97,7 @@ public class LoginController {
         messageLabel.setText("Đang đăng nhập...");
 
         // 2. Sử dụng dịch vụ mạng bất đồng bộ để giao tiếp với Server (tránh làm đóng băng UI)
-        LoginService.sendLoginRequestAsync(username, password, (res) -> {
+        LoginNetworkRequest.sendLoginRequestAsync(username, password, (res) -> {
             String status = res.get("status").getAsString();
             String message = res.get("message").getAsString();
 

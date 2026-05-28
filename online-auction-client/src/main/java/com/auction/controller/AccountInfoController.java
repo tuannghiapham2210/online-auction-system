@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.AccountInfoService;
+import com.auction.network.AccountInfoNetworkRequest;
 import com.google.gson.JsonObject;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -61,7 +61,7 @@ public class AccountInfoController {
 
             showMessage("Đang lưu thông tin...", false);
 
-            AccountInfoService.sendUpdateProfileRequestAsync(Session.userId, newName, newEmail, newPhone, (response) -> {
+            AccountInfoNetworkRequest.sendUpdateProfileRequestAsync(Session.userId, newName, newEmail, newPhone, (response) -> {
                 if (response.has("status") && "SUCCESS".equals(response.get("status").getAsString())) {
                     String updatedUsername = response.has("username") ? response.get("username").getAsString() : newName;
                     String updatedEmail = response.has("email") ? response.get("email").getAsString() : newEmail;

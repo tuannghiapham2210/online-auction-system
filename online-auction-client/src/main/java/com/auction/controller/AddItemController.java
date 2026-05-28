@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.AddItemService;
+import com.auction.network.AddItemNetworkRequest;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -163,7 +163,7 @@ public class AddItemController {
             request.addProperty("sellerId", currentSellerId);
 
             // 6. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
-            AddItemService.sendAddItemRequestAsync(request.toString(), (response) -> {
+            AddItemNetworkRequest.sendAddItemRequestAsync(request.toString(), (response) -> {
                 if (response.get("status").getAsString().equals("SUCCESS")) {
                     if (response.has("itemId")) {
                         createdItemId = response.get("itemId").getAsInt();
@@ -221,7 +221,7 @@ public class AddItemController {
     }
 
     private void publishItemToServer(int itemId) {
-        AddItemService.sendPublishItemRequestAsync(itemId);
+        AddItemNetworkRequest.sendPublishItemRequestAsync(itemId);
     }
 
     /**
