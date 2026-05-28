@@ -102,6 +102,25 @@ public class BiddingService {
         errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
         return errorMsg;
       }
+      if ("CLOSED".equalsIgnoreCase(item.getStatus()) || "FINISHED".equalsIgnoreCase(item.getStatus())) {
+        JsonObject errorMsg = new JsonObject();
+        errorMsg.addProperty("action", "ERROR");
+        errorMsg.addProperty("message", "Từ chối: Phiên đấu giá này đã kết thúc!");
+        return errorMsg;
+      }
+      if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+        java.time.format.DateTimeFormatter formatter =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
+        if (secondsLeft < -2) {
+          JsonObject errorMsg = new JsonObject();
+          errorMsg.addProperty("action", "ERROR");
+          errorMsg.addProperty("message", "Từ chối: Phiên đấu giá đã kết thúc!");
+          return errorMsg;
+        }
+      }
 
       double minBid = item.getCurrentPrice() + item.getStepPrice();
 
@@ -415,8 +434,9 @@ public class BiddingService {
 
       long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
 
-      if (secondsLeft <= 10 && secondsLeft >= 0) {
-        String extendedTime = endTime.plusSeconds(10).format(formatter);
+      if (secondsLeft <= 10 && secondsLeft >= -2) {
+        java.time.LocalDateTime baseTime = now.isAfter(endTime) ? now.withNano(0) : endTime;
+        String extendedTime = baseTime.plusSeconds(10).format(formatter);
         itemDao.updateEndTime(itemId, extendedTime);
         logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}",
             itemId, extendedTime);

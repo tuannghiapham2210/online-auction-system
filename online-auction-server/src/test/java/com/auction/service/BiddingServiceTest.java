@@ -115,4 +115,49 @@ class BiddingServiceTest {
         JsonObject lastMsg = broadcastMessages.get(broadcastMessages.size() - 1);
         assertEquals("UPDATE_PRICE", lastMsg.get("action").getAsString());
     }
+
+    @Test
+    @DisplayName("Test: Anti-sniping hoạt động chính xác khi bid đến trễ một chút (secondsLeft = -1)")
+    void testAntiSnipingGracePeriod() {
+        // 1. Cập nhật endTime của sản phẩm về thời điểm cách đây 1 giây (để secondsLeft = -1)
+        java.time.LocalDateTime targetEndTime = java.time.LocalDateTime.now().minusSeconds(1);
+        java.time.format.DateTimeFormatter formatter =
+            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String endTimeStr = targetEndTime.format(formatter);
+        
+        try {
+            java.sql.Connection conn = DatabaseConnection.getInstance().getConnection();
+            try (java.sql.PreparedStatement pstmt = conn.prepareStatement("UPDATE items SET end_time = ? WHERE id = ?")) {
+                pstmt.setString(1, endTimeStr);
+                pstmt.setInt(2, itemId);
+                pstmt.executeUpdate();
+            }
+        } catch (Exception ex) {
+            fail("Không thể cập nhật endTime trong Database: " + ex.getMessage());
+        }
+
+        // 2. Thực hiện đặt giá hợp lệ (giá khởi điểm 1000 + bước 100, nên bid 1500 là hợp lệ)
+        JsonObject graceReq = new JsonObject();
+        graceReq.addProperty("itemId", itemId);
+        graceReq.addProperty("bidderId", bidderId);
+        graceReq.addProperty("bidAmount", 1500.0);
+        graceReq.addProperty("username", TEST_BIDDER);
+        graceReq.addProperty("role", "BIDDER");
+
+        JsonObject res = biddingService.processPlaceBid(graceReq);
+        assertNull(res, "Lượt bid trong khoảng trễ mạng hợp lý (-1s) phải được chấp nhận thành công!");
+
+        // 3. Kiểm tra xem có broadcast cập nhật newEndTime hay không
+        assertFalse(broadcastMessages.isEmpty());
+        JsonObject lastMsg = broadcastMessages.get(broadcastMessages.size() - 1);
+        assertTrue(lastMsg.has("newEndTime"), "Phản hồi broadcast phải chứa thời gian kết thúc mới (newEndTime)!");
+        
+        String newEndTimeStr = lastMsg.get("newEndTime").getAsString();
+        java.time.LocalDateTime newEndTime = java.time.LocalDateTime.parse(newEndTimeStr, formatter);
+        
+        // Mốc thời gian mới phải bằng thời điểm hiện tại cộng 10 giây (hoặc lệch tối đa 1 giây do sai số chạy test)
+        long durationToNewEnd = java.time.Duration.between(java.time.LocalDateTime.now(), newEndTime).getSeconds();
+        assertTrue(durationToNewEnd >= 8 && durationToNewEnd <= 12, 
+            "Thời gian gia hạn mới phải khoảng 10 giây từ hiện tại, thực tế nhận được: " + durationToNewEnd);
+    }
 }
