@@ -2,8 +2,8 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
+import com.auction.network.DepositService;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -16,11 +16,6 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 
 public class DepositController {
 
@@ -115,7 +110,6 @@ public class DepositController {
         }
 
         try {
-
             Integer amount = spinnerAmount.getValue();
 
             if (amount == null || amount <= 0) {
@@ -130,81 +124,12 @@ public class DepositController {
                 return;
             }
 
-            // ================= CONNECT SERVER =================
-            try (
-                    Socket socket = new Socket("localhost", 8080);
-
-                    PrintWriter out =
-                            new PrintWriter(
-                                     socket.getOutputStream(),
-                                     true
-                             );
-
-                    BufferedReader in =
-                            new BufferedReader(
-                                    new InputStreamReader(
-                                             socket.getInputStream()
-                                    )
-                            )
-            ) {
-
-                JsonObject request =
-                        new JsonObject();
-
-                request.addProperty(
-                        "action",
-                        "DEPOSIT"
-                );
-
-                request.addProperty(
-                        "username",
-                        Session.username
-                );
-
-                request.addProperty(
-                        "amount",
-                        amount
-                );
-
-                // send
-                out.println(request.toString());
-
-                logger.info(
-                        "Deposit request sent: {}",
-                        request
-                );
-
-                // response
-                String responseStr =
-                        in.readLine();
-
-                if (responseStr == null) {
-
-                    showMessage(
-                            "Server không phản hồi!",
-                            false
-                    );
-                    isProcessing = false;
-                    if (btnConfirm != null) {
-                        btnConfirm.setDisable(false);
-                    }
-                    return;
-                }
-
-                JsonObject response =
-                        JsonParser
-                                .parseString(responseStr)
-                                .getAsJsonObject();
-
-                String status =
-                        response.get("status")
-                                .getAsString();
+            // Sử dụng dịch vụ mạng bất đồng bộ
+            DepositService.sendDepositRequestAsync(Session.username, amount, (response) -> {
+                String status = response.get("status").getAsString();
 
                 if ("SUCCESS".equals(status)) {
-
-                    int newBalance =
-                            response.get("newBalance")
-                                    .getAsInt();
+                    int newBalance = response.get("newBalance").getAsInt();
 
                     // UPDATE SESSION
                     Session.balance = newBalance;
@@ -221,35 +146,26 @@ public class DepositController {
 
                     // auto close popup
                     new Thread(() -> {
-
                         try {
                             Thread.sleep(1000);
-
                             javafx.application.Platform.runLater(
                                     this::closePopup
                             );
-
                         } catch (Exception ignored) {
                         }
-
                     }).start();
 
                 } else {
-
-                    String message =
-                            response.get("message")
-                                    .getAsString();
-
+                    String message = response.get("message").getAsString();
                     showMessage(message, false);
                     isProcessing = false;
                     if (btnConfirm != null) {
                         btnConfirm.setDisable(false);
                     }
                 }
-            }
+            });
 
         } catch (NumberFormatException e) {
-
             showMessage(
                     "Số tiền phải là số!",
                     false
@@ -258,15 +174,12 @@ public class DepositController {
             if (btnConfirm != null) {
                 btnConfirm.setDisable(false);
             }
-
         } catch (Exception e) {
-
             logger.error(
                     "Deposit failed: {}",
                     e.getMessage(),
                     e
             );
-
             showMessage(
                     "Không kết nối được server!",
                     false
@@ -287,9 +200,7 @@ public class DepositController {
     }
 
     public void closePopup() {
-
         try {
-
             StackPane rootPane =
                     (StackPane) depositRoot.getParent();
 
@@ -305,9 +216,7 @@ public class DepositController {
             if (onCloseCallback != null) {
                 onCloseCallback.run();
             }
-
         } catch (Exception e) {
-
             logger.error(
                     "Failed to close popup: {}",
                     e.getMessage(),
@@ -330,7 +239,6 @@ public class DepositController {
             String message,
             boolean success
     ) {
-
         lblMessage.setText(message);
         lblMessage.getStyleClass().removeAll("deposit-msg-success", "deposit-msg-error");
 
