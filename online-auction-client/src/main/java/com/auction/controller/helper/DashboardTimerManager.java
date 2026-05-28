@@ -38,7 +38,7 @@ public class DashboardTimerManager {
     /**
      * Bắt đầu đếm ngược và kiểm tra hết hạn cho danh sách sản phẩm.
      */
-    public void start(List<Item> itemsToDisplay, Runnable onExpiryRefresh) {
+    public void start(com.auction.controller.DashboardController controller, List<Item> itemsToDisplay, Runnable onExpiryRefresh) {
         if (timeline != null) {
             timeline.stop();
         }
@@ -56,6 +56,9 @@ public class DashboardTimerManager {
                         if (!now.isBefore(end)) {
                             item.setStatus("FINISHED");
                             needRefresh = true;
+                            if (controller != null) {
+                                controller.triggerWinnerPaymentIfWon(item);
+                            }
                         }
                     } catch (Exception ignored) {}
                 }

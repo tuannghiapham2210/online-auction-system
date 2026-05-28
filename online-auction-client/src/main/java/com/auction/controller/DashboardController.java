@@ -2,6 +2,7 @@ package com.auction.controller;
 
 import com.auction.*;
 import com.auction.network.NetworkService;
+import com.auction.network.PaymentService;
 import com.auction.controller.helper.DialogManager;
 import com.auction.controller.helper.DashboardTimerManager;
 
@@ -526,7 +527,7 @@ public class DashboardController {
         }
 
         // 3. Khởi động luồng đếm ngược thời gian thực cho các thẻ mới
-        timerManager.start(itemsToDisplay, () -> filterItems(searchField.getText()));
+        timerManager.start(this, itemsToDisplay, () -> filterItems(searchField.getText()));
     }
 
     private void updateFilterButtonsStyle(Button activeButton) {
@@ -835,6 +836,8 @@ public class DashboardController {
                         item.setFinalPrice(finalPrice);
                         item.setCurrentPrice(finalPrice);
                         item.setWinnerUsername(winnerUsername);
+                        
+                        triggerWinnerPaymentIfWon(item);
 
                         logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId,
                                 winnerUsername, finalPrice);
@@ -850,17 +853,49 @@ public class DashboardController {
         });
     }
 
+    public void triggerWinnerPaymentIfWon(Item item) {
+        if (Session.username != null && Session.username.equalsIgnoreCase(item.getWinnerUsername())) {
+            try {
+                if (Session.processedPayments.contains(item.getId())) {
+                    return;
+                }
+            } catch (Exception ignored) {}
+
+            PaymentService.processWinnerPaymentAsync(
+                item.getId(),
+                Session.username,
+                (int) Math.round(item.getCurrentPrice()),
+                item.getSellerId(),
+                () -> {
+                    Platform.runLater(() -> {
+                        if (Session.justWon) {
+                            if (lblBalance != null) {
+                                lblBalance.setText("$" + NumberUtil.format(Session.balance));
+                            }
+                            showWinNotification(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.", Session.lastWinRemainingBalance);
+                            Session.justWon = false;
+                            Session.lastWinMessage = null;
+                        }
+                    });
+                }
+            );
+        }
+    }
+
     /**
      * Gọi bởi DashboardListener khi giá item được cập nhật trong phòng đấu giá.
      * Cập nhật giá hiện tại của item.
      */
-    public void updateItemPriceRealtime(int itemId, double newPrice) {
+    public void updateItemPriceRealtime(int itemId, double newPrice, String winnerUsername) {
         Platform.runLater(() -> {
             try {
                 // Tìm item theo ID
                 for (Item item : allItems) {
                     if (item.getId() == itemId) {
                         item.setCurrentPrice(newPrice);
+                        if (winnerUsername != null && !winnerUsername.isEmpty()) {
+                            item.setWinnerUsername(winnerUsername);
+                        }
 
                         logger.info("Item price updated: {} -> ${}", itemId, newPrice);
 
