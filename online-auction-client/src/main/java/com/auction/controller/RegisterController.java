@@ -1,8 +1,7 @@
 package com.auction.controller;
 import com.auction.*;
+import com.auction.network.RegisterService;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -14,9 +13,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.css.PseudoClass;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
-
-import java.io.*;
-import java.net.Socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,75 +102,38 @@ public class RegisterController {
         messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng ký...");
 
-        // 3. Mở Thread mạng độc lập gửi request lên Server
-        new Thread(() -> {
-            try (Socket socket = new Socket("127.0.0.1", 8080);
-                 PrintWriter writer = new PrintWriter(
-                         new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-                 BufferedReader reader = new BufferedReader(
-                         new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
+        // 3. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
+        RegisterService.sendRegisterRequestAsync(username, password, role, email, phone, (status, message) -> {
+            if ("SUCCESS".equals(status)) {
+                messageLabel.getStyleClass().setAll("label", "msg-success");
+                messageLabel.setText("✔ " + message + " Đang chuyển");
 
-                // 4. Đóng gói dữ liệu JSON
-                JsonObject req = new JsonObject();
-                req.addProperty("action", "REGISTER");
-                req.addProperty("username", username);
-                req.addProperty("password", password);
-                req.addProperty("role", role);
-                req.addProperty("email", email);
-                req.addProperty("phone", phone);
+                // 4. Hiệu ứng dấu chấm lửng lúc chuyển trang
+                Timeline dots = new Timeline(
+                        new KeyFrame(Duration.millis(300), e -> {
+                            String text = messageLabel.getText();
+                            if (text.endsWith("...")) {
+                                messageLabel.setText(text.replace("...", ""));
+                            } else {
+                                messageLabel.setText(text + ".");
+                            }
+                        })
+                );
+                dots.setCycleCount(Timeline.INDEFINITE);
+                dots.play();
 
-                writer.println(req.toString());
-
-                // 5. Đọc và phân tích phản hồi
-                String line = reader.readLine();
-                if (line == null) throw new Exception("No response");
-
-                JsonObject res = JsonParser.parseString(line).getAsJsonObject();
-
-                String status = res.get("status").getAsString();
-                String message = res.get("message").getAsString();
-
-                // 6. Cập nhật kết quả lên giao diện
-                javafx.application.Platform.runLater(() -> {
-
-                    if ("SUCCESS".equals(status)) {
-
-                        messageLabel.getStyleClass().setAll("label", "msg-success");
-                        messageLabel.setText("✔ " + message + " Đang chuyển");
-
-                        // 7. Hiệu ứng dấu chấm lửng lúc chuyển trang
-                        Timeline dots = new Timeline(
-                                new KeyFrame(Duration.millis(300), e -> {
-                                    String text = messageLabel.getText();
-                                    if (text.endsWith("...")) {
-                                        messageLabel.setText(text.replace("...", ""));
-                                    } else {
-                                        messageLabel.setText(text + ".");
-                                    }
-                                })
-                        );
-                        dots.setCycleCount(Timeline.INDEFINITE);
-                        dots.play();
-
-                        // 8. Chờ 1.5s rồi tự động quay về trang Đăng nhập
-                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                        delay.setOnFinished(e -> {
-                            dots.stop();
-                            goToLogin();
-                        });
-                        delay.play();
-
-                    } else {
-                        messageLabel.getStyleClass().setAll("label", "msg-error");
-                        messageLabel.setText(message);
-                    }
+                // 5. Chờ 1.5s rồi tự động quay về trang Đăng nhập
+                PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                delay.setOnFinished(e -> {
+                    dots.stop();
+                    goToLogin();
                 });
-
-            } catch (Exception e) {
-                javafx.application.Platform.runLater(() ->
-                        messageLabel.setText("Lỗi server!"));
+                delay.play();
+            } else {
+                messageLabel.getStyleClass().setAll("label", "msg-error");
+                messageLabel.setText(message);
             }
-        }).start();
+        });
     }
 
     /**

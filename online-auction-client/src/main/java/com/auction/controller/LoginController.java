@@ -1,9 +1,9 @@
 package com.auction.controller;
 
 import com.auction.*;
+import com.auction.network.LoginService;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -15,9 +15,6 @@ import javafx.scene.input.KeyEvent;
 import javafx.css.PseudoClass;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
-
-import java.io.*;
-import java.net.Socket;
 
 import com.auction.Session;
 import org.slf4j.Logger;
@@ -98,93 +95,64 @@ public class LoginController {
         messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng nhập...");
 
-        // 2. Tạo Thread mới để giao tiếp với Server (tránh làm đóng băng UI)
-        new Thread(() -> {
-            try (Socket socket = new Socket("127.0.0.1", 8080);
-                    PrintWriter writer = new PrintWriter(
-                            new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-                    BufferedReader reader = new BufferedReader(
-                            new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
+        // 2. Sử dụng dịch vụ mạng bất đồng bộ để giao tiếp với Server (tránh làm đóng băng UI)
+        LoginService.sendLoginRequestAsync(username, password, (res) -> {
+            String status = res.get("status").getAsString();
+            String message = res.get("message").getAsString();
 
-                // 3. Đóng gói và gửi yêu cầu đăng nhập (Payload JSON)
-                JsonObject req = new JsonObject();
-                req.addProperty("action", "LOGIN");
-                req.addProperty("username", username);
-                req.addProperty("password", password);
+            // Trích xuất Role và UserID một cách an toàn
+            String role = res.has("role") ? res.get("role").getAsString() : "bidder";
+            int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
+            int balance = res.has("balance") ? res.get("balance").getAsInt() : 0;
+            String returnedUsername = res.has("username") ? res.get("username").getAsString() : username;
+            String email = res.has("email") ? res.get("email").getAsString() : "";
+            String phone = res.has("phone") ? res.get("phone").getAsString() : "";
 
-                writer.println(req.toString());
+            if ("SUCCESS".equals(status)) {
 
-                // 4. Chờ luồng đọc phản hồi từ Server
-                String line = reader.readLine();
-                if (line == null)
-                    throw new Exception("No response");
+                // Lưu trữ trạng thái phiên làm việc (Session)
+                Session.role = role;
+                Session.userId = userId;
+                Session.username = returnedUsername;
+                Session.email = email;
+                Session.phone = phone;
+                Session.balance = balance;
 
-                JsonObject res = JsonParser.parseString(line).getAsJsonObject();
+                // Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
+                messageLabel.getStyleClass().setAll("label", "msg-success");
+                messageLabel.setText("✔ " + message + " Đang chuyển");
 
-                String status = res.get("status").getAsString();
-                String message = res.get("message").getAsString();
-
-                // 5. Trích xuất Role và UserID một cách an toàn
-                String role = res.has("role") ? res.get("role").getAsString() : "bidder";
-                int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
-                int balance = res.has("balance") ? res.get("balance").getAsInt() : 0;
-                String returnedUsername = res.has("username") ? res.get("username").getAsString() : username;
-                String email = res.has("email") ? res.get("email").getAsString() : "";
-                String phone = res.has("phone") ? res.get("phone").getAsString() : "";
-
-                // 6. Gói lệnh cập nhật giao diện vào JavaFX Application Thread
-                javafx.application.Platform.runLater(() -> {
-
-                    if ("SUCCESS".equals(status)) {
-
-                        // 7. Lưu trữ trạng thái phiên làm việc (Session)
-                        Session.role = role;
-                        Session.userId = userId;
-                        Session.username = returnedUsername;
-                        Session.email = email;
-                        Session.phone = phone;
-                        Session.balance = balance;
-
-                        // 8. Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
-                        messageLabel.getStyleClass().setAll("label", "msg-success");
-                        messageLabel.setText("✔ " + message + " Đang chuyển");
-
-                        Timeline dots = new Timeline(
-                                new KeyFrame(Duration.millis(300), e -> {
-                                    String text = messageLabel.getText();
-                                    if (text.endsWith("...")) {
-                                        messageLabel.setText(text.replace("...", ""));
-                                    } else {
-                                        messageLabel.setText(text + ".");
-                                    }
-                                }));
-                        dots.setCycleCount(Timeline.INDEFINITE);
-                        dots.play();
-
-                        // 9. Độ trễ 1.5s trước khi chuyển cảnh sang Dashboard
-                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                        delay.setOnFinished(e -> {
-                            dots.stop();
-                            try {
-                                Parent root = FXMLLoader.load(
-                                        getClass().getResource("/com/auction/dashboard.fxml"));
-                                usernameField.getScene().setRoot(root);
-                            } catch (Exception ex) {
-                                logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
+                Timeline dots = new Timeline(
+                        new KeyFrame(Duration.millis(300), e -> {
+                            String text = messageLabel.getText();
+                            if (text.endsWith("...")) {
+                                messageLabel.setText(text.replace("...", ""));
+                            } else {
+                                messageLabel.setText(text + ".");
                             }
-                        });
-                        delay.play();
+                        }));
+                dots.setCycleCount(Timeline.INDEFINITE);
+                dots.play();
 
-                    } else {
-                        messageLabel.getStyleClass().setAll("label", "msg-error");
-                        messageLabel.setText(message);
+                // Độ trễ 1.5s trước khi chuyển cảnh sang Dashboard
+                PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                delay.setOnFinished(e -> {
+                    dots.stop();
+                    try {
+                        Parent root = FXMLLoader.load(
+                                getClass().getResource("/com/auction/dashboard.fxml"));
+                        usernameField.getScene().setRoot(root);
+                    } catch (Exception ex) {
+                        logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
                     }
                 });
+                delay.play();
 
-            } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> messageLabel.setText("Không kết nối server!"));
+            } else {
+                messageLabel.getStyleClass().setAll("label", "msg-error");
+                messageLabel.setText(message);
             }
-        }).start();
+        });
     }
 
     /**

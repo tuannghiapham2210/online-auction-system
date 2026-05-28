@@ -1,8 +1,7 @@
 package com.auction.controller;
 import com.auction.*;
+import com.auction.network.PasswordChangeService;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -12,12 +11,6 @@ import javafx.scene.control.PasswordField;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
 
 public class PasswordChangeController {
 
@@ -49,34 +42,7 @@ public class PasswordChangeController {
             }
 
             showMessage("Đang đổi mật khẩu...", false);
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "CHANGE_PASSWORD");
-            request.addProperty("userId", Session.userId);
-            request.addProperty("oldPassword", oldPassword);
-            request.addProperty("newPassword", newPassword);
-
-            new Thread(() -> sendChangePasswordRequest(request.toString())).start();
-        } catch (Exception e) {
-            logger.error("Lỗi khi đổi mật khẩu: {}", e.getMessage(), e);
-            showMessage("Đã có lỗi. Vui lòng thử lại.", true);
-        }
-    }
-
-    private void sendChangePasswordRequest(String requestJson) {
-        try (Socket socket = new Socket("127.0.0.1", 8080);
-             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
-
-            out.println(requestJson);
-            String responseLine = in.readLine();
-            if (responseLine == null) {
-                throw new IllegalStateException("Không nhận được phản hồi từ server");
-            }
-
-            JsonObject response = JsonParser.parseString(responseLine).getAsJsonObject();
-            Platform.runLater(() -> {
-                String status = response.has("status") ? response.get("status").getAsString() : "FAIL";
-                String message = response.has("message") ? response.get("message").getAsString() : "Lỗi đổi mật khẩu.";
+            PasswordChangeService.sendChangePasswordRequestAsync(Session.userId, oldPassword, newPassword, (status, message) -> {
                 if ("SUCCESS".equals(status)) {
                     showMessage(message, false);
                     PauseTransition delay = new PauseTransition(Duration.seconds(1));
@@ -91,8 +57,8 @@ public class PasswordChangeController {
                 }
             });
         } catch (Exception e) {
-            logger.error("Lỗi gửi yêu cầu đổi mật khẩu: {}", e.getMessage(), e);
-            Platform.runLater(() -> showMessage("Mất kết nối tới Server!", true));
+            logger.error("Lỗi khi đổi mật khẩu: {}", e.getMessage(), e);
+            showMessage("Đã có lỗi. Vui lòng thử lại.", true);
         }
     }
 
