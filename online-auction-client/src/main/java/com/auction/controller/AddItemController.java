@@ -2,6 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
+import com.auction.network.AddItemService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -10,13 +11,8 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.util.Duration;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
 import java.io.File;
 import javafx.stage.FileChooser;
 import java.text.ParseException;
@@ -157,50 +153,26 @@ public class AddItemController {
             request.addProperty("durationHours", durationHours);
             request.addProperty("sellerId", currentSellerId);
 
-            // 6. Mở luồng mạng (Networking) để gửi request mà không làm treo UI
-            new Thread(() -> sendRequestToServer(request.toString())).start();
+            // 6. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
+            AddItemService.sendAddItemRequestAsync(request.toString(), (response) -> {
+                if (response.get("status").getAsString().equals("SUCCESS")) {
+                    if (response.has("itemId")) {
+                        createdItemId = response.get("itemId").getAsInt();
+                    }
+                    messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-success");
+                    messageLabel.setText("Đăng bán thành công!");
+
+                    // Tạo độ trễ 1.5s (PauseTransition) rồi mới đóng Popup
+                    PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                    delay.setOnFinished(e -> closePopup());
+                    delay.play();
+                } else {
+                    messageLabel.setText("Lỗi: " + response.get("message").getAsString());
+                }
+            });
 
         } catch (NumberFormatException e) {
             messageLabel.setText("Giá, Bước giá và Thời gian phải là số hợp lệ!");
-        }
-    }
-
-    /**
-     * Mở Socket gửi request lên Server và xử lý luồng kết quả trả về.
-     * @param jsonRequest Chuỗi JSON chứa dữ liệu sản phẩm cần thêm.
-     */
-    private void sendRequestToServer(String jsonRequest) {
-        // 1. Khởi tạo Socket và luồng I/O an toàn với try-with-resources
-        try (Socket socket = new Socket("localhost", 8080);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
-
-            // 2. Gửi chuỗi JSON tới Server và chờ phản hồi
-            out.println(jsonRequest);
-            String responseStr = in.readLine();
-
-            if (responseStr != null) {
-                JsonObject response = JsonParser.parseString(responseStr).getAsJsonObject();
-
-                Platform.runLater(() -> {
-                    if (response.get("status").getAsString().equals("SUCCESS")) {
-                        if (response.has("itemId")) {
-                            createdItemId = response.get("itemId").getAsInt();
-                        }
-                        messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-success");
-                        messageLabel.setText("Đăng bán thành công!");
-
-                        // 4. Tạo độ trễ 1.5s (PauseTransition) rồi mới đóng Popup
-                        PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                        delay.setOnFinished(e -> closePopup());
-                        delay.play();
-                    } else {
-                        messageLabel.setText("Lỗi: " + response.get("message").getAsString());
-                    }
-                });
-            }
-        } catch (Exception e) {
-            Platform.runLater(() -> messageLabel.setText("Mất kết nối tới Server!"));
         }
     }
 
@@ -238,17 +210,7 @@ public class AddItemController {
     }
 
     private void publishItemToServer(int itemId) {
-        new Thread(() -> {
-            try (Socket socket = new Socket("localhost", 8080);
-                 PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
-                JsonObject req = new JsonObject();
-                req.addProperty("action", "PUBLISH_ITEM");
-                req.addProperty("itemId", itemId);
-                out.println(req.toString());
-            } catch (Exception e) {
-                System.err.println("Failed to publish item: " + e.getMessage());
-            }
-        }).start();
+        AddItemService.sendPublishItemRequestAsync(itemId);
     }
 
     /**
