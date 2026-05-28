@@ -1,7 +1,6 @@
 package com.auction.controller;
 
-import com.auction.*;
-import com.auction.network.LoginNetworkRequest;
+import com.auction.service.LoginService;
 
 import com.google.gson.JsonObject;
 import javafx.animation.*;
@@ -86,73 +85,43 @@ public class LoginController {
         String username = usernameField.getText().trim();
         String password = passwordField.getText().trim();
 
-        // 1. Kiểm tra validation cơ bản (chặn bỏ trống)
-        if (username.isEmpty() || password.isEmpty()) {
-            messageLabel.getStyleClass().setAll("label", "msg-error");
-            messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
-            return;
-        }
-
         messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng nhập...");
 
-        // 2. Sử dụng dịch vụ mạng bất đồng bộ để giao tiếp với Server (tránh làm đóng băng UI)
-        LoginNetworkRequest.sendLoginRequestAsync(username, password, (res) -> {
-            String status = res.get("status").getAsString();
-            String message = res.get("message").getAsString();
+        LoginService.validateAndLogin(username, password, (isSuccess, message) -> {
+            javafx.application.Platform.runLater(() -> {
+                if (isSuccess) {
+                    messageLabel.getStyleClass().setAll("label", "msg-success");
+                    messageLabel.setText("✔ " + message + " Đang chuyển");
 
-            // Trích xuất Role và UserID một cách an toàn
-            String role = res.has("role") ? res.get("role").getAsString() : "bidder";
-            int userId = res.has("userId") ? res.get("userId").getAsInt() : 0;
-            int balance = res.has("balance") ? res.get("balance").getAsInt() : 0;
-            String returnedUsername = res.has("username") ? res.get("username").getAsString() : username;
-            String email = res.has("email") ? res.get("email").getAsString() : "";
-            String phone = res.has("phone") ? res.get("phone").getAsString() : "";
+                    Timeline dots = new Timeline(
+                            new KeyFrame(Duration.millis(300), e -> {
+                                String text = messageLabel.getText();
+                                if (text.endsWith("...")) {
+                                    messageLabel.setText(text.replace("...", ""));
+                                } else {
+                                    messageLabel.setText(text + ".");
+                                }
+                            }));
+                    dots.setCycleCount(Timeline.INDEFINITE);
+                    dots.play();
 
-            if ("SUCCESS".equals(status)) {
-
-                // Lưu trữ trạng thái phiên làm việc (Session)
-                Session.role = role;
-                Session.userId = userId;
-                Session.username = returnedUsername;
-                Session.email = email;
-                Session.phone = phone;
-                Session.balance = balance;
-
-                // Chạy hiệu ứng Animation dấu chấm lửng (...) cho đẹp mắt
-                messageLabel.getStyleClass().setAll("label", "msg-success");
-                messageLabel.setText("✔ " + message + " Đang chuyển");
-
-                Timeline dots = new Timeline(
-                        new KeyFrame(Duration.millis(300), e -> {
-                            String text = messageLabel.getText();
-                            if (text.endsWith("...")) {
-                                messageLabel.setText(text.replace("...", ""));
-                            } else {
-                                messageLabel.setText(text + ".");
-                            }
-                        }));
-                dots.setCycleCount(Timeline.INDEFINITE);
-                dots.play();
-
-                // Độ trễ 1.5s trước khi chuyển cảnh sang Dashboard
-                PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                delay.setOnFinished(e -> {
-                    dots.stop();
-                    try {
-                        Parent root = FXMLLoader.load(
-                                getClass().getResource("/com/auction/dashboard.fxml"));
-                        usernameField.getScene().setRoot(root);
-                    } catch (Exception ex) {
-                        logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
-                    }
-                });
-                delay.play();
-
-            } else {
-                messageLabel.getStyleClass().setAll("label", "msg-error");
-                messageLabel.setText(message);
-            }
+                    PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                    delay.setOnFinished(e -> {
+                        dots.stop();
+                        try {
+                            Parent root = FXMLLoader.load(getClass().getResource("/com/auction/dashboard.fxml"));
+                            usernameField.getScene().setRoot(root);
+                        } catch (Exception ex) {
+                            logger.error("Failed to load dashboard after login: {}", ex.getMessage(), ex);
+                        }
+                    });
+                    delay.play();
+                } else {
+                    messageLabel.getStyleClass().setAll("label", "msg-error");
+                    messageLabel.setText(message);
+                }
+            });
         });
     }
 

@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.DepositNetworkRequest;
+import com.auction.service.DepositService;
 import com.google.gson.JsonObject;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -112,57 +112,26 @@ public class DepositController {
         try {
             Integer amount = spinnerAmount.getValue();
 
-            if (amount == null || amount <= 0) {
-                showMessage(
-                        "Số tiền không hợp lệ!",
-                        false
-                );
-                isProcessing = false;
-                if (btnConfirm != null) {
-                    btnConfirm.setDisable(false);
-                }
-                return;
-            }
-
-            // Sử dụng dịch vụ mạng bất đồng bộ
-            DepositNetworkRequest.sendDepositRequestAsync(Session.username, amount, (response) -> {
-                String status = response.get("status").getAsString();
-
-                if ("SUCCESS".equals(status)) {
-                    int newBalance = response.get("newBalance").getAsInt();
-
-                    // UPDATE SESSION
-                    Session.balance = newBalance;
-
-                    showMessage(
-                            "Nạp tiền thành công!",
-                            true
-                    );
-
-                    logger.info(
-                            "Deposit success. New balance={}",
-                            newBalance
-                    );
-
-                    // auto close popup
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(1000);
-                            javafx.application.Platform.runLater(
-                                    this::closePopup
-                            );
-                        } catch (Exception ignored) {
+            DepositService.validateAndDeposit(amount, (isSuccess, message) -> {
+                javafx.application.Platform.runLater(() -> {
+                    if (isSuccess) {
+                        showMessage(message, true);
+                        logger.info("Deposit success. New balance={}", Session.balance);
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(1000);
+                                javafx.application.Platform.runLater(this::closePopup);
+                            } catch (Exception ignored) {
+                            }
+                        }).start();
+                    } else {
+                        showMessage(message, false);
+                        isProcessing = false;
+                        if (btnConfirm != null) {
+                            btnConfirm.setDisable(false);
                         }
-                    }).start();
-
-                } else {
-                    String message = response.get("message").getAsString();
-                    showMessage(message, false);
-                    isProcessing = false;
-                    if (btnConfirm != null) {
-                        btnConfirm.setDisable(false);
                     }
-                }
+                });
             });
 
         } catch (NumberFormatException e) {

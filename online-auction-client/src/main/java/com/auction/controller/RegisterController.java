@@ -1,7 +1,5 @@
 package com.auction.controller;
-import com.auction.*;
-import com.auction.network.RegisterNetworkRequest;
-
+import com.auction.service.RegisterService;
 import javafx.animation.*;
 import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
@@ -86,55 +84,39 @@ public class RegisterController {
         Toggle selectedRole = roleToggleGroup.getSelectedToggle();
         String roleValue = selectedRole != null ? ((ToggleButton) selectedRole).getId() : null;
 
-        // 1. Kiểm tra validation cơ bản
-        if (username.isEmpty() || password.isEmpty() || roleValue == null) {
-            messageLabel.getStyleClass().setAll("label", "msg-error");
-            messageLabel.setText("Vui lòng nhập đầy đủ thông tin!");
-            return;
-        }
-
-        // 2. Tạo biến FINAL cho vai trò để sử dụng an toàn trong biểu thức Lambda
-        final String role;
-        if ("btnBidder".equals(roleValue)) {
-            role = "BIDDER";
-        } else {
-            role = "SELLER";
-        }
-
         messageLabel.getStyleClass().setAll("label", "msg-warning");
         messageLabel.setText("Đang đăng ký...");
 
-        // 3. Sử dụng dịch vụ mạng bất đồng bộ gửi yêu cầu lên Server
-        RegisterNetworkRequest.sendRegisterRequestAsync(username, password, role, email, phone, (status, message) -> {
-            if ("SUCCESS".equals(status)) {
-                messageLabel.getStyleClass().setAll("label", "msg-success");
-                messageLabel.setText("✔ " + message + " Đang chuyển");
+        RegisterService.validateAndRegister(username, password, email, phone, roleValue, (isSuccess, message) -> {
+            javafx.application.Platform.runLater(() -> {
+                if (isSuccess) {
+                    messageLabel.getStyleClass().setAll("label", "msg-success");
+                    messageLabel.setText("✔ " + message + " Đang chuyển");
 
-                // 4. Hiệu ứng dấu chấm lửng lúc chuyển trang
-                Timeline dots = new Timeline(
-                        new KeyFrame(Duration.millis(300), e -> {
-                            String text = messageLabel.getText();
-                            if (text.endsWith("...")) {
-                                messageLabel.setText(text.replace("...", ""));
-                            } else {
-                                messageLabel.setText(text + ".");
-                            }
-                        })
-                );
-                dots.setCycleCount(Timeline.INDEFINITE);
-                dots.play();
+                    Timeline dots = new Timeline(
+                            new KeyFrame(Duration.millis(300), e -> {
+                                String text = messageLabel.getText();
+                                if (text.endsWith("...")) {
+                                    messageLabel.setText(text.replace("...", ""));
+                                } else {
+                                    messageLabel.setText(text + ".");
+                                }
+                            })
+                    );
+                    dots.setCycleCount(Timeline.INDEFINITE);
+                    dots.play();
 
-                // 5. Chờ 1.5s rồi tự động quay về trang Đăng nhập
-                PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                delay.setOnFinished(e -> {
-                    dots.stop();
-                    goToLogin();
-                });
-                delay.play();
-            } else {
-                messageLabel.getStyleClass().setAll("label", "msg-error");
-                messageLabel.setText(message);
-            }
+                    PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+                    delay.setOnFinished(e -> {
+                        dots.stop();
+                        goToLogin();
+                    });
+                    delay.play();
+                } else {
+                    messageLabel.getStyleClass().setAll("label", "msg-error");
+                    messageLabel.setText(message);
+                }
+            });
         });
     }
 
