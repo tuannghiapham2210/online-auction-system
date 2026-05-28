@@ -116,6 +116,7 @@ public class BidRoomController {
     private ObservableList<BidEvent> historyLogs;
     private FadeTransition pulseAnimation;
     private ToastNotificationController toastNotificationController;
+    private Parent winnerOverlayNode;
 
     // Các Manager Helper được uỷ quyền
     private BidRoomChartManager chartManager;
@@ -798,6 +799,62 @@ public class BidRoomController {
     public void extendTimeRealtime(String newEndTime) {
         Platform.runLater(() -> {
             this.currentEndTime = newEndTime;
+            this.auctionEndedShown = false;
+
+            if (winnerOverlayNode != null) {
+                rootPane.getChildren().remove(winnerOverlayNode);
+                winnerOverlayNode = null;
+            }
+
+            if (heroImageController != null) {
+                heroImageController.setLive(true);
+            }
+
+            if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(false);
+                    double cp = 0;
+                    try {
+                        cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                    } catch (Exception ex) {
+                    }
+                    bidAmountField.setText(NumberUtil.format(cp + currentStepPrice));
+                }
+                if (btnPlaceBid != null) {
+                    btnPlaceBid.setDisable(false);
+                }
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
+                }
+            } else {
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(true);
+                    bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                }
+                if (btnPlaceBid != null) {
+                    btnPlaceBid.setDisable(true);
+                }
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(true);
+                    autoBidPanel.setOpacity(0.4);
+                }
+            }
+
+            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == this.currentSellerId) {
+                if (btnStopAuction != null) {
+                    btnStopAuction.setVisible(true);
+                }
+            } else {
+                if (btnStopAuction != null) {
+                    btnStopAuction.setVisible(false);
+                }
+            }
+
+            if (timerLabelTitle != null) {
+                timerLabelTitle.setText("THỜI GIAN");
+            }
+
             startCountdown(newEndTime);
             showNotification("🔥 Gia hạn tự động", "Phiên đấu giá được cộng thêm 10s do có lượt ra giá phút chót!");
 
@@ -825,13 +882,18 @@ public class BidRoomController {
 
         Runnable showOverlayRunnable = () -> {
             try {
+                if (winnerOverlayNode != null) {
+                    rootPane.getChildren().remove(winnerOverlayNode);
+                }
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/winner_overlay.fxml"));
                 Parent overlay = loader.load();
+                winnerOverlayNode = overlay;
                 WinnerOverlayController controller = loader.getController();
 
                 rootPane.getChildren().add(overlay);
                 controller.setData(winnerUsername, finalPrice, noWinner, () -> {
                     rootPane.getChildren().remove(overlay);
+                    winnerOverlayNode = null;
                     handleLeaveRoom();
                 });
             } catch (Exception e) {
