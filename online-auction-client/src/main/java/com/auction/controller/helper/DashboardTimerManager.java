@@ -38,9 +38,12 @@ public class DashboardTimerManager {
     /**
      * Bắt đầu đếm ngược và kiểm tra hết hạn cho danh sách sản phẩm.
      */
-    public void start(List<Item> itemsToDisplay, Runnable onExpiryRefresh) {
-        stop();
-        timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> {
+    public void start(com.auction.controller.DashboardController controller, List<Item> itemsToDisplay, Runnable onExpiryRefresh) {
+        if (timeline != null) {
+            timeline.stop();
+        }
+        
+        Runnable updateTask = () -> {
             LocalDateTime now = LocalDateTime.now();
             boolean needRefresh = false;
 
@@ -53,6 +56,9 @@ public class DashboardTimerManager {
                         if (!now.isBefore(end)) {
                             item.setStatus("FINISHED");
                             needRefresh = true;
+                            if (controller != null) {
+                                controller.triggerWinnerPaymentIfWon(item);
+                            }
                         }
                     } catch (Exception ignored) {}
                 }
@@ -83,7 +89,12 @@ public class DashboardTimerManager {
                             duration.toHours(), duration.toMinutesPart(), duration.toSecondsPart()));
                 }
             }
-        }));
+        };
+
+        // Chạy ngay lập tức để cập nhật UI, tránh 1 giây đầu hiện "Đang tải..."
+        updateTask.run();
+
+        timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateTask.run()));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
     }

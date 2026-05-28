@@ -367,10 +367,10 @@
 }
 
 .card-price {
-    -fx-text-fill: #39FF14;
+    -fx-text-fill: white;
     -fx-font-size: 20px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(57, 255, 20, 0.25), 8, 0, 0, 0);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.25), 8, 0, 0, 0);
 }
 
 /* Nút bấm Cam */

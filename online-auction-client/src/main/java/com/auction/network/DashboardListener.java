@@ -92,9 +92,10 @@ public class DashboardListener implements Runnable {
                 else if ("UPDATE_PRICE".equals(action)) {
                     int itemId = json.get("itemId").getAsInt();
                     double newPrice = json.get("newPrice").getAsDouble();
+                    String winnerUsername = json.has("username") ? json.get("username").getAsString() : "";
 
                     if (controller != null) {
-                        controller.updateItemPriceRealtime(itemId, newPrice);
+                        controller.updateItemPriceRealtime(itemId, newPrice, winnerUsername);
                     }
                 }
                 // 8. Xử lý sự kiện cập nhật số lượng người xem

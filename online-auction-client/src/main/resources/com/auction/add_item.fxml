@@ -97,7 +97,7 @@
 
             <HBox spacing="20.0" translateY="5.0">
                 <Button maxWidth="Infinity" onAction="#closePopup" styleClass="btn-target-cancel" text="Hủy" HBox.hgrow="ALWAYS" />
-                <Button maxWidth="Infinity" onAction="#handleSubmit" styleClass="btn-target-submit" text="Tạo Phiên Đấu Giá" HBox.hgrow="ALWAYS" />
+                <Button fx:id="btnSubmit" maxWidth="Infinity" onAction="#handleSubmit" styleClass="btn-target-submit" text="Tạo Phiên Đấu Giá" HBox.hgrow="ALWAYS" />
             </HBox>
 
         </VBox>
