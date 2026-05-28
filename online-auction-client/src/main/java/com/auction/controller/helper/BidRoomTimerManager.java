@@ -1,4 +1,4 @@
-package com.auction.controller;
+package com.auction.controller.helper;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;

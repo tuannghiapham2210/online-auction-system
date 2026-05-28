@@ -34,6 +34,8 @@ import java.time.format.DateTimeFormatter;
 
 import com.auction.network.PaymentService;
 import com.auction.network.BidRoomSocketManager;
+import com.auction.controller.helper.BidRoomTimerManager;
+import com.auction.controller.helper.BidRoomChartManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
