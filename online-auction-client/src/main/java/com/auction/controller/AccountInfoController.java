@@ -2,7 +2,7 @@ package com.auction.controller;
 import com.auction.*;
 
 import com.auction.util.NumberUtil;
-import com.auction.network.AccountInfoNetworkRequest;
+import com.auction.service.AccountInfoService;
 import com.google.gson.JsonObject;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -50,37 +50,21 @@ public class AccountInfoController {
             String newEmail = tfEmail.getText().trim();
             String newPhone = tfPhone.getText().trim();
 
-            if (newName.isEmpty()) {
-                showMessage("Tên người dùng không được để trống", true);
-                return;
-            }
-            if (!newEmail.isEmpty() && !newEmail.contains("@")) {
-                showMessage("Email không hợp lệ", true);
-                return;
-            }
-
             showMessage("Đang lưu thông tin...", false);
 
-            AccountInfoNetworkRequest.sendUpdateProfileRequestAsync(Session.userId, newName, newEmail, newPhone, (response) -> {
-                if (response.has("status") && "SUCCESS".equals(response.get("status").getAsString())) {
-                    String updatedUsername = response.has("username") ? response.get("username").getAsString() : newName;
-                    String updatedEmail = response.has("email") ? response.get("email").getAsString() : newEmail;
-                    String updatedPhone = response.has("phone") ? response.get("phone").getAsString() : newPhone;
-
-                    Session.username = updatedUsername;
-                    Session.email = updatedEmail;
-                    Session.phone = updatedPhone;
-                    showMessage("Cập nhật thông tin thành công", false);
-
-                    if (onSaveCallback != null) {
-                        PauseTransition pause = new PauseTransition(Duration.seconds(1));
-                        pause.setOnFinished(event -> onSaveCallback.run());
-                        pause.play();
+            AccountInfoService.validateAndUpdate(newName, newEmail, newPhone, (isSuccess, message) -> {
+                javafx.application.Platform.runLater(() -> {
+                    if (isSuccess) {
+                        showMessage(message, false);
+                        if (onSaveCallback != null) {
+                            PauseTransition pause = new PauseTransition(Duration.seconds(1));
+                            pause.setOnFinished(event -> onSaveCallback.run());
+                            pause.play();
+                        }
+                    } else {
+                        showMessage(message, true);
                     }
-                } else {
-                    String error = response.has("message") ? response.get("message").getAsString() : "Lỗi khi cập nhật thông tin";
-                    showMessage(error, true);
-                }
+                });
             });
         } catch (Exception e) {
             logger.error("Lỗi khi cập nhật thông tin: {}", e.getMessage());
