@@ -1,8 +1,7 @@
 package com.auction.controller;
 import com.auction.*;
+import com.auction.network.ForgotPasswordService;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -12,12 +11,6 @@ import javafx.scene.control.TextField;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.Socket;
 
 public class ForgotPasswordController {
 
@@ -49,34 +42,7 @@ public class ForgotPasswordController {
             }
 
             showMessage("Đang xử lý...", false);
-            JsonObject request = new JsonObject();
-            request.addProperty("action", "RESET_PASSWORD");
-            request.addProperty("username", username);
-            request.addProperty("contactInfo", contactInfo);
-            request.addProperty("newPassword", newPassword);
-
-            new Thread(() -> sendResetRequest(request.toString())).start();
-        } catch (Exception e) {
-            logger.error("Lỗi khi khôi phục mật khẩu: {}", e.getMessage(), e);
-            showMessage("Đã có lỗi xảy ra.", true);
-        }
-    }
-
-    private void sendResetRequest(String requestJson) {
-        try (Socket socket = new Socket("127.0.0.1", 8080);
-             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"))) {
-
-            out.println(requestJson);
-            String responseLine = in.readLine();
-            if (responseLine == null) {
-                throw new IllegalStateException("Không nhận được phản hồi từ server");
-            }
-
-            JsonObject response = JsonParser.parseString(responseLine).getAsJsonObject();
-            Platform.runLater(() -> {
-                String status = response.has("status") ? response.get("status").getAsString() : "FAIL";
-                String message = response.has("message") ? response.get("message").getAsString() : "Lỗi không xác định.";
+            ForgotPasswordService.sendResetRequestAsync(username, contactInfo, newPassword, (status, message) -> {
                 if ("SUCCESS".equals(status)) {
                     showMessage(message, false);
                     PauseTransition delay = new PauseTransition(Duration.seconds(2));
@@ -87,8 +53,8 @@ public class ForgotPasswordController {
                 }
             });
         } catch (Exception e) {
-            logger.error("Lỗi gửi yêu cầu khôi phục: {}", e.getMessage(), e);
-            Platform.runLater(() -> showMessage("Mất kết nối tới Server!", true));
+            logger.error("Lỗi khi khôi phục mật khẩu: {}", e.getMessage(), e);
+            showMessage("Đã có lỗi xảy ra.", true);
         }
     }
 
