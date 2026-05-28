@@ -31,6 +31,7 @@ public class AddItemController {
     @FXML private TextField stepPriceField;
     @FXML private TextField durationField;
     @FXML private Label messageLabel;
+    @FXML private Button btnSubmit;
 
     private int currentSellerId = Session.userId;
     private int createdItemId = -1;
@@ -87,6 +88,10 @@ public class AddItemController {
         messageLabel.setText("");
         messageLabel.getStyleClass().setAll("label", "add-item-message-label", "msg-error");
 
+        if (btnSubmit != null) {
+            btnSubmit.setDisable(true);
+        }
+
         String name = nameField.getText();
         String type = typeComboBox.getValue();
         String imageUrl = imageUrlField.getText();
@@ -101,6 +106,7 @@ public class AddItemController {
                 stepStr == null || stepStr.trim().isEmpty() ||
                 durationStr == null || durationStr.trim().isEmpty()) {
             messageLabel.setText("Vui lòng điền đủ các trường bắt buộc (*)");
+            if (btnSubmit != null) btnSubmit.setDisable(false);
             return;
         }
 
@@ -114,6 +120,7 @@ public class AddItemController {
 
             if (timeParts.length != 3) {
                 messageLabel.setText("Thời gian phải đúng định dạng HH:mm:ss");
+                if (btnSubmit != null) btnSubmit.setDisable(false);
                 return;
             }
 
@@ -126,6 +133,7 @@ public class AddItemController {
                     minutes >= 60 || seconds >= 60) {
 
                 messageLabel.setText("Thời gian không hợp lệ!");
+                if (btnSubmit != null) btnSubmit.setDisable(false);
                 return;
             }
 
@@ -138,6 +146,7 @@ public class AddItemController {
             // Kiểm tra logic
             if(startingPrice <= 0 || stepPrice <= 0 || durationHours <= 0) {
                 messageLabel.setText("Giá tiền và thời gian phải lớn hơn 0");
+                if (btnSubmit != null) btnSubmit.setDisable(false);
                 return;
             }
 
@@ -168,11 +177,13 @@ public class AddItemController {
                     delay.play();
                 } else {
                     messageLabel.setText("Lỗi: " + response.get("message").getAsString());
+                    if (btnSubmit != null) btnSubmit.setDisable(false);
                 }
             });
 
         } catch (NumberFormatException e) {
             messageLabel.setText("Giá, Bước giá và Thời gian phải là số hợp lệ!");
+            if (btnSubmit != null) btnSubmit.setDisable(false);
         }
     }
 
