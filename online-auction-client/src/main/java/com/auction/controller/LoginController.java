@@ -55,21 +55,17 @@ public class LoginController {
         cardVBox.prefWidthProperty().bind(cardVBox.maxWidthProperty());
         PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
-        // Lắng nghe sự kiện ngay khi nút được thêm vào Scene (Hiển thị lên màn hình)
-        loginButton.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                // Dùng EventFilter để bắt sự kiện trước khi bị "defaultButton" consume mất
-                newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        loginButton.pseudoClassStateChanged(pressedClass, true); // Ép trạng thái đồ họa CSS :pressed
-                    }
-                });
+        // Dùng EventFilter trên rootPane để bắt sự kiện phím Enter
+        // và tự động được giải phóng khi chuyển cảnh (tránh rò rỉ bộ nhớ / xung đột bộ lọc trên Scene)
+        rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER && loginButton.isDefaultButton()) {
+                loginButton.pseudoClassStateChanged(pressedClass, true); // Ép trạng thái đồ họa CSS :pressed
+            }
+        });
 
-                newScene.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-                    if (event.getCode() == KeyCode.ENTER) {
-                        loginButton.pseudoClassStateChanged(pressedClass, false); // Gỡ trạng thái đồ họa CSS :pressed
-                    }
-                });
+        rootPane.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+            if (event.getCode() == KeyCode.ENTER && loginButton.isDefaultButton()) {
+                loginButton.pseudoClassStateChanged(pressedClass, false); // Gỡ trạng thái đồ họa CSS :pressed
             }
         });
     }
@@ -194,7 +190,12 @@ public class LoginController {
             controller.setOnCloseCallback(() -> {
                 mainContent.getStyleClass().remove("blurred-content");
                 rootPane.getChildren().removeAll(darkOverlay, forgotGroup);
+                // Khôi phục lại defaultButton của nút đăng nhập
+                loginButton.setDefaultButton(true);
             });
+
+            // Tạm thời tắt defaultButton của nút đăng nhập để không bị xung đột với popup quên mật khẩu
+            loginButton.setDefaultButton(false);
 
             rootPane.getChildren().addAll(darkOverlay, forgotGroup);
         } catch (Exception e) {
