@@ -130,6 +130,12 @@ public class DashboardController {
      */
     @FXML
     public void initialize() {
+        // Khôi phục bộ lọc danh mục từ Session
+        if (Session.selectedCategory == null) {
+            Session.selectedCategory = "ALL";
+        }
+        restoreSelectedCategoryStyle();
+
         loadDataFromServer();
 
         // Kết nối tới Server để lắng nghe các cập nhật thời gian thực
@@ -540,40 +546,62 @@ public class DashboardController {
         }
     }
 
+    private void restoreSelectedCategoryStyle() {
+        Button activeBtn = btnFilterAll;
+        if ("ART".equalsIgnoreCase(Session.selectedCategory)) {
+            activeBtn = btnFilterArt;
+        } else if ("VEHICLE".equalsIgnoreCase(Session.selectedCategory)) {
+            activeBtn = btnFilterVehicle;
+        } else if ("ELECTRONICS".equalsIgnoreCase(Session.selectedCategory)) {
+            activeBtn = btnFilterElectronics;
+        } else if ("OTHER".equalsIgnoreCase(Session.selectedCategory)) {
+            activeBtn = btnFilterOther;
+        } else if ("FINISHED".equalsIgnoreCase(Session.selectedCategory)) {
+            activeBtn = btnFilterFinished;
+        }
+        updateFilterButtonsStyle(activeBtn);
+    }
+
     // --- CÁC HÀM XỬ LÝ LỌC DANH MỤC (FILTERS) ---
 
     @FXML
     private void filterAll() {
+        Session.selectedCategory = "ALL";
         updateFilterButtonsStyle(btnFilterAll);
         filterItems(searchField.getText());
     }
 
     @FXML
     private void filterArt() {
+        Session.selectedCategory = "ART";
         updateFilterButtonsStyle(btnFilterArt);
         filterItems(searchField.getText());
     }
 
     @FXML
     private void filterVehicle() {
+        Session.selectedCategory = "VEHICLE";
         updateFilterButtonsStyle(btnFilterVehicle);
         filterItems(searchField.getText());
     }
 
     @FXML
     private void filterElectronics() {
+        Session.selectedCategory = "ELECTRONICS";
         updateFilterButtonsStyle(btnFilterElectronics);
         filterItems(searchField.getText());
     }
 
     @FXML
     private void filterOther() {
+        Session.selectedCategory = "OTHER";
         updateFilterButtonsStyle(btnFilterOther);
         filterItems(searchField.getText());
     }
 
     @FXML
     private void filterFinished() {
+        Session.selectedCategory = "FINISHED";
         updateFilterButtonsStyle(btnFilterFinished);
         filterItems(searchField.getText());
     }
@@ -646,6 +674,7 @@ public class DashboardController {
         try {
             timerManager.stop();
             closeListener(); // Đóng kết nối socket khi đăng xuất
+            Session.selectedCategory = "ALL"; // Reset selected category on logout
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("/com/auction/login.fxml")));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
