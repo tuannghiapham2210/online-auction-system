@@ -28,6 +28,7 @@ import com.auction.controller.helper.BidRoomTimerManager;
 import com.auction.controller.helper.BidRoomChartManager;
 import com.auction.controller.helper.BidRoomModel;
 import com.auction.controller.helper.BidRoomView;
+import com.auction.controller.helper.BidRoomAutoBidManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,7 @@ public class BidRoomController {
     private BidRoomChartManager chartManager;
     private BidRoomTimerManager timerManager;
     private BidRoomSocketManager socketManager;
+    private BidRoomAutoBidManager autoBidManager;
 
     private ToastNotificationController toastNotificationController;
     private FadeTransition pulseAnimation;
@@ -95,6 +97,7 @@ public class BidRoomController {
 
         timerManager = new BidRoomTimerManager();
         socketManager = new BidRoomSocketManager();
+        autoBidManager = new BidRoomAutoBidManager(model, viewHelper, socketManager, rootPane, currentPriceLabel);
 
         viewHelper.startBlinkingAnimation(hotBadge);
 
@@ -122,7 +125,7 @@ public class BidRoomController {
         bidHistoryList.setItems(model.getHistoryLogs());
         bidHistoryList.setCellFactory(lv -> new BidHistoryCell());
 
-        initAutoBidPanel();
+        autoBidManager.initAutoBidPanel(autoBidIncField, autoBidMaxField);
 
         // Data Binding for UI updates based on Model changes
         model.currentPriceProperty().addListener((obs, oldVal, newVal) -> {
@@ -247,33 +250,7 @@ public class BidRoomController {
             } else {
                 if (heroImageController != null) heroImageController.setLive(true);
 
-                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == sellerId) {
-                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
-                } else {
-                    if (btnStopAuction != null) btnStopAuction.setVisible(false);
-                }
-
-                if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                    if (autoBidPanel != null) {
-                        autoBidPanel.setDisable(false);
-                        autoBidPanel.setOpacity(1.0);
-                    }
-                    if (bidAmountField != null) {
-                        bidAmountField.setDisable(false);
-                        bidAmountField.setText(NumberUtil.format(currentPrice + stepPrice));
-                    }
-                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-                } else {
-                    if (bidAmountField != null) {
-                        bidAmountField.setDisable(true);
-                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
-                    }
-                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
-                    if (autoBidPanel != null) {
-                        autoBidPanel.setDisable(true);
-                        autoBidPanel.setOpacity(0.4);
-                    }
-                }
+                updateUIForActiveAuction();
 
                 startCountdown(endTime);
             }
@@ -392,35 +369,7 @@ public class BidRoomController {
         if (btnOpenAuction != null) btnOpenAuction.setVisible(false);
         if (btnCancelAuction != null) btnCancelAuction.setVisible(false);
 
-        if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == model.getCurrentSellerId()) {
-            if (btnStopAuction != null) btnStopAuction.setVisible(true);
-        }
-
-        if ("BIDDER".equalsIgnoreCase(Session.role)) {
-            if (bidAmountField != null) {
-                bidAmountField.setDisable(false);
-                double cp = 0;
-                try {
-                    cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-                } catch (Exception ex) {}
-                bidAmountField.setText(NumberUtil.format(cp + model.getCurrentStepPrice()));
-            }
-            if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-            if (autoBidPanel != null) {
-                autoBidPanel.setDisable(false);
-                autoBidPanel.setOpacity(1.0);
-            }
-        } else {
-            if (bidAmountField != null) {
-                bidAmountField.setDisable(true);
-                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
-            }
-            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
-            if (autoBidPanel != null) {
-                autoBidPanel.setDisable(true);
-                autoBidPanel.setOpacity(0.4);
-            }
-        }
+        updateUIForActiveAuction();
 
         if (timerLabelTitle != null) timerLabelTitle.setText("THỜI GIAN");
         if (toastNotificationController != null) {
@@ -458,31 +407,7 @@ public class BidRoomController {
                 model.setCurrentEndTime(endTime);
                 if (heroImageController != null) heroImageController.setLive(true);
 
-                if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                    if (bidAmountField != null) {
-                        bidAmountField.setDisable(false);
-                        double cp = 0;
-                        try {
-                            cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-                        } catch (Exception ex) {}
-                        bidAmountField.setText(NumberUtil.format(cp + model.getCurrentStepPrice()));
-                    }
-                    if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
-                    if (autoBidPanel != null) {
-                        autoBidPanel.setDisable(false);
-                        autoBidPanel.setOpacity(1.0);
-                    }
-                } else {
-                    if (bidAmountField != null) {
-                        bidAmountField.setDisable(true);
-                        bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
-                    }
-                    if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
-                    if (autoBidPanel != null) {
-                        autoBidPanel.setDisable(true);
-                        autoBidPanel.setOpacity(0.4);
-                    }
-                }
+                updateUIForActiveAuction();
 
                 if (timerLabelTitle != null) {
                     timerLabelTitle.setText("THỜI GIAN");
@@ -496,85 +421,48 @@ public class BidRoomController {
                     btnCancelAuction.setVisible(false);
                 }
 
-                if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == model.getCurrentSellerId()) {
-                    if (btnStopAuction != null) btnStopAuction.setVisible(true);
-                }
-
                 startCountdown(endTime);
             });
         }
     }
 
-    private void initAutoBidPanel() {
-        if (autoBidIncField != null) addFormattingListener(autoBidIncField);
-        if (autoBidMaxField != null) addFormattingListener(autoBidMaxField);
+    private void updateUIForActiveAuction() {
+        if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == model.getCurrentSellerId()) {
+            if (btnStopAuction != null) btnStopAuction.setVisible(true);
+        } else {
+            if (btnStopAuction != null) btnStopAuction.setVisible(false);
+        }
+
+        if ("BIDDER".equalsIgnoreCase(Session.role)) {
+            if (bidAmountField != null) {
+                bidAmountField.setDisable(false);
+                double cp = 0;
+                try {
+                    cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                } catch (Exception ex) {}
+                bidAmountField.setText(NumberUtil.format(cp + model.getCurrentStepPrice()));
+            }
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(false);
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(false);
+                autoBidPanel.setOpacity(1.0);
+            }
+        } else {
+            if (bidAmountField != null) {
+                bidAmountField.setDisable(true);
+                bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+            }
+            if (btnPlaceBid != null) btnPlaceBid.setDisable(true);
+            if (autoBidPanel != null) {
+                autoBidPanel.setDisable(true);
+                autoBidPanel.setOpacity(0.4);
+            }
+        }
     }
 
     @FXML
     private void handleRegisterAutoBidClick() {
-        if (autoBidMaxField != null && autoBidIncField != null) {
-            handleRegisterAutoBid(autoBidMaxField.getText(), autoBidIncField.getText());
-        }
-    }
-
-    private void addFormattingListener(TextField textField) {
-        textField.textProperty().addListener((obs, oldValue, newValue) -> {
-            if (newValue == null || newValue.isEmpty()) return;
-            if (!newValue.matches("[\\d,]*")) {
-                textField.setText(oldValue);
-            }
-        });
-
-        textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
-            if (!isNowFocused) {
-                try {
-                    String text = textField.getText().replaceAll(",", "");
-                    if (!text.isEmpty()) {
-                        Number parsed = NumberUtil.parse(text);
-                        textField.setText(NumberUtil.format(parsed));
-                    }
-                } catch (Exception e) {
-                    textField.setText("0");
-                }
-            }
-        });
-    }
-
-    private void handleRegisterAutoBid(String maxBidStr, String incStr) {
-        if (maxBidStr.isEmpty() || incStr.isEmpty()) {
-            viewHelper.showNotification(rootPane, "Thiếu thông tin", "Vui lòng nhập đầy đủ Giá tối đa và Bước giá!");
-            return;
-        }
-
-        try {
-            double maxBid = NumberUtil.parse(maxBidStr).doubleValue();
-            double inc = NumberUtil.parse(incStr).doubleValue();
-
-            double currentPrice = 0.0;
-            try {
-                currentPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-            } catch (Exception ex) {}
-
-            double minMaxBid = currentPrice + model.getCurrentStepPrice();
-            if (maxBid < minMaxBid) {
-                viewHelper.showNotification(rootPane, "Mức giá không hợp lệ", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + NumberUtil.format(minMaxBid) + ")!");
-                return;
-            }
-
-            if (maxBid > Session.balance) {
-                viewHelper.showNotification(rootPane, "Không đủ số dư", "Ngân sách tối đa không được vượt quá số dư tài khoản ($" + NumberUtil.format(Session.balance) + ")!");
-                return;
-            }
-            if (inc < model.getCurrentStepPrice()) {
-                viewHelper.showNotification(rootPane, "Bước giá không hợp lệ", "Bước giá tự động phải ít nhất bằng bước giá của sản phẩm ($" + NumberUtil.format(model.getCurrentStepPrice()) + ")!");
-                return;
-            }
-
-            socketManager.sendRegisterAutoBid(model.getCurrentItemId(), Session.userId, maxBid, inc, Session.username, Session.role);
-            viewHelper.showNotification(rootPane, "Thành công", "Đã gửi yêu cầu đăng ký Auto-Bid!");
-        } catch (Exception e) {
-            viewHelper.showNotification(rootPane, "Lỗi nhập liệu", "Vui lòng nhập số hợp lệ!");
-        }
+        autoBidManager.handleRegisterAutoBidClick(autoBidMaxField, autoBidIncField);
     }
 
     public void extendTimeRealtime(String newEndTime) {
@@ -587,46 +475,7 @@ public class BidRoomController {
                 heroImageController.setLive(true);
             }
 
-            if ("BIDDER".equalsIgnoreCase(Session.role)) {
-                if (bidAmountField != null) {
-                    bidAmountField.setDisable(false);
-                    double cp = 0;
-                    try {
-                        cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
-                    } catch (Exception ex) {
-                    }
-                    bidAmountField.setText(NumberUtil.format(cp + model.getCurrentStepPrice()));
-                }
-                if (btnPlaceBid != null) {
-                    btnPlaceBid.setDisable(false);
-                }
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(false);
-                    autoBidPanel.setOpacity(1.0);
-                }
-            } else {
-                if (bidAmountField != null) {
-                    bidAmountField.setDisable(true);
-                    bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
-                }
-                if (btnPlaceBid != null) {
-                    btnPlaceBid.setDisable(true);
-                }
-                if (autoBidPanel != null) {
-                    autoBidPanel.setDisable(true);
-                    autoBidPanel.setOpacity(0.4);
-                }
-            }
-
-            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == model.getCurrentSellerId()) {
-                if (btnStopAuction != null) {
-                    btnStopAuction.setVisible(true);
-                }
-            } else {
-                if (btnStopAuction != null) {
-                    btnStopAuction.setVisible(false);
-                }
-            }
+            updateUIForActiveAuction();
 
             if (timerLabelTitle != null) {
                 timerLabelTitle.setText("THỜI GIAN");
