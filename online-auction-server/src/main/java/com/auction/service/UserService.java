@@ -1,6 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.UserDao;
+import com.auction.dto.UserDTO;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,32 +13,24 @@ public class UserService {
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
   /**
-   * Xử lý nghiệp vụ đăng nhập vào hệ thống.
-   *
-   * @param username Tên đăng nhập của người dùng.
-   * @param password Mật khẩu đăng nhập.
-   * @return Đối tượng {@link JsonObject} chứa trạng thái và thông tin chi tiết tài khoản.
+   * Xử lý nghiệp vụ đăng nhập vào hệ thống (Đã tối ưu hóa).
+   * DTO Pattern: Chuyển 6 câu query thành 1 câu query duy nhất.
    */
   public JsonObject processLogin(String username, String password) {
     UserDao dao = new UserDao();
-    boolean isOk = dao.login(username, password);
+    UserDTO user = dao.getUserByCredentials(username, password); // Chỉ gọi DB 1 lần!
+    
     JsonObject response = new JsonObject();
 
-    if (isOk) {
-      String role = dao.getUserRole(username, password);
-      int userId = dao.getUserId(username, password);
-      int balance = dao.getBalanceByUsername(username);
-      String email = dao.getUserEmail(username, password);
-      String phone = dao.getUserPhone(username, password);
-
+    if (user != null) {
       response.addProperty("status", "SUCCESS");
       response.addProperty("message", "Đăng nhập thành công!");
-      response.addProperty("role", role);
-      response.addProperty("userId", userId);
-      response.addProperty("username", username);
-      response.addProperty("balance", balance);
-      response.addProperty("email", email != null ? email : "");
-      response.addProperty("phone", phone != null ? phone : "");
+      response.addProperty("role", user.getRole());
+      response.addProperty("userId", user.getId());
+      response.addProperty("username", user.getUsername());
+      response.addProperty("balance", user.getBalance());
+      response.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
+      response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
     } else {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");

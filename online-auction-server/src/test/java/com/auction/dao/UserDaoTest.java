@@ -3,6 +3,7 @@ package com.auction.dao;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.auction.dto.UserDTO;
 
 import java.sql.Connection;
 
@@ -53,12 +54,12 @@ class UserDaoTest {
         boolean isDup = userDAO.registerUser(TEST_USER, TEST_PASS, "BIDDER", "", "");
         assertFalse(isDup, "Đăng ký trùng username phải bị từ chối");
 
-        // 3. Đăng nhập
-        boolean isLoginOk = userDAO.login(TEST_USER, TEST_PASS);
-        assertTrue(isLoginOk, "Đăng nhập với mật khẩu đúng phải thành công");
+        // 3. Đăng nhập (Sử dụng getUserByCredentials thay cho login)
+        UserDTO userOk = userDAO.getUserByCredentials(TEST_USER, TEST_PASS);
+        assertNotNull(userOk, "Đăng nhập với mật khẩu đúng phải trả về thông tin UserDTO");
 
-        boolean isLoginFail = userDAO.login(TEST_USER, "wrong_pass");
-        assertFalse(isLoginFail, "Đăng nhập sai mật khẩu phải thất bại");
+        UserDTO userFail = userDAO.getUserByCredentials(TEST_USER, "wrong_pass");
+        assertNull(userFail, "Đăng nhập sai mật khẩu phải trả về null");
 
         // 4. Lấy Role và ID
         assertEquals("BIDDER", userDAO.getUserRole(TEST_USER, TEST_PASS));

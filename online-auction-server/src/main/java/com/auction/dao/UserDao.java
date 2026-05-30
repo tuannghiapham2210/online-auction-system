@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.auction.dto.UserDTO;
 
 /**
  * Lớp DAO quản lý các thao tác Database liên quan đến người dùng (User).
@@ -106,20 +107,33 @@ public class UserDao {
   }
 
   /**
-   * Xác thực thông tin tài khoản và mật khẩu khi đăng nhập.
+   * TỐI ƯU HÓA HIỆU SUẤT (Performance Optimization):
+   * Khắc phục N+1 Query Anti-Pattern bằng cách lấy TOÀN BỘ dữ liệu User 
+   * chỉ trong 1 câu SQL (Database Hit) thay vì gọi DB 6 lần rời rạc.
+   * 
+   * @return Đối tượng DTO (Data Transfer Object) lưu trong RAM.
    */
-  public boolean login(String username, String password) {
+  public UserDTO getUserByCredentials(String username, String password) {
     String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
     try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
       stmt.setString(1, username);
       stmt.setString(2, password);
       try (ResultSet rs = stmt.executeQuery()) {
-        return rs.next();
+        if (rs.next()) {
+          return new UserDTO(
+              rs.getInt("id"),
+              rs.getString("username"),
+              rs.getString("role"),
+              rs.getInt("balance"),
+              rs.getString("email"),
+              rs.getString("phone")
+          );
+        }
       }
     } catch (Exception e) {
-      logger.error("Login authentication failed: {}", e.getMessage(), e);
+      logger.error("Login authentication and DTO mapping failed: {}", e.getMessage(), e);
     }
-    return false;
+    return null; // Trả về null nếu sai tài khoản/mật khẩu
   }
 
   /**
