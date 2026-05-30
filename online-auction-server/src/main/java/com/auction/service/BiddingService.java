@@ -281,7 +281,14 @@ public class BiddingService {
   }
 
   /**
-   * Động cơ đánh giá, so sánh và tự động đẩy giá thầu lên (Auto-Bid Engine).
+   * AUTO-BID ENGINE (Cơ chế Đấu giá tự động - Proxy Bidding)
+   * 
+   * Luồng hoạt động (Architecture Flow):
+   * 1. Kiểm tra trạng thái sản phẩm xem có đang mở đấu giá không.
+   * 2. Lấy người đang dẫn đầu hiện tại (currentHighestBidderId).
+   * 3. Lấy danh sách đăng ký Auto-Bid từ DB (sắp xếp theo Ngân sách giảm dần).
+   * 4. Tính toán mức giá tiếp theo dựa vào đối thủ bám đuổi (Proxy Bidding Math).
+   * 5. Cập nhật giá mới, lưu lịch sử, và phát tín hiệu (Broadcast) cho Client.
    */
   private void evaluateAutoBids(int itemId) {
     try {
@@ -291,113 +298,165 @@ public class BiddingService {
         return;
       }
 
-      int currentHighestBidderId = -1;
-      String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? "
-          + "ORDER BY id DESC LIMIT 1";
-      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance()
-          .getConnection().prepareStatement(getBidderSql)) {
-        pstmt.setInt(1, itemId);
-        try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-          if (rs.next()) {
-            currentHighestBidderId = rs.getInt("bidder_id");
-          }
-        }
-      }
-
-      List<AutoBidConfig> autoBidders = new ArrayList<>();
-      String getAutoBidsSql = "SELECT user_id, max_bid, increment_amount, created_at "
-          + "FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
-      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance()
-          .getConnection().prepareStatement(getAutoBidsSql)) {
-        pstmt.setInt(1, itemId);
-        try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-          while (rs.next()) {
-            autoBidders.add(new AutoBidConfig(
-                rs.getInt("user_id"),
-                rs.getDouble("max_bid"),
-                rs.getDouble("increment_amount"),
-                rs.getString("created_at")
-            ));
-          }
-        }
-      }
+      int currentHighestBidderId = fetchCurrentHighestBidder(itemId);
+      List<AutoBidConfig> autoBidders = fetchActiveAutoBidConfigs(itemId);
 
       if (autoBidders.isEmpty()) {
-        return;
+        return; // Không có ai đăng ký Auto-Bid
       }
 
       AutoBidConfig topBidder = autoBidders.get(0);
+      double nextProxyBidPrice = calculateNextProxyBidPrice(item, autoBidders, topBidder, currentHighestBidderId);
 
-      double challengePrice = item.getCurrentPrice();
-      if (autoBidders.size() > 1) {
-        challengePrice = Math.max(challengePrice, autoBidders.get(1).maxBid);
-      }
-
-      if (topBidder.userId == currentHighestBidderId) {
-        if (challengePrice <= item.getCurrentPrice()) {
+      // Nếu thuật toán xác định không cần nâng giá thêm, kết thúc luồng
+      if (nextProxyBidPrice == -1) {
           return;
-        }
       }
 
-      double newPrice = challengePrice + topBidder.increment;
-
-      if (currentHighestBidderId == -1 && autoBidders.size() == 1) {
-        newPrice = item.getCurrentPrice();
-      }
-
-      if (newPrice > topBidder.maxBid) {
-        newPrice = topBidder.maxBid;
-      }
-
-      if (newPrice < item.getCurrentPrice()) {
-        return;
-      }
-      if (newPrice == item.getCurrentPrice() && topBidder.userId == currentHighestBidderId) {
-        return;
-      }
-
+      // Kiểm tra số dư khả dụng (Sufficient Balance Validation)
       UserDao userDao = new UserDao();
       String username = getUsernameById(topBidder.userId);
       int balance = userDao.getBalanceByUsername(username);
-      if (balance < newPrice) {
-        String deleteAutoBidSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
-        try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance()
-            .getConnection().prepareStatement(deleteAutoBidSql)) {
-          pstmt.setInt(1, itemId);
-          pstmt.setInt(2, topBidder.userId);
-          pstmt.executeUpdate();
-        }
-        evaluateAutoBids(itemId);
-        return;
+      
+      if (balance < nextProxyBidPrice) {
+          removeInvalidAutoBidConfig(itemId, topBidder.userId);
+          evaluateAutoBids(itemId); // Đệ quy để đánh giá người tiếp theo
+          return;
       }
 
-      boolean updateSuccess = itemDao.updateProxyPrice(itemId, newPrice, topBidder.userId);
+      // Thực thi giao dịch và gửi tín hiệu mạng (Execute & Broadcast)
+      executeAutoBidTransaction(itemId, nextProxyBidPrice, topBidder.userId, username, itemDao);
+
+    } catch (Exception e) {
+      logger.error("[PROXY ENGINE] Error evaluating auto-bids for item {}: {}", itemId, e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Truy vấn cơ sở dữ liệu để tìm ra ID của người đang trả giá cao nhất.
+   */
+  private int fetchCurrentHighestBidder(int itemId) throws java.sql.SQLException {
+      int currentHighestBidderId = -1;
+      String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? ORDER BY id DESC LIMIT 1";
+      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getBidderSql)) {
+          pstmt.setInt(1, itemId);
+          try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+              if (rs.next()) {
+                  currentHighestBidderId = rs.getInt("bidder_id");
+              }
+          }
+      }
+      return currentHighestBidderId;
+  }
+
+  /**
+   * Lấy danh sách những người đăng ký Auto-Bid cho sản phẩm này.
+   * Danh sách được sắp xếp ưu tiên Ngân sách tối đa (max_bid) giảm dần.
+   */
+  private List<AutoBidConfig> fetchActiveAutoBidConfigs(int itemId) throws java.sql.SQLException {
+      List<AutoBidConfig> autoBidders = new ArrayList<>();
+      String getAutoBidsSql = "SELECT user_id, max_bid, increment_amount, created_at "
+          + "FROM auto_bids WHERE item_id = ? ORDER BY max_bid DESC, created_at ASC";
+      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(getAutoBidsSql)) {
+          pstmt.setInt(1, itemId);
+          try (java.sql.ResultSet rs = pstmt.executeQuery()) {
+              while (rs.next()) {
+                  autoBidders.add(new AutoBidConfig(
+                      rs.getInt("user_id"),
+                      rs.getDouble("max_bid"),
+                      rs.getDouble("increment_amount"),
+                      rs.getString("created_at")
+                  ));
+              }
+          }
+      }
+      return autoBidders;
+  }
+
+  /**
+   * Thuật toán cốt lõi tính toán giá Proxy.
+   * Proxy Bidding chỉ nâng giá lên đúng bằng Bước Giá (increment) so với đối thủ đứng thứ 2.
+   * @return Giá mới cần đặt, hoặc -1 nếu không cần nâng giá.
+   */
+  private double calculateNextProxyBidPrice(Item item, List<AutoBidConfig> autoBidders, AutoBidConfig topBidder, int currentHighestBidderId) {
+      double challengePrice = item.getCurrentPrice();
+      
+      // Nếu có đối thủ cạnh tranh (người thứ 2)
+      if (autoBidders.size() > 1) {
+          challengePrice = Math.max(challengePrice, autoBidders.get(1).maxBid);
+      }
+
+      // Nếu đang là người dẫn đầu và không có ai đe dọa, giữ nguyên giá
+      if (topBidder.userId == currentHighestBidderId) {
+          if (challengePrice <= item.getCurrentPrice()) {
+              return -1; // Trả về cờ hiệu không cần nâng giá
+          }
+      }
+
+      // Tính giá lý thuyết tiếp theo
+      double nextPrice = challengePrice + topBidder.increment;
+
+      // Trường hợp đặc biệt: Chỉ có 1 người Auto-Bid và chưa ai đặt giá thủ công
+      if (currentHighestBidderId == -1 && autoBidders.size() == 1) {
+          nextPrice = item.getCurrentPrice();
+      }
+
+      // Giới hạn giá không vượt qua Ngân sách tối đa của người thắng
+      if (nextPrice > topBidder.maxBid) {
+          nextPrice = topBidder.maxBid;
+      }
+
+      // Nếu giá tính toán thấp hơn giá sàn hiện tại, hủy bỏ
+      if (nextPrice < item.getCurrentPrice()) {
+          return -1;
+      }
+      
+      // Nếu giá không đổi và chính họ đang dẫn đầu, hủy bỏ
+      if (nextPrice == item.getCurrentPrice() && topBidder.userId == currentHighestBidderId) {
+          return -1;
+      }
+
+      return nextPrice;
+  }
+
+  /**
+   * Xóa cấu hình Auto-Bid khỏi cơ sở dữ liệu nếu người dùng không đủ tiền.
+   */
+  private void removeInvalidAutoBidConfig(int itemId, int userId) throws java.sql.SQLException {
+      String deleteAutoBidSql = "DELETE FROM auto_bids WHERE item_id = ? AND user_id = ?";
+      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance().getConnection().prepareStatement(deleteAutoBidSql)) {
+          pstmt.setInt(1, itemId);
+          pstmt.setInt(2, userId);
+          pstmt.executeUpdate();
+      }
+  }
+
+  /**
+   * Lưu giá trị mới vào Database và phát (Broadcast) thông điệp Socket tới mọi Client.
+   */
+  private void executeAutoBidTransaction(int itemId, double newPrice, int bidderId, String username, ItemDao itemDao) {
+      boolean updateSuccess = itemDao.updateProxyPrice(itemId, newPrice, bidderId);
       BidTransactionDao bidDao = new BidTransactionDao();
-      boolean logSuccess = bidDao.insertBidTransaction(itemId, topBidder.userId, newPrice);
+      boolean logSuccess = bidDao.insertBidTransaction(itemId, bidderId, newPrice);
 
       if (updateSuccess && logSuccess) {
+          JsonObject broadcastMsg = new JsonObject();
+          broadcastMsg.addProperty("action", "UPDATE_PRICE");
+          broadcastMsg.addProperty("itemId", itemId);
+          broadcastMsg.addProperty("newPrice", newPrice);
+          broadcastMsg.addProperty("bidderId", bidderId);
+          broadcastMsg.addProperty("username", username);
+          broadcastMsg.addProperty("isAutoBid", true);
 
-        JsonObject broadcastMsg = new JsonObject();
-        broadcastMsg.addProperty("action", "UPDATE_PRICE");
-        broadcastMsg.addProperty("itemId", itemId);
-        broadcastMsg.addProperty("newPrice", newPrice);
-        broadcastMsg.addProperty("bidderId", topBidder.userId);
-        broadcastMsg.addProperty("username", username);
-        broadcastMsg.addProperty("isAutoBid", true);
+          String extendedTime = checkAndExtendAuctionTime(itemId, itemDao);
+          if (extendedTime != null) {
+              broadcastMsg.addProperty("newEndTime", extendedTime);
+          }
 
-        String extendedTime = checkAndExtendAuctionTime(itemId, itemDao);
-        if (extendedTime != null) {
-          broadcastMsg.addProperty("newEndTime", extendedTime);
-        }
-
-        if (broadcaster != null) {
-          broadcaster.accept(broadcastMsg);
-        }
+          if (broadcaster != null) {
+              broadcaster.accept(broadcastMsg);
+          }
       }
-    } catch (Exception e) {
-      logger.error("[PROXY ENGINE] Error evaluating auto-bids for item {}: {}",
-          itemId, e.getMessage(), e);
-    }
   }
 
   /**
