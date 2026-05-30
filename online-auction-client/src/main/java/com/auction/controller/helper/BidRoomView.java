@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 public class BidRoomView {
     private static final Logger logger = LoggerFactory.getLogger(BidRoomView.class);
     private boolean isNotificationShowing = false;
+    private Parent winnerOverlayNode;
 
     public void startBlinkingAnimation(Node node) {
         if (node == null) return;
@@ -89,13 +90,18 @@ public class BidRoomView {
 
         Runnable showOverlayRunnable = () -> {
             try {
+                if (winnerOverlayNode != null) {
+                    rootPane.getChildren().remove(winnerOverlayNode);
+                }
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/winner_overlay.fxml"));
                 Parent overlay = loader.load();
+                winnerOverlayNode = overlay;
                 WinnerOverlayController controller = loader.getController();
 
                 rootPane.getChildren().add(overlay);
                 controller.setData(winnerUsername, finalPrice, noWinner, () -> {
                     rootPane.getChildren().remove(overlay);
+                    winnerOverlayNode = null;
                     if (onLeaveRoom != null) onLeaveRoom.run();
                 });
             } catch (Exception e) {
@@ -197,6 +203,13 @@ public class BidRoomView {
             rootPane.getChildren().add(depositGroup);
         } catch (Exception e) {
             logger.error("Lỗi khi mở cửa sổ nạp tiền: {}", e.getMessage());
+        }
+    }
+
+    public void clearWinnerOverlay(StackPane rootPane) {
+        if (winnerOverlayNode != null) {
+            rootPane.getChildren().remove(winnerOverlayNode);
+            winnerOverlayNode = null;
         }
     }
 }

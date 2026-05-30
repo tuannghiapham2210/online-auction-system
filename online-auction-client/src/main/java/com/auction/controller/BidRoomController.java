@@ -580,6 +580,58 @@ public class BidRoomController {
     public void extendTimeRealtime(String newEndTime) {
         Platform.runLater(() -> {
             model.setCurrentEndTime(newEndTime);
+            auctionEndedShown = false;
+            viewHelper.clearWinnerOverlay(rootPane);
+
+            if (heroImageController != null) {
+                heroImageController.setLive(true);
+            }
+
+            if ("BIDDER".equalsIgnoreCase(Session.role)) {
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(false);
+                    double cp = 0;
+                    try {
+                        cp = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
+                    } catch (Exception ex) {
+                    }
+                    bidAmountField.setText(NumberUtil.format(cp + model.getCurrentStepPrice()));
+                }
+                if (btnPlaceBid != null) {
+                    btnPlaceBid.setDisable(false);
+                }
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(false);
+                    autoBidPanel.setOpacity(1.0);
+                }
+            } else {
+                if (bidAmountField != null) {
+                    bidAmountField.setDisable(true);
+                    bidAmountField.setPromptText("Chỉ người mua (Bidder) mới có thể đặt giá");
+                }
+                if (btnPlaceBid != null) {
+                    btnPlaceBid.setDisable(true);
+                }
+                if (autoBidPanel != null) {
+                    autoBidPanel.setDisable(true);
+                    autoBidPanel.setOpacity(0.4);
+                }
+            }
+
+            if ("ADMIN".equalsIgnoreCase(Session.role) || Session.userId == model.getCurrentSellerId()) {
+                if (btnStopAuction != null) {
+                    btnStopAuction.setVisible(true);
+                }
+            } else {
+                if (btnStopAuction != null) {
+                    btnStopAuction.setVisible(false);
+                }
+            }
+
+            if (timerLabelTitle != null) {
+                timerLabelTitle.setText("THỜI GIAN");
+            }
+
             startCountdown(newEndTime);
             viewHelper.showNotification(rootPane, "🔥 Gia hạn tự động", "Phiên đấu giá được cộng thêm 10s do có lượt ra giá phút chót!");
 
