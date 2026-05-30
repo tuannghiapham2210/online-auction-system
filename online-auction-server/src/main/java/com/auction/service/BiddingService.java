@@ -61,129 +61,143 @@ public class BiddingService {
    * @param request Đối tượng JSON chứa tham số đặt thầu.
    * @return Một JsonObject chứa thông báo lỗi, hoặc null nếu xử lý thành công.
    */
+  /**
+   * Xử lý luồng đặt giá (PLACE_BID) từ người dùng.
+   * Kiến trúc: Áp dụng Single Responsibility Principle (SRP) để đập nhỏ hàm khổng lồ
+   * thành 3 bước độc lập, dễ bảo trì và dễ unit test.
+   */
   public JsonObject processPlaceBid(JsonObject request) {
     try {
       logger.info("Received PLACE_BID request: {}", request);
 
       int itemId = request.get("itemId").getAsInt();
       int bidderId = request.get("bidderId").getAsInt();
+      double bidAmount = request.get("bidAmount").getAsDouble();
       String username = request.has("username") ? request.get("username").getAsString() : "Khách";
       String role = request.has("role") ? request.get("role").getAsString() : "";
 
-      if (!"BIDDER".equalsIgnoreCase(role)) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
-        return errorMsg;
-      }
-
-      // PREVENT SELF-BIDDING
-      int currentHighestBidderId = -1;
-      String getBidderSql = "SELECT bidder_id FROM bids WHERE item_id = ? "
-          + "ORDER BY id DESC LIMIT 1";
-      try (java.sql.PreparedStatement pstmt = com.auction.dao.DatabaseConnection.getInstance()
-          .getConnection().prepareStatement(getBidderSql)) {
-        pstmt.setInt(1, itemId);
-        try (java.sql.ResultSet rs = pstmt.executeQuery()) {
-          if (rs.next()) {
-            currentHighestBidderId = rs.getInt("bidder_id");
-          }
-        }
-      }
-      if (currentHighestBidderId == bidderId) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message",
-            "Bạn đang là người trả giá cao nhất, hãy đợi đối thủ ra giá!");
-        return errorMsg;
-      }
-
       ItemDao itemDao = new ItemDao();
-      Item item = itemDao.getItemById(itemId);
-      if (item == null) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Sản phẩm không tồn tại!");
-        return errorMsg;
-      }
-      if ("PENDING".equalsIgnoreCase(item.getStatus())) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
-        return errorMsg;
-      }
-      if ("CLOSED".equalsIgnoreCase(item.getStatus())
-          || "FINISHED".equalsIgnoreCase(item.getStatus())) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Từ chối: Phiên đấu giá này đã kết thúc!");
-        return errorMsg;
-      }
-      if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-        java.time.format.DateTimeFormatter formatter =
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(),
-            formatter);
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
-        if (secondsLeft < -2) {
-          JsonObject errorMsg = new JsonObject();
-          errorMsg.addProperty("action", "ERROR");
-          errorMsg.addProperty("message", "Từ chối: Phiên đấu giá đã kết thúc!");
-          return errorMsg;
-        }
-      }
-
-      double minBid = item.getCurrentPrice() + item.getStepPrice();
-
-      double bidAmount = request.get("bidAmount").getAsDouble();
-      if (bidAmount < minBid) {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Giá đặt tối thiểu phải là: $" + minBid);
-        return errorMsg;
-      }
-
-      boolean updateSuccess = itemDao.updateCurrentPrice(itemId, bidAmount, bidderId);
       BidTransactionDao bidDao = new BidTransactionDao();
-      boolean logSuccess = bidDao.insertBidTransaction(itemId, bidderId, bidAmount);
 
-      if (updateSuccess && logSuccess) {
-
-        JsonObject broadcastMsg = new JsonObject();
-        broadcastMsg.addProperty("action", "UPDATE_PRICE");
-        broadcastMsg.addProperty("itemId", itemId);
-        broadcastMsg.addProperty("newPrice", bidAmount);
-        broadcastMsg.addProperty("bidderId", bidderId);
-        broadcastMsg.addProperty("username", username);
-
-        String extendedTime = checkAndExtendAuctionTime(itemId, itemDao);
-        if (extendedTime != null) {
-          broadcastMsg.addProperty("newEndTime", extendedTime);
-        }
-
-        logger.info("New bid accepted. Broadcasting price update...");
-        if (broadcaster != null) {
-          broadcaster.accept(broadcastMsg);
-        }
-
-        // TRIGGER AUTO-BID ENGINE
-        evaluateAutoBids(itemId);
-        return null;
-      } else {
-        JsonObject errorMsg = new JsonObject();
-        errorMsg.addProperty("action", "ERROR");
-        errorMsg.addProperty("message", "Lỗi Database khi xử lý đặt giá!");
-        return errorMsg;
+      // BƯỚC 1: Xác thực dữ liệu (Validation)
+      JsonObject validationError = validateBidRequest(itemDao, bidDao, itemId, bidderId, bidAmount, role);
+      if (validationError != null) {
+        return validationError;
       }
+
+      // BƯỚC 2: Thực thi giao dịch vào Database (Execution)
+      boolean isSuccess = executeBidTransaction(itemDao, bidDao, itemId, bidderId, bidAmount);
+      if (!isSuccess) {
+        return createErrorResponse("Lỗi Database khi xử lý đặt giá!");
+      }
+
+      // BƯỚC 3: Phát tín hiệu và Kích hoạt Auto-Bid (Broadcasting & Triggering)
+      broadcastAndTrigger(itemDao, itemId, bidderId, bidAmount, username);
+
+      return null; // Trả về null nghĩa là thành công không có lỗi
 
     } catch (Exception e) {
       logger.error("Error while handling PLACE_BID request: {}", e.getMessage(), e);
-      JsonObject errorMsg = new JsonObject();
-      errorMsg.addProperty("action", "ERROR");
-      errorMsg.addProperty("message", "Lỗi Server!");
-      return errorMsg;
+      return createErrorResponse("Lỗi Server!");
     }
+  }
+
+  // --- HELPER METHODS CHO PROCESS_PLACE_BID ---
+
+  /**
+   * Bước 1: Kiểm tra tính hợp lệ của lệnh đặt giá.
+   * Áp dụng nghiêm ngặt DAO Pattern, không viết Raw SQL trong Service.
+   */
+  private JsonObject validateBidRequest(ItemDao itemDao, BidTransactionDao bidDao, 
+                                        int itemId, int bidderId, double bidAmount, String role) {
+    if (!"BIDDER".equalsIgnoreCase(role)) {
+      return createErrorResponse("Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
+    }
+
+    Item item = itemDao.getItemById(itemId);
+    if (item == null) {
+      return createErrorResponse("Sản phẩm không tồn tại!");
+    }
+
+    // Kiểm tra trạng thái phiên đấu giá
+    if ("PENDING".equalsIgnoreCase(item.getStatus())) {
+      return createErrorResponse("Bid rejected: Auction is currently PENDING.");
+    }
+    if ("CLOSED".equalsIgnoreCase(item.getStatus()) || "FINISHED".equalsIgnoreCase(item.getStatus())) {
+      return createErrorResponse("Từ chối: Phiên đấu giá này đã kết thúc!");
+    }
+
+    // Kiểm tra thời gian (bao gồm dung sai độ trễ mạng)
+    if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
+      java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
+      java.time.LocalDateTime now = java.time.LocalDateTime.now();
+      long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
+      if (secondsLeft < -NETWORK_LATENCY_TOLERANCE_SECONDS) {
+        return createErrorResponse("Từ chối: Phiên đấu giá đã kết thúc!");
+      }
+    }
+
+    // Kiểm tra chống tự đẩy giá (Self-Bidding) thông qua DAO
+    java.util.Map<String, Object> highestBidderInfo = bidDao.getHighestBidder(itemId);
+    int currentHighestBidderId = (int) highestBidderInfo.get("bidderId");
+    if (currentHighestBidderId == bidderId) {
+      return createErrorResponse("Bạn đang là người trả giá cao nhất, hãy đợi đối thủ ra giá!");
+    }
+
+    // Kiểm tra giá đặt tối thiểu
+    double minBid = item.getCurrentPrice() + item.getStepPrice();
+    if (bidAmount < minBid) {
+      return createErrorResponse("Giá đặt tối thiểu phải là: $" + minBid);
+    }
+
+    return null;
+  }
+
+  /**
+   * Bước 2: Gọi DAO để thực hiện ghi dữ liệu.
+   */
+  private boolean executeBidTransaction(ItemDao itemDao, BidTransactionDao bidDao, 
+                                        int itemId, int bidderId, double bidAmount) {
+    boolean updateSuccess = itemDao.updateCurrentPrice(itemId, bidAmount, bidderId);
+    boolean logSuccess = bidDao.insertBidTransaction(itemId, bidderId, bidAmount);
+    return updateSuccess && logSuccess;
+  }
+
+  /**
+   * Bước 3: Phát tín hiệu Socket cho các Client khác và kích hoạt Auto-Bid.
+   */
+  private void broadcastAndTrigger(ItemDao itemDao, int itemId, int bidderId, double bidAmount, String username) {
+    JsonObject broadcastMsg = new JsonObject();
+    broadcastMsg.addProperty("action", "UPDATE_PRICE");
+    broadcastMsg.addProperty("itemId", itemId);
+    broadcastMsg.addProperty("newPrice", bidAmount);
+    broadcastMsg.addProperty("bidderId", bidderId);
+    broadcastMsg.addProperty("username", username);
+
+    // Kiểm tra Anti-Sniping
+    String extendedTime = checkAndExtendAuctionTime(itemId, itemDao);
+    if (extendedTime != null) {
+      broadcastMsg.addProperty("newEndTime", extendedTime);
+    }
+
+    logger.info("New bid accepted. Broadcasting price update...");
+    if (broadcaster != null) {
+      broadcaster.accept(broadcastMsg);
+    }
+
+    // TRIGGER AUTO-BID ENGINE
+    evaluateAutoBids(itemId);
+  }
+
+  /**
+   * Helper tạo JSON phản hồi lỗi.
+   */
+  private JsonObject createErrorResponse(String message) {
+    JsonObject errorMsg = new JsonObject();
+    errorMsg.addProperty("action", "ERROR");
+    errorMsg.addProperty("message", message);
+    return errorMsg;
   }
 
   /**
