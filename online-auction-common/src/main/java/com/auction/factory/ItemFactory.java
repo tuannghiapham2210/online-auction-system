@@ -37,7 +37,7 @@ public class ItemFactory {
       case "ART"         -> new Art(name, startingPrice, endTime, sellerId, extraInfo);
       case "VEHICLE"     -> new Vehicle(name, startingPrice, endTime, sellerId, extraInfo);
       case "OTHER"       -> new Other(name, startingPrice, endTime, sellerId, extraInfo);
-      default -> throw new IllegalArgumentException("Loại sản phẩm không được hỗ trợ: " + type);
+      default -> throw new IllegalArgumentException("Loại sản phẩm không được hệ thống hỗ trợ: " + type);
     };
   }
 }
