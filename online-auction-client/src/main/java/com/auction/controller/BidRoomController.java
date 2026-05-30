@@ -29,6 +29,7 @@ import com.auction.controller.helper.BidRoomChartManager;
 import com.auction.controller.helper.BidRoomModel;
 import com.auction.controller.helper.BidRoomView;
 import com.auction.controller.helper.BidRoomAutoBidManager;
+import com.auction.service.BidRoomService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +76,7 @@ public class BidRoomController {
     // MVC components
     private final BidRoomModel model = new BidRoomModel();
     private final BidRoomView viewHelper = new BidRoomView();
+    private final BidRoomService bidRoomService = new BidRoomService();
 
     // Managers
     private BidRoomChartManager chartManager;
@@ -97,7 +99,7 @@ public class BidRoomController {
 
         timerManager = new BidRoomTimerManager();
         socketManager = new BidRoomSocketManager();
-        autoBidManager = new BidRoomAutoBidManager(model, viewHelper, socketManager, rootPane, currentPriceLabel);
+        autoBidManager = new BidRoomAutoBidManager(model, viewHelper, socketManager, bidRoomService, rootPane, currentPriceLabel);
 
         viewHelper.startBlinkingAnimation(hotBadge);
 
@@ -300,14 +302,10 @@ public class BidRoomController {
                 logger.warn("Could not parse current price for validation", ex);
             }
 
-            double minBid = currentPrice + model.getCurrentStepPrice();
-            if (bidAmount < minBid) {
-                viewHelper.showNotification(rootPane, "Giá thầu không hợp lệ!", "Giá đặt tối thiểu phải là $" + NumberUtil.format(minBid));
-                return;
-            }
-
-            if (bidAmount > Session.balance) {
-                viewHelper.showNotification(rootPane, "Không đủ số dư!", "Bạn chỉ còn $" + NumberUtil.format(Session.balance));
+            try {
+                bidRoomService.validateBid(bidAmount, currentPrice, model.getCurrentStepPrice(), Session.balance);
+            } catch (IllegalArgumentException e) {
+                viewHelper.showNotification(rootPane, "Không hợp lệ!", e.getMessage());
                 return;
             }
 

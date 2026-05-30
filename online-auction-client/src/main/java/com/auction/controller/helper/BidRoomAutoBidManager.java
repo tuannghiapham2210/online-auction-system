@@ -6,19 +6,22 @@ import com.auction.util.NumberUtil;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
+import com.auction.service.BidRoomService;
 
 public class BidRoomAutoBidManager {
 
     private final BidRoomModel model;
     private final BidRoomView viewHelper;
     private final BidRoomSocketManager socketManager;
+    private final BidRoomService bidRoomService;
     private final StackPane rootPane;
     private final Label currentPriceLabel;
 
-    public BidRoomAutoBidManager(BidRoomModel model, BidRoomView viewHelper, BidRoomSocketManager socketManager, StackPane rootPane, Label currentPriceLabel) {
+    public BidRoomAutoBidManager(BidRoomModel model, BidRoomView viewHelper, BidRoomSocketManager socketManager, BidRoomService bidRoomService, StackPane rootPane, Label currentPriceLabel) {
         this.model = model;
         this.viewHelper = viewHelper;
         this.socketManager = socketManager;
+        this.bidRoomService = bidRoomService;
         this.rootPane = rootPane;
         this.currentPriceLabel = currentPriceLabel;
     }
@@ -72,18 +75,10 @@ public class BidRoomAutoBidManager {
                 currentPrice = NumberUtil.parse(currentPriceLabel.getText().replace("$", "").trim()).doubleValue();
             } catch (Exception ex) {}
 
-            double minMaxBid = currentPrice + model.getCurrentStepPrice();
-            if (maxBid < minMaxBid) {
-                viewHelper.showNotification(rootPane, "Mức giá không hợp lệ", "Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($" + NumberUtil.format(minMaxBid) + ")!");
-                return;
-            }
-
-            if (maxBid > Session.balance) {
-                viewHelper.showNotification(rootPane, "Không đủ số dư", "Ngân sách tối đa không được vượt quá số dư tài khoản ($" + NumberUtil.format(Session.balance) + ")!");
-                return;
-            }
-            if (inc < model.getCurrentStepPrice()) {
-                viewHelper.showNotification(rootPane, "Bước giá không hợp lệ", "Bước giá tự động phải ít nhất bằng bước giá của sản phẩm ($" + NumberUtil.format(model.getCurrentStepPrice()) + ")!");
+            try {
+                bidRoomService.validateAutoBid(maxBid, inc, currentPrice, model.getCurrentStepPrice(), Session.balance);
+            } catch (IllegalArgumentException e) {
+                viewHelper.showNotification(rootPane, "Không hợp lệ", e.getMessage());
                 return;
             }
 
