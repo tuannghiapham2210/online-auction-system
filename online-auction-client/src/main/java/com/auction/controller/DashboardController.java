@@ -1,10 +1,10 @@
 package com.auction.controller;
 
 import com.auction.*;
-import com.auction.network.BaseNetworkRequest;
 import com.auction.network.PaymentNetworkRequest;
 import com.auction.controller.helper.DialogManager;
 import com.auction.controller.helper.DashboardTimerManager;
+import com.auction.service.DashboardService;
 
 import com.auction.model.Item;
 import com.auction.model.User;
@@ -118,6 +118,9 @@ public class DashboardController {
 
     // Real-time listener socket manager
     private DashboardSocketManager socketManager;
+    
+    // Tầng Service Layer xử lý Data Fetching (MVC Architecture)
+    private final DashboardService dashboardService = new DashboardService();
 
     /**
      * Kho lưu trữ toàn bộ sản phẩm đã tải về để thực hiện lọc dữ liệu tức thì không
@@ -389,93 +392,18 @@ public class DashboardController {
     }
 
     /**
-     * Tải danh sách sản phẩm từ Server thông qua kết nối Socket.
-     * Sử dụng luồng riêng (Thread) để tránh làm đóng băng giao diện người dùng.
+     * Lấy danh sách sản phẩm thông qua tầng Service Layer.
+     * Controller không còn trực tiếp phân tích JSON hay mở Socket nữa. (MVC)
      */
     private void loadDataFromServer() {
-        JsonObject request = new JsonObject();
-        request.addProperty("action", "GET_ALL_ITEMS");
-
-        BaseNetworkRequest.sendRequestAsync(request)
-            .thenAccept(response -> {
-                if (response.get("status").getAsString().equals("SUCCESS")) {
-                    JsonArray dataArray = response.getAsJsonArray("data");
-                    List<Item> items = new ArrayList<>();
-
-                    // Ánh xạ các trường đặc trưng để xác định loại sản phẩm
-                    Map<String, String> typeMap = new LinkedHashMap<>();
-                    typeMap.put("warrantyMonths", "ELECTRONICS");
-                    typeMap.put("engineType", "VEHICLE");
-                    typeMap.put("artistName", "ART");
-                    typeMap.put("generalInfo", "OTHER");
-
-                    for (int i = 0; i < dataArray.size(); i++) {
-                        JsonObject obj = dataArray.get(i).getAsJsonObject();
-                        String type = "OTHER";
-                        String extraInfo = "N/A";
-
-                        for (Map.Entry<String, String> entry : typeMap.entrySet()) {
-                            if (obj.has(entry.getKey())) {
-                                type = entry.getValue();
-                                extraInfo = obj.get(entry.getKey()).getAsString();
-                                break;
-                            }
-                        }
-
-                        String endTime = "";
-
-                        if (obj.has("endTime") && !obj.get("endTime").isJsonNull()) {
-                            endTime = obj.get("endTime").getAsString();
-                        }
-
-                        Item item = com.auction.factory.ItemFactory.createItem(
-                                type,
-                                obj.get("name").getAsString(),
-                                obj.get("startingPrice").getAsDouble(),
-                                endTime,
-                                obj.get("sellerId").getAsInt(),
-                                extraInfo);
-
-                        item.setId(obj.get("id").getAsInt());
-                        if (obj.has("currentPrice"))
-                            item.setCurrentPrice(obj.get("currentPrice").getAsDouble());
-                        if (obj.has("stepPrice") && !obj.get("stepPrice").isJsonNull()) {
-                            item.setStepPrice(obj.get("stepPrice").getAsDouble());
-                        }
-                        if (obj.has("imageUrl"))
-                            item.setImageUrl(obj.get("imageUrl").getAsString());
-                        if (obj.has("description") && !obj.get("description").isJsonNull()) {
-                            item.setDescription(obj.get("description").getAsString());
-                        }
-                        if (obj.has("durationHours") && !obj.get("durationHours").isJsonNull()) {
-                            item.setDurationHours(obj.get("durationHours").getAsInt());
-                        }
-                        if (obj.has("status") && !obj.get("status").isJsonNull()) {
-                            item.setStatus(obj.get("status").getAsString());
-                        }
-                        if (obj.has("winnerId") && !obj.get("winnerId").isJsonNull()) {
-                            item.setWinnerId(obj.get("winnerId").getAsInt());
-                        }
-                        if (obj.has("finalPrice") && !obj.get("finalPrice").isJsonNull()) {
-                            item.setFinalPrice(obj.get("finalPrice").getAsDouble());
-                        }
-                        if (obj.has("winnerUsername") && !obj.get("winnerUsername").isJsonNull()) {
-                            item.setWinnerUsername(obj.get("winnerUsername").getAsString());
-                        }
-                        if (obj.has("viewerCount") && !obj.get("viewerCount").isJsonNull()) {
-                            item.setViewerCount(obj.get("viewerCount").getAsInt());
-                        }
-
-                        items.add(item);
-                    }
-
-                    // Lưu trữ vào kho dữ liệu và hiển thị lên UI
-                    this.allItems = items;
-                    Platform.runLater(() -> filterItems(searchField.getText()));
-                }
+        dashboardService.fetchAllItems()
+            .thenAccept(items -> {
+                // Lưu trữ vào kho dữ liệu và hiển thị lên UI (Chỉ chạy trên luồng JavaFX)
+                this.allItems = items;
+                Platform.runLater(() -> filterItems(searchField.getText()));
             })
             .exceptionally(ex -> {
-                logger.error("Lỗi kết nối khi tải danh sách sản phẩm: {}", ex.getMessage());
+                logger.error("Lỗi kết nối khi tải danh sách sản phẩm qua Service: {}", ex.getMessage());
                 return null;
             });
     }
@@ -685,31 +613,21 @@ public class DashboardController {
     }
 
     /**
-     * Gửi yêu cầu gỡ bỏ/xóa sản phẩm trực tuyến lên máy chủ Server thời gian thực.
+     * Gửi yêu cầu gỡ bỏ/xóa sản phẩm trực tuyến thông qua Service Layer.
      */
     private void sendDeleteRequestToServer(int itemId) {
-        JsonObject request = new JsonObject();
-        request.addProperty("action", "CANCEL_AUCTION_REQUEST");
-        request.addProperty("itemId", itemId);
-        request.addProperty("userId", Session.userId);
-        request.addProperty("role", Session.role);
-
-        logger.info("Sent CANCEL_AUCTION_REQUEST for itemId: {}", itemId);
-
-        BaseNetworkRequest.sendRequestAsync(request)
-            .thenAccept(responseJson -> {
+        dashboardService.deleteItem(itemId, Session.userId, Session.role)
+            .thenAccept(errorMessage -> {
                 Platform.runLater(() -> {
-                    if (responseJson.has("action") && "ERROR".equals(responseJson.get("action").getAsString())) {
-                        String errorMsg = responseJson.has("message") ? responseJson.get("message").getAsString()
-                                : "Lỗi hệ thống khi gỡ sản phẩm!";
-                        showCustomAlert("TỪ CHỐI THAO TÁC", errorMsg, "⚠️", "Đã hiểu", true, null);
+                    if (errorMessage != null) {
+                        showCustomAlert("TỪ CHỐI THAO TÁC", errorMessage, "⚠️", "Đã hiểu", true, null);
                     } else {
                         loadDataFromServer();
                     }
                 });
             })
             .exceptionally(ex -> {
-                logger.error("Lỗi kết nối Socket khi gửi yêu cầu gỡ sản phẩm: {}", ex.getMessage());
+                logger.error("Lỗi khi gửi yêu cầu gỡ sản phẩm qua Service: {}", ex.getMessage());
                 return null;
             });
     }
