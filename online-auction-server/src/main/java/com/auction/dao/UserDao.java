@@ -223,21 +223,41 @@ public class UserDao {
   }
 
   /**
-   * Đổi mật khẩu tài khoản (Kiểm tra xem mật khẩu cũ nhập vào có đúng không).
+   * BƯỚC 1 (DAO Layer): Xác thực mật khẩu cũ của người dùng.
+   * Tách biệt bước xác thực (Read) khỏi bước cập nhật (Write) để Service Layer có thể kiểm soát luồng.
    */
-  public boolean changePassword(int userId, String oldPassword, String newPassword) {
+  public boolean verifyPassword(int userId, String password) {
+    String sql = "SELECT COUNT(*) FROM users WHERE id = ? AND password = ?";
+    try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
+      stmt.setInt(1, userId);
+      stmt.setString(2, password);
+      try (ResultSet rs = stmt.executeQuery()) {
+        if (rs.next()) {
+          return rs.getInt(1) > 0;
+        }
+      }
+    } catch (Exception e) {
+      logger.error("Verify password failed: {}", e.getMessage(), e);
+    }
+    return false;
+  }
+
+  /**
+   * BƯỚC 3 (DAO Layer): Cập nhật mật khẩu mới vào cơ sở dữ liệu.
+   * Phương thức này CHỈ được gọi khi Service (Bước 2) đã xác thực thành công.
+   */
+  public boolean updatePassword(int userId, String newPassword) {
     java.util.concurrent.locks.ReentrantLock lock =
         DatabaseConnection.getInstance().getDbWriteLock();
     lock.lock();
     try {
-      String sql = "UPDATE users SET password = ? WHERE id = ? AND password = ?";
+      String sql = "UPDATE users SET password = ? WHERE id = ?";
       try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
         stmt.setString(1, newPassword);
         stmt.setInt(2, userId);
-        stmt.setString(3, oldPassword);
         return stmt.executeUpdate() > 0;
       } catch (Exception e) {
-        logger.error("Change password failed: {}", e.getMessage(), e);
+        logger.error("Update password failed: {}", e.getMessage(), e);
       }
       return false;
     } finally {
