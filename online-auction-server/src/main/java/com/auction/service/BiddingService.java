@@ -17,6 +17,16 @@ import org.slf4j.LoggerFactory;
 public class BiddingService {
   private static final Logger logger = LoggerFactory.getLogger(BiddingService.class);
 
+  // --- ANTI-SNIPING CONSTANTS ---
+  /** Thời gian còn lại tối đa để kích hoạt chống bắn tỉa (giây) */
+  private static final int ANTI_SNIPING_THRESHOLD_SECONDS = 10;
+  
+  /** Thời gian gia hạn thêm khi kích hoạt chống bắn tỉa (giây) */
+  private static final int ANTI_SNIPING_EXTENSION_SECONDS = 10;
+  
+  /** Dung sai mạng (Network Latency Tolerance): Chấp nhận các request chậm tối đa 2 giây */
+  private static final int NETWORK_LATENCY_TOLERANCE_SECONDS = 2;
+
   private final Consumer<JsonObject> broadcaster;
 
   /**
@@ -479,12 +489,21 @@ public class BiddingService {
   }
 
   /**
-   * Kiểm tra thời gian còn lại của phiên thầu và thực hiện gia hạn (Cơ chế Anti-sniping).
+   * ANTI-SNIPING (Cơ chế Chống Bắn Tỉa - Gia hạn giờ chót)
+   * 
+   * Cơ chế này đảm bảo sự công bằng cho tất cả người tham gia bằng cách cộng thêm
+   * thời gian nếu có một mức giá mới được đưa ra vào những giây cuối cùng.
+   * 
+   * Xử lý Edge Case (Độ trễ mạng): 
+   * Hệ thống cho phép dung sai 2 giây (NETWORK_LATENCY_TOLERANCE_SECONDS). 
+   * Nếu người dùng bấm "Đặt giá" ở đúng giây 00:00 nhưng do độ trễ mạng (Ping) 
+   * làm gói tin tới Server trễ 1-2 giây, hệ thống vẫn chấp nhận và lấy thời gian
+   * hiện tại làm mốc để cộng dồn, đảm bảo người mua không bị mất quyền lợi oan.
    */
   private String checkAndExtendAuctionTime(int itemId, ItemDao itemDao) {
     try {
       Item item = itemDao.getItemById(itemId);
-      if (item == null) {
+      if (item == null || item.getEndTime() == null) {
         return null;
       }
 
@@ -495,16 +514,24 @@ public class BiddingService {
 
       long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
 
-      if (secondsLeft <= 10 && secondsLeft >= -2) {
+      // Kiểm tra xem thời gian còn lại có nằm trong ngưỡng kích hoạt không (bao gồm cả dung sai trễ mạng)
+      boolean isWithinThreshold = secondsLeft <= ANTI_SNIPING_THRESHOLD_SECONDS;
+      boolean isWithinLatencyTolerance = secondsLeft >= -NETWORK_LATENCY_TOLERANCE_SECONDS;
+
+      if (isWithinThreshold && isWithinLatencyTolerance) {
+        
+        // Nếu gói tin tới trễ (now > endTime), mốc thời gian sẽ là "Bây giờ" để cộng dồn
+        // Nếu gói tin tới sớm, mốc thời gian vẫn là "Thời gian kết thúc cũ"
         java.time.LocalDateTime baseTime = now.isAfter(endTime) ? now.withNano(0) : endTime;
-        String extendedTime = baseTime.plusSeconds(10).format(formatter);
+        
+        String extendedTime = baseTime.plusSeconds(ANTI_SNIPING_EXTENSION_SECONDS).format(formatter);
         itemDao.updateEndTime(itemId, extendedTime);
-        logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}",
-            itemId, extendedTime);
+        
+        logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);
         return extendedTime;
       }
     } catch (Exception ex) {
-      logger.error("Lỗi tính toán thời gian gia hạn: {}", ex.getMessage());
+      logger.error("Lỗi tính toán thời gian gia hạn Anti-sniping: {}", ex.getMessage());
     }
     return null;
   }
