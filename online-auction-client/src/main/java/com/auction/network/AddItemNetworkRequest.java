@@ -1,5 +1,6 @@
 package com.auction.network;
 
+import com.auction.dto.AddItemRequestDTO;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
@@ -23,19 +24,32 @@ public class AddItemNetworkRequest {
     private static final String ENCODING = "UTF-8";
 
     /**
-     * Gửi yêu cầu thêm sản phẩm tới Server bất đồng bộ.
+     * Nhận dữ liệu DTO từ Service, đóng gói (Serialize) thành JSON và gửi tới Server bất đồng bộ.
      *
-     * @param requestJson Đối tượng yêu cầu chứa thông tin sản phẩm
-     * @param callback    Bộ lắng nghe nhận JsonObject kết quả phản hồi chạy trên JavaFX Application Thread.
-     *                    Nếu lỗi kết nối, callback nhận JsonObject chứa status = "FAIL".
+     * @param dto           Gói dữ liệu AddItemRequestDTO
+     * @param startingPrice Giá khởi điểm đã kiểm duyệt
+     * @param stepPrice     Bước giá đã kiểm duyệt
+     * @param durationHours Thời lượng phiên đấu giá đã tính toán
+     * @param callback      Bộ lắng nghe nhận JsonObject kết quả phản hồi chạy trên JavaFX Application Thread.
      */
-    public static void sendAddItemRequestAsync(String requestJson, Consumer<JsonObject> callback) {
+    public static void sendAddItemRequestAsync(AddItemRequestDTO dto, double startingPrice, double stepPrice, double durationHours, Consumer<JsonObject> callback) {
         new Thread(() -> {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "ADD_ITEM");
+            request.addProperty("name", dto.getName());
+            request.addProperty("type", dto.getType());
+            request.addProperty("imageUrl", dto.getImageUrl());
+            request.addProperty("description", dto.getDescription());
+            request.addProperty("startingPrice", startingPrice);
+            request.addProperty("stepPrice", stepPrice);
+            request.addProperty("durationHours", durationHours);
+            request.addProperty("sellerId", dto.getSellerId());
+
             try (Socket socket = new Socket(HOST, PORT);
                  PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), ENCODING), true);
                  BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), ENCODING))) {
 
-                out.println(requestJson);
+                out.println(request.toString());
                 String responseStr = in.readLine();
                 if (responseStr == null) {
                     throw new IllegalStateException("Không nhận được phản hồi từ server");

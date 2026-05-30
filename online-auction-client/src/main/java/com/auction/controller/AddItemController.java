@@ -3,6 +3,7 @@ import com.auction.*;
 
 import com.auction.util.NumberUtil;
 import com.auction.service.AddItemService;
+import com.auction.dto.AddItemRequestDTO;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -92,15 +93,20 @@ public class AddItemController {
             btnSubmit.setDisable(true);
         }
 
-        String name = nameField.getText();
-        String type = typeComboBox.getValue();
-        String imageUrl = imageUrlField.getText();
-        String description = descriptionArea.getText();
-        String priceStr = priceField.getText();
-        String stepStr = stepPriceField.getText();
-        String durationStr = durationField.getText();
+        // 2. Sử dụng Builder Pattern để tạo DTO (Giải quyết Long Parameter List)
+        AddItemRequestDTO requestDTO = new AddItemRequestDTO.Builder()
+                .setName(nameField.getText())
+                .setType(typeComboBox.getValue())
+                .setImageUrl(imageUrlField.getText())
+                .setDescription(descriptionArea.getText())
+                .setPriceStr(priceField.getText())
+                .setStepStr(stepPriceField.getText())
+                .setDurationStr(durationField.getText())
+                .setSellerId(currentSellerId)
+                .build();
 
-        AddItemService.validateAndSubmit(name, type, imageUrl, description, priceStr, stepStr, durationStr, currentSellerId, (isSuccess, itemId, message) -> {
+        // 3. Chuyển DTO xuống tầng Service
+        AddItemService.submit(requestDTO, (isSuccess, itemId, message) -> {
             javafx.application.Platform.runLater(() -> {
                 if (isSuccess) {
                     if (itemId != -1) {
