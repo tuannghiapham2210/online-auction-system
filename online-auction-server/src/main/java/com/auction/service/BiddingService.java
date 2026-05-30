@@ -102,7 +102,8 @@ public class BiddingService {
         errorMsg.addProperty("message", "Bid rejected: Auction is currently PENDING.");
         return errorMsg;
       }
-      if ("CLOSED".equalsIgnoreCase(item.getStatus()) || "FINISHED".equalsIgnoreCase(item.getStatus())) {
+      if ("CLOSED".equalsIgnoreCase(item.getStatus())
+          || "FINISHED".equalsIgnoreCase(item.getStatus())) {
         JsonObject errorMsg = new JsonObject();
         errorMsg.addProperty("action", "ERROR");
         errorMsg.addProperty("message", "Từ chối: Phiên đấu giá này đã kết thúc!");
@@ -111,7 +112,8 @@ public class BiddingService {
       if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
         java.time.format.DateTimeFormatter formatter =
             java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
+        java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(),
+            formatter);
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
         if (secondsLeft < -2) {
