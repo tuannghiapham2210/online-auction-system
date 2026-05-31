@@ -1,4 +1,6 @@
 <div align="center">
+  <img src="images/banner.png" alt="Online Auction System Banner" width="100%">
+
   <h1>Hệ Thống Đấu Giá Trực Tuyến (Online Auction System)</h1>
   <p><i>Báo cáo Đồ án môn học Lập trình Nâng cao (LTNC)</i></p>
 
@@ -27,6 +29,7 @@
 5. [Hướng dẫn chạy Server/Client theo thứ tự](#5-hướng-dẫn-chạy-serverclient-theo-thứ-tự)
 6. [Danh sách chức năng đã hoàn thành](#6-danh-sách-chức-năng-đã-hoàn-thành-theo-yêu-cầu-đồ-án)
 7. [Tài liệu Báo cáo & Video Demo](#7-tài-liệu-báo-cáo--video-demo)
+8. [Giao diện hệ thống (Screenshots)](#8-giao-diện-hệ-thống-screenshots)
 
 ---
 
@@ -228,3 +231,31 @@ Hệ thống được phát triển bám sát và hoàn thành toàn bộ các t
 - **Link Báo Cáo (PDF):** [Chèn Link Google Drive/Dropbox vào đây]
 - **Link Video Demo (YouTube/Drive):** [Chèn Link Video vào đây]
 *(Video minh họa: Khởi chạy Server/Client, chức năng đấu giá thời gian thực song song, Auto-bidding và cơ chế xử lý Race Condition).*
+
+---
+
+## 8. Giao diện hệ thống (Screenshots)
+
+Dưới đây là một số hình ảnh giao diện nổi bật của hệ thống. 
+*(Lưu ý: Bạn hãy chụp ảnh ứng dụng và chép đè vào các đường dẫn `images/...` tương ứng nhé).*
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>1. Đăng nhập (Login)</b></td>
+      <td align="center"><b>2. Đăng ký (Register)</b></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="images/login.png" alt="Login Screen" width="400"></td>
+      <td align="center"><img src="images/register.png" alt="Register Screen" width="400"></td>
+    </tr>
+    <tr>
+      <td align="center"><b>3. Bảng điều khiển (Dashboard)</b></td>
+      <td align="center"><b>4. Phòng đấu giá (Bid Room)</b></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="images/dashboard.png" alt="Dashboard Screen" width="400"></td>
+      <td align="center"><img src="images/bidroom.png" alt="Bid Room Screen" width="400"></td>
+    </tr>
+  </table>
+</div>
