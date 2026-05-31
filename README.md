@@ -14,13 +14,14 @@
 <hr/>
 
 **Thông tin nhóm thực hiện: Nhóm 3**
+- **Lớp:** QH-2025-I/CQ-I-CS2
 
-| STT | Họ và tên | Mã sinh viên |
-| :---: | :--- | :---: |
-| 1 | Phạm Tuấn Nghĩa | 25021912 |
-| 2 | Trần Khánh Nam | 25021908 |
-| 3 | Trịnh Quang Hưng | 25021814 |
-| 4 | Trần Danh Tuấn Anh | 25021638 |
+| STT | Họ và tên | Mã sinh viên | Link GitHub |
+| :---: | :--- | :---: | :---: |
+| 1 | Phạm Tuấn Nghĩa | 25021912 | [🔗 GitHub](https://github.com/tuannghiapham2210) |
+| 2 | Trần Khánh Nam | 25021908 | [🔗 GitHub](https://github.com/tknamvn) |
+| 3 | Trịnh Quang Hưng | 25021814 | [🔗 GitHub](https://github.com/TrinhHung1510-me) |
+| 4 | Trần Danh Tuấn Anh | 25021638 | [🔗 GitHub](https://github.com/trandanhtuananh) |
 
 ---
 
@@ -243,7 +244,6 @@ Hệ thống được phát triển bám sát và hoàn thành toàn bộ các t
 ## 8. Giao diện hệ thống (Screenshots)
 
 Dưới đây là một số hình ảnh giao diện nổi bật của hệ thống. 
-*(Lưu ý: Bạn hãy chụp ảnh ứng dụng và chép đè vào các đường dẫn `images/...` tương ứng nhé).*
 
 <div align="center">
   <table>
