@@ -104,11 +104,6 @@ public class RegisterController {
    */
   @FXML
   private void handleRegister() {
-    String username = usernameField.getText().trim();
-    String password = passwordField.getText().trim();
-    String email = emailField.getText().trim();
-    String phone = phoneField.getText().trim();
-
     Toggle selectedToggle = roleToggleGroup.getSelectedToggle();
     String roleValue = "";
     if (selectedToggle instanceof ToggleButton) {
@@ -117,6 +112,12 @@ public class RegisterController {
 
     messageLabel.getStyleClass().setAll("label", "msg-warning");
     messageLabel.setText("Đang xử lý đăng ký...");
+
+    // Thêm final và đặt sát câu lệnh sử dụng để giải quyết VariableDeclarationUsageDistance
+    final String username = usernameField.getText().trim();
+    final String password = passwordField.getText().trim();
+    final String email = emailField.getText().trim();
+    final String phone = phoneField.getText().trim();
 
     RegisterService.validateAndRegister(username, password, email, phone, roleValue,
         (isSuccess, message) -> Platform.runLater(() -> {
