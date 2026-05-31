@@ -2,7 +2,7 @@
   <img src="images/banner.png" alt="Online Auction System Banner" width="100%">
 
   <h1>Hệ Thống Đấu Giá Trực Tuyến (Online Auction System)</h1>
-  <p><i>Báo cáo Đồ án môn học Lập trình Nâng cao (LTNC)</i></p>
+  <p><i>Báo cáo Bài tập lớn môn Lập trình Nâng cao (2526II_UET.CS2043_9)</i></p>
 
   <!-- Badges -->
   <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=java&logoColor=white" alt="Java" />
@@ -13,11 +13,14 @@
 
 <hr/>
 
-**Thông tin nhóm thực hiện:**
-- **Thành viên 1:** [Họ và tên] - [Mã sinh viên]
-- **Thành viên 2:** [Họ và tên] - [Mã sinh viên]
-- **Thành viên 3:** [Họ và tên] - [Mã sinh viên]
-- **Repository:** [Link GitHub]
+**Thông tin nhóm thực hiện: Nhóm 3**
+
+| STT | Họ và tên | Mã sinh viên |
+| :---: | :--- | :---: |
+| 1 | Phạm Tuấn Nghĩa | 25021912 |
+| 2 | Trần Khánh Nam | 25021908 |
+| 3 | Trịnh Quang Hưng | 25021814 |
+| 4 | Trần Danh Tuấn Anh | 25021638 |
 
 ---
 
@@ -58,11 +61,13 @@ Hệ thống hoạt động theo mô hình Client-Server, giao tiếp qua giao t
 | **Cơ sở dữ liệu** | SQLite (`sqlite-jdbc`) | Quản trị dữ liệu quan hệ, tích hợp trực tiếp |
 | **Giao tiếp mạng** | TCP Sockets, `Gson` (JSON) | Truyền tải dữ liệu thời gian thực |
 | **Quản lý dự án** | Maven (`maven-shade-plugin`) | Quản lý phụ thuộc và đóng gói Fat JAR |
+| **Chất lượng mã & Log**| Google Checkstyle, SLF4J | Đảm bảo Coding Convention và theo dõi hệ thống |
 | **Kiểm thử & CI/CD** | JUnit 5, Mockito, GitHub Actions| Tự động hóa kiểm thử mã nguồn |
 
 ### Yêu cầu cài đặt
 - Hệ điều hành: Windows, macOS, hoặc Linux.
 - Môi trường thực thi: Java Runtime Environment (JRE) 21 hoặc JDK 21.
+  - *(Mẹo: Mở Terminal hoặc Command Prompt và chạy lệnh `java -version` để kiểm tra chắc chắn máy tính đã cài đặt đúng phiên bản Java).*
 - Mạng: Kết nối mạng cục bộ (Localhost/LAN) để đảm bảo giao tiếp giữa Client và Server.
 
 ---
