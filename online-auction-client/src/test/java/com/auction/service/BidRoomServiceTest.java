@@ -55,7 +55,7 @@ class BidRoomServiceTest {
                 IllegalArgumentException.class,
                 () -> service.validateAutoBid(105, 15, 100, 10, 250)
         );
-        assertEquals("Giá tối đa phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($110)!", exception.getMessage());
+        assertEquals("Giá max phải lớn hơn hoặc bằng giá tối thiểu tiếp theo ($110)!", exception.getMessage());
     }
 
     @Test
@@ -75,6 +75,6 @@ class BidRoomServiceTest {
                 IllegalArgumentException.class,
                 () -> service.validateAutoBid(200, 5, 100, 10, 250)
         );
-        assertEquals("Bước giá tự động phải ít nhất bằng bước giá của sản phẩm ($10)!", exception.getMessage());
+        assertEquals("Bước giá tự động ít nhất bằng bước giá của sản phẩm ($10)!", exception.getMessage());
     }
 }
