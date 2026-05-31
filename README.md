@@ -240,11 +240,11 @@ Hệ thống được phát triển bám sát và hoàn thành toàn bộ các t
 ## 7. Tài liệu Báo cáo & Video Demo
 
 <div align="left">
-  <a href="[LINK_BAO_CAO_PDF]">
+  <a href="https://drive.google.com/file/d/1IaGMZoIuCopHSzv6nr1M0ZJk8XICEfOG/view?usp=drive_link">
     <img src="https://img.shields.io/badge/BAO_CAO_CHI_TIET-PDF_DOWNLOAD-E34F26?style=for-the-badge" alt="Báo Cáo PDF">
   </a>
   &nbsp;&nbsp;
-  <a href="[LINK_VIDEO_YOUTUBE_HOAC_DRIVE]">
+  <a href="https://www.youtube.com/watch?v=x84uPwxNXj8s">
     <img src="https://img.shields.io/badge/VIDEO_DEMO-WATCH_NOW-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Video Demo">
   </a>
 </div>
