@@ -72,7 +72,7 @@ class AddItemValidatorTest {
 
         AddItemValidator.ValidationResult result = AddItemValidator.validate(dto);
         assertFalse(result.isValid);
-        assertEquals("Giá, Bước giá và Thời gian phải là số hợp lệ!", result.errorMessage);
+        assertEquals("Giá tiền và thời gian phải lớn hơn 0", result.errorMessage);
     }
 
     @Test
