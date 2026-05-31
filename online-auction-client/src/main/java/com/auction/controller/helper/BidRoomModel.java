@@ -58,6 +58,24 @@ public class BidRoomModel {
   private final ObservableList<BidEvent> historyLogs = FXCollections.observableArrayList();
 
   /**
+   * Cung cấp thuộc tính currentPrice dưới dạng JavaFX DoubleProperty để Controller lắng nghe.
+   *
+   * @return Đối tượng DoubleProperty của giá hiện tại.
+   */
+  public DoubleProperty currentPriceProperty() {
+    return currentPrice;
+  }
+
+  /**
+   * Cung cấp thuộc tính currentWinnerUsername dưới dạng StringProperty để Controller lắng nghe.
+   *
+   * @return Đối tượng StringProperty của tên người dẫn đầu hiện tại.
+   */
+  public StringProperty currentWinnerUsernameProperty() {
+    return currentWinnerUsername;
+  }
+
+  /**
    * Lấy ra mã định danh của người bán hiện tại.
    *
    * @return Mã người bán (seller ID)
