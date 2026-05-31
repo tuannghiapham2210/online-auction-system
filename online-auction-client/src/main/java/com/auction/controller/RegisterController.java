@@ -15,9 +15,10 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputControl;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -108,13 +109,16 @@ public class RegisterController {
     String email = emailField.getText().trim();
     String phone = phoneField.getText().trim();
 
-    RadioButton selectedRadio = (RadioButton) roleToggleGroup.getSelectedToggle();
-    String role = selectedRadio != null ? selectedRadio.getText() : "";
+    Toggle selectedToggle = roleToggleGroup.getSelectedToggle();
+    String roleValue = "";
+    if (selectedToggle instanceof ToggleButton) {
+      roleValue = ((ToggleButton) selectedToggle).getId();
+    }
 
     messageLabel.getStyleClass().setAll("label", "msg-warning");
     messageLabel.setText("Đang xử lý đăng ký...");
 
-    RegisterService.validateAndRegister(username, password, email, phone, role,
+    RegisterService.validateAndRegister(username, password, email, phone, roleValue,
         (isSuccess, message) -> Platform.runLater(() -> {
           if (isSuccess) {
             messageLabel.getStyleClass().setAll("label", "msg-success");
