@@ -2,157 +2,82 @@ package com.auction.controller;
 
 import com.auction.*;
 import com.auction.network.PaymentNetworkRequest;
-import com.auction.controller.helper.DialogManager;
+import com.auction.controller.helper.DashboardModel;
+import com.auction.controller.helper.DashboardView;
 import com.auction.controller.helper.DashboardTimerManager;
 import com.auction.service.DashboardService;
 
 import com.auction.model.Item;
-import com.auction.model.User;
 import com.auction.util.NumberUtil;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import javafx.application.Platform;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
-import javafx.util.Duration;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.event.EventHandler;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.SVGPath;
+import javafx.scene.layout.Region;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import com.auction.network.DashboardSocketManager;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-/**
- * Controller quản lý màn hình chính (Dashboard) của ứng dụng.
- * <p>
- * Chịu trách nhiệm:
- * <ul>
- * <li>Tải dữ liệu từ Server và lưu vào bộ nhớ đệm (allItems) để lọc nhanh.</li>
- * <li>Hiển thị danh sách sản phẩm dưới dạng các thẻ (Card) trực quan, đẹp
- * mắt.</li>
- * <li>Quản lý bộ lọc sản phẩm theo từng danh mục (Art, Vehicle,
- * Electronics).</li>
- * <li>Xử lý các luồng đếm ngược thời gian thực cho từng món hàng.</li>
- * <li>Điều hướng sang các chức năng Thêm sản phẩm, Nạp tiền và Đấu giá.</li>
- * </ul>
- */
 public class DashboardController {
     private static final Logger logger = LoggerFactory.getLogger(DashboardController.class);
 
-    @FXML
-    private Button btnLogout;
-    @FXML
-    private Label lblBalance;
-    @FXML
-    private javafx.scene.layout.FlowPane itemGrid;
-    @FXML
-    private Button btnAddItem;
-    @FXML
-    private Label lblUsername;
-    @FXML
-    private Label lblRole;
-    @FXML
-    private Label lblAvatar;
-    @FXML
-    private TextField searchField;
-    @FXML
-    private Label lblItemCount;
+    @FXML private Button btnLogout;
+    @FXML private Label lblBalance;
+    @FXML private javafx.scene.layout.FlowPane itemGrid;
+    @FXML private Button btnAddItem;
+    @FXML private Label lblUsername;
+    @FXML private Label lblRole;
+    @FXML private Label lblAvatar;
+    @FXML private TextField searchField;
+    @FXML private Label lblItemCount;
 
-    @FXML
-    private Button btnFilterAll;
-    @FXML
-    private Button btnFilterArt;
-    @FXML
-    private Button btnFilterVehicle;
-    @FXML
-    private Button btnFilterElectronics;
-    @FXML
-    private Button btnFilterOther;
-    @FXML
-    private Button btnFilterFinished;
+    @FXML private Button btnFilterAll;
+    @FXML private Button btnFilterArt;
+    @FXML private Button btnFilterVehicle;
+    @FXML private Button btnFilterElectronics;
+    @FXML private Button btnFilterOther;
+    @FXML private Button btnFilterFinished;
+
+    @FXML private VBox profileDropdown;
+    @FXML private ProfileDropdownController profileDropdownController;
+    @FXML private Region darkOverlay;
 
     private final DashboardTimerManager timerManager = new DashboardTimerManager();
-    @FXML
-    private VBox profileDropdown;
-    @FXML
-    private ProfileDropdownController profileDropdownController;
-    @FXML
-    private Region darkOverlay;
-    private EventHandler<MouseEvent> profileDropdownCloser;
+    private DashboardSocketManager socketManager;
+    private final DashboardService dashboardService = new DashboardService();
+    
+    // MVC Components
+    private final DashboardModel model = new DashboardModel();
+    private final DashboardView viewHelper = new DashboardView();
+
     private boolean isAddItemPopupOpen = false;
 
-    // Real-time listener socket manager
-    private DashboardSocketManager socketManager;
-    
-    // Tầng Service Layer xử lý Data Fetching (MVC Architecture)
-    private final DashboardService dashboardService = new DashboardService();
-
-    /**
-     * Kho lưu trữ toàn bộ sản phẩm đã tải về để thực hiện lọc dữ liệu tức thì không
-     * cần load lại từ Server.
-     */
-    private List<Item> allItems = new ArrayList<>();
-
-    /**
-     * Khởi tạo giao diện Dashboard.
-     * Thiết lập hiển thị số dư và phân quyền nút đăng bán.
-     */
     @FXML
     public void initialize() {
-        // Khôi phục bộ lọc danh mục từ Session
         if (Session.selectedCategory == null) {
             Session.selectedCategory = "ALL";
         }
         restoreSelectedCategoryStyle();
-
         loadDataFromServer();
-
-        // Kết nối tới Server để lắng nghe các cập nhật thời gian thực
         connectToServerListener();
 
         if (Session.role == null || !Session.role.equalsIgnoreCase("seller")) {
             btnAddItem.setVisible(false);
         }
 
-        // Cập nhật số dư từ Session toàn cục
         lblBalance.setText("$" + NumberUtil.format(Session.balance));
 
-        // Cập nhật thông tin người dùng từ Session
         if (Session.username != null && !Session.username.isEmpty()) {
             lblUsername.setText(Session.username);
             lblAvatar.setText(Session.username.substring(0, 1).toUpperCase());
@@ -172,19 +97,24 @@ public class DashboardController {
             }
         }
 
-        lblAvatar.setOnMouseClicked(e -> toggleProfileDropdown());
+        lblAvatar.setOnMouseClicked(e -> {
+            StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+            viewHelper.toggleProfileDropdown(rootPane, profileDropdown, lblAvatar);
+        });
 
         if (profileDropdownController != null) {
             profileDropdownController.setCallbacks(
                     () -> {
-                        if (profileDropdown != null)
-                            profileDropdown.setVisible(false);
-                        openAccountInfoPopup();
+                        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+                        viewHelper.closeProfileDropdown(rootPane, profileDropdown);
+                        Node mainContent = rootPane.getChildren().get(0);
+                        viewHelper.openAccountInfoPopup(rootPane, darkOverlay, mainContent, this::refreshUserProfile);
                     },
                     () -> {
-                        if (profileDropdown != null)
-                            profileDropdown.setVisible(false);
-                        openChangePasswordPopup();
+                        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
+                        viewHelper.closeProfileDropdown(rootPane, profileDropdown);
+                        Node mainContent = rootPane.getChildren().get(0);
+                        viewHelper.openChangePasswordPopup(rootPane, darkOverlay, mainContent);
                     });
         }
 
@@ -192,15 +122,14 @@ public class DashboardController {
             filterItems(newValue);
         });
 
-        // Nếu vừa thắng phiên (được set bởi BidRoomController), hiển thị thông báo
-        // thành công và số dư còn lại
         Platform.runLater(() -> {
             try {
                 if (Session.justWon) {
                     if (lblBalance != null) {
                         lblBalance.setText("$" + NumberUtil.format(Session.balance));
                     }
-                    showWinNotification(Session.lastWinMessage != null ? Session.lastWinMessage
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                    viewHelper.showWinNotification(rootPane, Session.lastWinMessage != null ? Session.lastWinMessage
                             : "Chúc mừng! Bạn đã sở hữu sản phẩm này.", Session.lastWinRemainingBalance);
                     Session.justWon = false;
                     Session.lastWinMessage = null;
@@ -209,19 +138,8 @@ public class DashboardController {
                     if (lblBalance != null) {
                         lblBalance.setText("$" + NumberUtil.format(Session.balance));
                     }
-                    try {
-                        StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-                        FXMLLoader loader = new FXMLLoader(
-                                getClass().getResource("/com/auction/sale_notification.fxml"));
-                        Parent saleNode = loader.load();
-                        SaleNotificationController ctrl = loader.getController();
-
-                        rootPane.getChildren().add(saleNode);
-                        ctrl.setData(Session.lastSoldItemName, Session.lastSoldWinnerUsername, Session.lastSoldPrice,
-                                Session.lastSoldSellerBalance, rootPane);
-                    } catch (Exception e) {
-                        logger.error("Failed to load sale notification FXML inside dashboard initialize: ", e);
-                    }
+                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                    viewHelper.showSaleNotification(rootPane, Session.lastSoldItemName, Session.lastSoldWinnerUsername, Session.lastSoldPrice, Session.lastSoldSellerBalance);
                     Session.justSold = false;
                     Session.lastSoldItemName = null;
                     Session.lastSoldWinnerUsername = null;
@@ -229,67 +147,6 @@ public class DashboardController {
             } catch (Exception ignored) {
             }
         });
-    }
-
-    private void showWinNotification(String message, int balance) {
-        try {
-            StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/win_notification.fxml"));
-            Parent winNode = loader.load();
-            WinNotificationController ctrl = loader.getController();
-
-            rootPane.getChildren().add(winNode);
-            ctrl.setData(message, balance, rootPane);
-        } catch (Exception e) {
-            logger.error("Failed to load win notification FXML: ", e);
-        }
-    }
-
-    private void toggleProfileDropdown() {
-        if (profileDropdown == null)
-            return;
-
-        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-        if (profileDropdown.isVisible()) {
-            closeProfileDropdown(rootPane);
-        } else {
-            profileDropdown.setVisible(true);
-
-            TranslateTransition slide = new TranslateTransition(Duration.millis(180), profileDropdown);
-            slide.setFromY(-8);
-            slide.setToY(0);
-            slide.play();
-
-            profileDropdownCloser = event -> {
-                if (isClickInsideNode(event, profileDropdown) || isClickInsideNode(event, lblAvatar)) {
-                    return;
-                }
-                closeProfileDropdown(rootPane);
-            };
-            rootPane.addEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
-        }
-    }
-
-    private void closeProfileDropdown(StackPane rootPane) {
-        if (profileDropdown != null) {
-            profileDropdown.setVisible(false);
-        }
-        if (profileDropdownCloser != null && rootPane != null) {
-            rootPane.removeEventFilter(MouseEvent.MOUSE_PRESSED, profileDropdownCloser);
-            profileDropdownCloser = null;
-        }
-    }
-
-    private void openAccountInfoPopup() {
-        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-        Node mainContent = rootPane.getChildren().get(0);
-        DialogManager.showAccountInfoDialog(rootPane, darkOverlay, mainContent, null, this::refreshUserProfile);
-    }
-
-    private void openChangePasswordPopup() {
-        StackPane rootPane = (StackPane) lblAvatar.getScene().getRoot();
-        Node mainContent = rootPane.getChildren().get(0);
-        DialogManager.showPasswordChangeDialog(rootPane, darkOverlay, mainContent, null);
     }
 
     private void refreshUserProfile() {
@@ -302,104 +159,10 @@ public class DashboardController {
         }
     }
 
-    private boolean isClickInsideNode(MouseEvent event, javafx.scene.Node node) {
-        if (node == null) {
-            return false;
-        }
-        javafx.geometry.Bounds bounds = node.localToScene(node.getBoundsInLocal());
-        return bounds != null && bounds.contains(event.getSceneX(), event.getSceneY());
-    }
-
-    private boolean isFinished(Item item) {
-        if ("FINISHED".equalsIgnoreCase(item.getStatus()) || "CLOSED".equalsIgnoreCase(item.getStatus())) {
-            return true;
-        }
-        if (("ACTIVE".equalsIgnoreCase(item.getStatus()) || "RUNNING".equalsIgnoreCase(item.getStatus()))
-                && item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-            try {
-                LocalDateTime end = LocalDateTime.parse(item.getEndTime(),
-                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                if (!LocalDateTime.now().isBefore(end)) {
-                    item.setStatus("FINISHED");
-                    return true;
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        return false;
-    }
-
-    private Button getActiveFilterButton() {
-        if (btnFilterAll.getStyleClass().contains("menu-item-active"))
-            return btnFilterAll;
-        if (btnFilterArt.getStyleClass().contains("menu-item-active"))
-            return btnFilterArt;
-        if (btnFilterVehicle.getStyleClass().contains("menu-item-active"))
-            return btnFilterVehicle;
-        if (btnFilterElectronics.getStyleClass().contains("menu-item-active"))
-            return btnFilterElectronics;
-        if (btnFilterOther != null && btnFilterOther.getStyleClass().contains("menu-item-active"))
-            return btnFilterOther;
-        if (btnFilterFinished != null && btnFilterFinished.getStyleClass().contains("menu-item-active"))
-            return btnFilterFinished;
-        return btnFilterAll;
-    }
-
-    private List<Item> getFilteredItemsByActiveCategory() {
-        Button activeBtn = getActiveFilterButton();
-        if (activeBtn == btnFilterArt) {
-            return allItems.stream()
-                    .filter(i -> "ART".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
-                    .collect(Collectors.toList());
-        } else if (activeBtn == btnFilterVehicle) {
-            return allItems.stream()
-                    .filter(i -> "VEHICLE".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
-                    .collect(Collectors.toList());
-        } else if (activeBtn == btnFilterElectronics) {
-            return allItems.stream()
-                    .filter(i -> "ELECTRONICS".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
-                    .collect(Collectors.toList());
-        } else if (activeBtn == btnFilterOther) {
-            return allItems.stream()
-                    .filter(i -> "OTHER".equalsIgnoreCase(i.getItemType()) && !isFinished(i))
-                    .collect(Collectors.toList());
-        } else if (activeBtn == btnFilterFinished) {
-            return allItems.stream()
-                    .filter(this::isFinished)
-                    .collect(Collectors.toList());
-        } else {
-            // Mặc định: Tất cả (không bao gồm các phiên đã hoàn thành/đóng)
-            return allItems.stream()
-                    .filter(i -> !isFinished(i))
-                    .collect(Collectors.toList());
-        }
-    }
-
-    private void filterItems(String searchText) {
-        List<Item> targetList = getFilteredItemsByActiveCategory();
-        if (searchText == null || searchText.isEmpty()) {
-            displayItems(targetList);
-            return;
-        }
-
-        String lowerCaseFilter = searchText.toLowerCase();
-
-        List<Item> filteredList = targetList.stream()
-                .filter(item -> item.getName().toLowerCase().contains(lowerCaseFilter))
-                .collect(Collectors.toList());
-
-        displayItems(filteredList);
-    }
-
-    /**
-     * Lấy danh sách sản phẩm thông qua tầng Service Layer.
-     * Controller không còn trực tiếp phân tích JSON hay mở Socket nữa. (MVC)
-     */
     private void loadDataFromServer() {
         dashboardService.fetchAllItems()
             .thenAccept(items -> {
-                // Lưu trữ vào kho dữ liệu và hiển thị lên UI (Chỉ chạy trên luồng JavaFX)
-                this.allItems = items;
+                model.setAllItems(items);
                 Platform.runLater(() -> filterItems(searchField.getText()));
             })
             .exceptionally(ex -> {
@@ -408,13 +171,12 @@ public class DashboardController {
             });
     }
 
-    /**
-     * Hàm dùng chung để hiển thị một danh sách sản phẩm bất kỳ lên màn hình.
-     * 
-     * @param itemsToDisplay Danh sách các sản phẩm cần vẽ lên lưới.
-     */
+    private void filterItems(String searchText) {
+        List<Item> filteredList = model.getFilteredItems(Session.selectedCategory, searchText);
+        displayItems(filteredList);
+    }
+
     private void displayItems(List<Item> itemsToDisplay) {
-        // 1. Dọn dẹp lưới cũ và dừng các bộ đếm đang chạy
         itemGrid.getChildren().clear();
         timerManager.stop();
 
@@ -422,13 +184,11 @@ public class DashboardController {
             lblItemCount.setText(String.valueOf(itemsToDisplay.size()));
         }
 
-        // 2. Tạo và thêm các thẻ sản phẩm mới
         for (Item item : itemsToDisplay) {
             try {
                 java.net.URL fxmlUrl = getClass().getResource("/com/auction/item_card.fxml");
                 if (fxmlUrl == null) {
-                    logger.error("Không tìm thấy file item_card.fxml! Vui lòng Rebuild/Compile lại project.");
-                    Label err = new Label("Lỗi: Không tìm thấy file item_card.fxml\n(Vui lòng Rebuild project)");
+                    Label err = new Label("Lỗi: Không tìm thấy file item_card.fxml");
                     err.getStyleClass().add("item-card-error");
                     itemGrid.getChildren().add(err);
                     continue;
@@ -446,15 +206,12 @@ public class DashboardController {
                     timerManager.registerTimer(controller.getTimerLabel(), controller.getBadgeLabel(), item.getEndTime());
                 }
             } catch (Exception e) {
-                logger.error("Lỗi khi load item card FXML cho sản phẩm: " + item.getName(), e);
-                e.printStackTrace();
                 Label err = new Label("Lỗi hiển thị Card (" + item.getName() + "):\n" + e.getMessage());
                 err.getStyleClass().add("item-card-error");
                 itemGrid.getChildren().add(err);
             }
         }
 
-        // 3. Khởi động luồng đếm ngược thời gian thực cho các thẻ mới
         timerManager.start(this, itemsToDisplay, () -> filterItems(searchField.getText()));
     }
 
@@ -477,61 +234,24 @@ public class DashboardController {
 
     private void restoreSelectedCategoryStyle() {
         Button activeBtn = btnFilterAll;
-        if ("ART".equalsIgnoreCase(Session.selectedCategory)) {
-            activeBtn = btnFilterArt;
-        } else if ("VEHICLE".equalsIgnoreCase(Session.selectedCategory)) {
-            activeBtn = btnFilterVehicle;
-        } else if ("ELECTRONICS".equalsIgnoreCase(Session.selectedCategory)) {
-            activeBtn = btnFilterElectronics;
-        } else if ("OTHER".equalsIgnoreCase(Session.selectedCategory)) {
-            activeBtn = btnFilterOther;
-        } else if ("FINISHED".equalsIgnoreCase(Session.selectedCategory)) {
-            activeBtn = btnFilterFinished;
-        }
+        if ("ART".equalsIgnoreCase(Session.selectedCategory)) activeBtn = btnFilterArt;
+        else if ("VEHICLE".equalsIgnoreCase(Session.selectedCategory)) activeBtn = btnFilterVehicle;
+        else if ("ELECTRONICS".equalsIgnoreCase(Session.selectedCategory)) activeBtn = btnFilterElectronics;
+        else if ("OTHER".equalsIgnoreCase(Session.selectedCategory)) activeBtn = btnFilterOther;
+        else if ("FINISHED".equalsIgnoreCase(Session.selectedCategory)) activeBtn = btnFilterFinished;
         updateFilterButtonsStyle(activeBtn);
     }
 
-    // --- CÁC HÀM XỬ LÝ LỌC DANH MỤC (FILTERS) ---
+    @FXML private void filterAll() { setCategoryFilter("ALL", btnFilterAll); }
+    @FXML private void filterArt() { setCategoryFilter("ART", btnFilterArt); }
+    @FXML private void filterVehicle() { setCategoryFilter("VEHICLE", btnFilterVehicle); }
+    @FXML private void filterElectronics() { setCategoryFilter("ELECTRONICS", btnFilterElectronics); }
+    @FXML private void filterOther() { setCategoryFilter("OTHER", btnFilterOther); }
+    @FXML private void filterFinished() { setCategoryFilter("FINISHED", btnFilterFinished); }
 
-    @FXML
-    private void filterAll() {
-        Session.selectedCategory = "ALL";
-        updateFilterButtonsStyle(btnFilterAll);
-        filterItems(searchField.getText());
-    }
-
-    @FXML
-    private void filterArt() {
-        Session.selectedCategory = "ART";
-        updateFilterButtonsStyle(btnFilterArt);
-        filterItems(searchField.getText());
-    }
-
-    @FXML
-    private void filterVehicle() {
-        Session.selectedCategory = "VEHICLE";
-        updateFilterButtonsStyle(btnFilterVehicle);
-        filterItems(searchField.getText());
-    }
-
-    @FXML
-    private void filterElectronics() {
-        Session.selectedCategory = "ELECTRONICS";
-        updateFilterButtonsStyle(btnFilterElectronics);
-        filterItems(searchField.getText());
-    }
-
-    @FXML
-    private void filterOther() {
-        Session.selectedCategory = "OTHER";
-        updateFilterButtonsStyle(btnFilterOther);
-        filterItems(searchField.getText());
-    }
-
-    @FXML
-    private void filterFinished() {
-        Session.selectedCategory = "FINISHED";
-        updateFilterButtonsStyle(btnFilterFinished);
+    private void setCategoryFilter(String category, Button activeBtn) {
+        Session.selectedCategory = category;
+        updateFilterButtonsStyle(activeBtn);
         filterItems(searchField.getText());
     }
 
@@ -539,32 +259,26 @@ public class DashboardController {
     private void handleDeposit() {
         StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
         Node mainContent = rootPane.getChildren().get(0);
-        DialogManager.showDepositDialog(rootPane, darkOverlay, mainContent, () -> {
+        viewHelper.handleDeposit(rootPane, darkOverlay, mainContent, () -> {
             lblBalance.setText("$" + NumberUtil.format(Session.balance));
         });
     }
 
-    /**
-     * Xử lý mở popup thêm sản phẩm mới (chỉ dành cho Seller).
-     */
     @FXML
     private void handleAddItem() {
         StackPane rootPane = (StackPane) btnAddItem.getScene().getRoot();
         Node mainContent = rootPane.getChildren().get(0);
         isAddItemPopupOpen = true;
-        DialogManager.showAddItemDialog(rootPane, darkOverlay, mainContent, () -> {
+        viewHelper.handleAddItem(rootPane, darkOverlay, mainContent, () -> {
             isAddItemPopupOpen = false;
             loadDataFromServer();
         });
     }
 
-    /**
-     * Chuyển sang giao diện phòng đấu giá cho sản phẩm cụ thể.
-     */
     private void openBidRoom(Item item) {
         try {
             timerManager.stop();
-            closeListener(); // Đóng kết nối socket cũ trước khi chuyển trang
+            closeListener();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/bid_room.fxml"));
             Parent root = loader.load();
@@ -587,14 +301,9 @@ public class DashboardController {
         }
     }
 
-    private void showCustomAlert(String title, String message, String iconText, String confirmText, boolean isError,
-            Runnable onConfirm) {
-        Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
-        DialogManager.showCustomAlert(ownerStage, title, message, iconText, confirmText, isError, onConfirm);
-    }
-
     private void confirmAndDelete(Item item) {
-        showCustomAlert("XÁC NHẬN GỠ SẢN PHẨM", "Bạn có chắc chắn muốn gỡ bỏ sản phẩm này khỏi danh sách không?", "!",
+        Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
+        viewHelper.showCustomAlert(ownerStage, "XÁC NHẬN GỠ SẢN PHẨM", "Bạn có chắc chắn muốn gỡ bỏ sản phẩm này khỏi danh sách không?", "!",
                 "Gỡ ngay", false, () -> sendDeleteRequestToServer(item.getId()));
     }
 
@@ -602,8 +311,8 @@ public class DashboardController {
     public void handleLogout() {
         try {
             timerManager.stop();
-            closeListener(); // Đóng kết nối socket khi đăng xuất
-            Session.selectedCategory = "ALL"; // Reset selected category on logout
+            closeListener();
+            Session.selectedCategory = "ALL";
             Stage stage = (Stage) btnLogout.getScene().getWindow();
             btnLogout.getScene().setRoot(FXMLLoader.load(getClass().getResource("/com/auction/login.fxml")));
             stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
@@ -612,15 +321,13 @@ public class DashboardController {
         }
     }
 
-    /**
-     * Gửi yêu cầu gỡ bỏ/xóa sản phẩm trực tuyến thông qua Service Layer.
-     */
     private void sendDeleteRequestToServer(int itemId) {
         dashboardService.deleteItem(itemId, Session.userId, Session.role)
             .thenAccept(errorMessage -> {
                 Platform.runLater(() -> {
                     if (errorMessage != null) {
-                        showCustomAlert("TỪ CHỐI THAO TÁC", errorMessage, "⚠️", "Đã hiểu", true, null);
+                        Stage ownerStage = (Stage) btnLogout.getScene().getWindow();
+                        viewHelper.showCustomAlert(ownerStage, "TỪ CHỐI THAO TÁC", errorMessage, "⚠️", "Đã hiểu", true, null);
                     } else {
                         loadDataFromServer();
                     }
@@ -632,34 +339,20 @@ public class DashboardController {
             });
     }
 
-    /**
-     * Kết nối tới Server để lắng nghe các sự kiện thời gian thực thông qua Socket Manager.
-     */
     private void connectToServerListener() {
         socketManager = new DashboardSocketManager();
         socketManager.connect(this);
     }
 
-    /**
-     * Đóng kết nối socket của Dashboard để giải phóng tài nguyên (tránh rò rỉ bộ
-     * nhớ).
-     */
     private void closeListener() {
         if (socketManager != null) {
             socketManager.disconnect();
         }
     }
 
-    /**
-     * Gọi bởi DashboardListener khi có item mới được tạo.
-     * Thêm item vào danh sách allItems và cập nhật giao diện.
-     */
     public void addNewItemRealtime(JsonObject itemJson) {
         Platform.runLater(() -> {
-            if (isAddItemPopupOpen) {
-                logger.info("Realtime item addition deferred because the Add Item popup is currently open.");
-                return;
-            }
+            if (isAddItemPopupOpen) return;
             try {
                 String type = itemJson.get("itemType").getAsString();
                 String name = itemJson.get("name").getAsString();
@@ -669,9 +362,7 @@ public class DashboardController {
                 String extraInfo = itemJson.has("extraInfo") ? itemJson.get("extraInfo").getAsString() : "";
                 String status = itemJson.has("status") ? itemJson.get("status").getAsString() : "PENDING";
 
-                // Tạo item mới từ dữ liệu nhận được
-                Item newItem = com.auction.factory.ItemFactory.createItem(type, name, startingPrice, "", sellerId,
-                        extraInfo);
+                Item newItem = com.auction.factory.ItemFactory.createItem(type, name, startingPrice, "", sellerId, extraInfo);
                 newItem.setId(id);
                 newItem.setCurrentPrice(itemJson.get("currentPrice").getAsDouble());
                 newItem.setStepPrice(itemJson.get("stepPrice").getAsDouble());
@@ -680,12 +371,7 @@ public class DashboardController {
                 newItem.setDescription(itemJson.has("description") ? itemJson.get("description").getAsString() : "");
                 newItem.setStatus(status);
 
-                // Thêm vào danh sách
-                allItems.add(newItem);
-
-                logger.info("New item added to dashboard: {} (ID: {})", name, id);
-
-                // Cập nhật giao diện
+                model.addItem(newItem);
                 filterItems(searchField.getText());
             } catch (Exception e) {
                 logger.error("Error adding new item: {}", e.getMessage(), e);
@@ -693,90 +379,49 @@ public class DashboardController {
         });
     }
 
-    /**
-     * Gọi bởi DashboardListener khi phiên đấu giá bắt đầu.
-     * Cập nhật trạng thái item và hiển thị timer.
-     */
     public void startAuctionRealtime(int itemId, String endTime) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setStatus("ACTIVE");
-                        item.setEndTime(endTime);
-
-                        logger.info("Auction started for item: {} at {}", itemId, endTime);
-
-                        // Cập nhật lại giao diện
-                        filterItems(searchField.getText());
-                        return;
-                    }
+                Item item = model.getItemById(itemId);
+                if (item != null) {
+                    item.setStatus("ACTIVE");
+                    item.setEndTime(endTime);
+                    filterItems(searchField.getText());
                 }
-            } catch (Exception e) {
-                logger.error("Error starting auction: {}", e.getMessage(), e);
-            }
+            } catch (Exception e) {}
         });
     }
 
-    /**
-     * Gọi bởi DashboardListener khi phiên đấu giá bị hủy.
-     * Cập nhật trạng thái item.
-     */
     public void auctionCancelledRealtime(int itemId) {
         Platform.runLater(() -> {
             try {
-                // Xóa hoàn toàn sản phẩm khỏi bộ nhớ đệm
-                boolean removed = allItems.removeIf(item -> item.getId() == itemId);
-                if (removed) {
-                    logger.info("Auction cancelled and removed from dashboard: {}", itemId);
-
-                    // Cập nhật lại giao diện (áp dụng bộ lọc tìm kiếm hiện tại)
-                    filterItems(searchField.getText());
-                }
-            } catch (Exception e) {
-                logger.error("Error cancelling auction: {}", e.getMessage(), e);
-            }
+                model.removeItemById(itemId);
+                filterItems(searchField.getText());
+            } catch (Exception e) {}
         });
     }
 
-    /**
-     * Gọi bởi DashboardListener khi phiên đấu giá kết thúc.
-     * Cập nhật trạng thái item và lưu thông tin người thắng.
-     */
     public void auctionFinishedRealtime(int itemId, String winnerUsername, double finalPrice) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setStatus("FINISHED");
-                        item.setFinalPrice(finalPrice);
-                        item.setCurrentPrice(finalPrice);
-                        item.setWinnerUsername(winnerUsername);
-                        
-                        triggerWinnerPaymentIfWon(item);
-
-                        logger.info("Auction finished for item: {}. Winner: {}, Final Price: ${}", itemId,
-                                winnerUsername, finalPrice);
-
-                        // Cập nhật lại giao diện
-                        filterItems(searchField.getText());
-                        return;
-                    }
+                Item item = model.getItemById(itemId);
+                if (item != null) {
+                    item.setStatus("FINISHED");
+                    item.setFinalPrice(finalPrice);
+                    item.setCurrentPrice(finalPrice);
+                    item.setWinnerUsername(winnerUsername);
+                    
+                    triggerWinnerPaymentIfWon(item);
+                    filterItems(searchField.getText());
                 }
-            } catch (Exception e) {
-                logger.error("Error finishing auction: {}", e.getMessage(), e);
-            }
+            } catch (Exception e) {}
         });
     }
 
     public void triggerWinnerPaymentIfWon(Item item) {
         if (Session.username != null && Session.username.equalsIgnoreCase(item.getWinnerUsername())) {
             try {
-                if (Session.processedPayments.contains(item.getId())) {
-                    return;
-                }
+                if (Session.processedPayments.contains(item.getId())) return;
             } catch (Exception ignored) {}
 
             PaymentNetworkRequest.processWinnerPaymentAsync(
@@ -790,7 +435,8 @@ public class DashboardController {
                             if (lblBalance != null) {
                                 lblBalance.setText("$" + NumberUtil.format(Session.balance));
                             }
-                            showWinNotification(Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.", Session.lastWinRemainingBalance);
+                            StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                            viewHelper.showWinNotification(rootPane, Session.lastWinMessage != null ? Session.lastWinMessage : "Chúc mừng! Bạn đã sở hữu sản phẩm này.", Session.lastWinRemainingBalance);
                             Session.justWon = false;
                             Session.lastWinMessage = null;
                         }
@@ -800,54 +446,30 @@ public class DashboardController {
         }
     }
 
-    /**
-     * Gọi bởi DashboardListener khi giá item được cập nhật trong phòng đấu giá.
-     * Cập nhật giá hiện tại của item.
-     */
     public void updateItemPriceRealtime(int itemId, double newPrice, String winnerUsername) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setCurrentPrice(newPrice);
-                        if (winnerUsername != null && !winnerUsername.isEmpty()) {
-                            item.setWinnerUsername(winnerUsername);
-                        }
-
-                        logger.info("Item price updated: {} -> ${}", itemId, newPrice);
-
-                        // Cập nhật lại giao diện
-                        filterItems(searchField.getText());
-                        return;
+                Item item = model.getItemById(itemId);
+                if (item != null) {
+                    item.setCurrentPrice(newPrice);
+                    if (winnerUsername != null && !winnerUsername.isEmpty()) {
+                        item.setWinnerUsername(winnerUsername);
                     }
+                    filterItems(searchField.getText());
                 }
-            } catch (Exception e) {
-                logger.error("Error updating item price: {}", e.getMessage(), e);
-            }
+            } catch (Exception e) {}
         });
     }
 
-    /**
-     * Gọi bởi DashboardListener khi số lượng người xem trong phòng thay đổi.
-     * Cập nhật số lượt xem và làm mới giao diện ngay lập tức.
-     */
     public void updateViewerCountRealtime(int itemId, int viewerCount) {
         Platform.runLater(() -> {
             try {
-                // Tìm item theo ID
-                for (Item item : allItems) {
-                    if (item.getId() == itemId) {
-                        item.setViewerCount(viewerCount);
-
-                        // Cập nhật lại giao diện
-                        filterItems(searchField.getText());
-                        return;
-                    }
+                Item item = model.getItemById(itemId);
+                if (item != null) {
+                    item.setViewerCount(viewerCount);
+                    filterItems(searchField.getText());
                 }
-            } catch (Exception e) {
-                logger.error("Error updating viewer count: {}", e.getMessage(), e);
-            }
+            } catch (Exception e) {}
         });
     }
 
@@ -859,17 +481,8 @@ public class DashboardController {
                 if (lblBalance != null) {
                     lblBalance.setText("$" + NumberUtil.format(Session.balance));
                 }
-                try {
-                    StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
-                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/auction/sale_notification.fxml"));
-                    Parent saleNode = loader.load();
-                    SaleNotificationController ctrl = loader.getController();
-
-                    rootPane.getChildren().add(saleNode);
-                    ctrl.setData(itemName, winnerUsername, amount, newSellerBalance, rootPane);
-                } catch (Exception e) {
-                    logger.error("Failed to load sale notification FXML inside dashboard: ", e);
-                }
+                StackPane rootPane = (StackPane) btnLogout.getScene().getRoot();
+                viewHelper.showSaleNotification(rootPane, itemName, winnerUsername, amount, newSellerBalance);
             });
         }
     }
