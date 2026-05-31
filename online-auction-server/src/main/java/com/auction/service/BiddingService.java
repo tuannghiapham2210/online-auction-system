@@ -12,7 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Lớp dịch vụ quản lý các nghiệp vụ liên quan đến đặt thầu (Bidding) và Auto-Bid.
+ * Lớp dịch vụ quản lý các nghiệp vụ liên quan đến đặt thầu (Bidding) và
+ * Auto-Bid.
  */
 public class BiddingService {
   private static final Logger logger = LoggerFactory.getLogger(BiddingService.class);
@@ -29,7 +30,8 @@ public class BiddingService {
   private static final int ANTI_SNIPING_EXTENSION_SECONDS = 10;
 
   /**
-   * Dung sai mạng (Network Latency Tolerance): Chấp nhận các request chậm tối đa 2 giây.
+   * Dung sai mạng (Network Latency Tolerance): Chấp nhận các request chậm tối đa
+   * 2 giây.
    */
   private static final int NETWORK_LATENCY_TOLERANCE_SECONDS = 2;
 
@@ -64,7 +66,9 @@ public class BiddingService {
   /**
    * Xử lý luồng đặt giá (PLACE_BID) từ người dùng.
    *
-   * <p>Kiến trúc: Áp dụng Single Responsibility Principle (SRP) để đập nhỏ hàm khổng lồ
+   * <p>
+   * Kiến trúc: Áp dụng Single Responsibility Principle (SRP) để đập nhỏ hàm khổng
+   * lồ
    * thành 3 bước độc lập, dễ bảo trì và dễ unit test.
    *
    * @param request Đối tượng JSON chứa tham số đặt thầu.
@@ -78,7 +82,8 @@ public class BiddingService {
       int bidderId = request.get("bidderId").getAsInt();
       double bidAmount = request.get("bidAmount").getAsDouble();
       String username = request.has("username")
-          ? request.get("username").getAsString() : "Khách";
+          ? request.get("username").getAsString()
+          : "Khách";
       String role = request.has("role") ? request.get("role").getAsString() : "";
 
       ItemDao itemDao = new ItemDao();
@@ -115,7 +120,7 @@ public class BiddingService {
    * Áp dụng nghiêm ngặt DAO Pattern, không viết Raw SQL trong Service.
    */
   private JsonObject validateBidRequest(ItemDao itemDao, BidTransactionDao bidDao,
-                                        int itemId, int bidderId, double bidAmount, String role) {
+      int itemId, int bidderId, double bidAmount, String role) {
     if (!"BIDDER".equalsIgnoreCase(role)) {
       return createErrorResponse("Từ chối: Chỉ người mua (BIDDER) mới có thể đặt giá!");
     }
@@ -136,8 +141,8 @@ public class BiddingService {
 
     // Kiểm tra thời gian (bao gồm dung sai độ trễ mạng)
     if (item.getEndTime() != null && !item.getEndTime().isEmpty()) {
-      java.time.format.DateTimeFormatter formatter =
-          java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+          .ofPattern("yyyy-MM-dd HH:mm:ss");
       java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
       java.time.LocalDateTime now = java.time.LocalDateTime.now();
       long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
@@ -166,7 +171,7 @@ public class BiddingService {
    * Bước 2: Gọi DAO để thực hiện ghi dữ liệu.
    */
   private boolean executeBidTransaction(ItemDao itemDao, BidTransactionDao bidDao,
-                                        int itemId, int bidderId, double bidAmount) {
+      int itemId, int bidderId, double bidAmount) {
     boolean updateSuccess = itemDao.updateCurrentPrice(itemId, bidAmount, bidderId);
     boolean logSuccess = bidDao.insertBidTransaction(itemId, bidderId, bidAmount);
     return updateSuccess && logSuccess;
@@ -176,7 +181,7 @@ public class BiddingService {
    * Bước 3: Phát tín hiệu Socket cho các Client khác và kích hoạt Auto-Bid.
    */
   private void broadcastAndTrigger(ItemDao itemDao, int itemId, int bidderId,
-                                   double bidAmount, String username) {
+      double bidAmount, String username) {
     JsonObject broadcastMsg = new JsonObject();
     broadcastMsg.addProperty("action", "UPDATE_PRICE");
     broadcastMsg.addProperty("itemId", itemId);
@@ -210,7 +215,8 @@ public class BiddingService {
   }
 
   /**
-   * Đăng ký cấu hình thiết lập Auto-Bid (Đấu giá tự động) cho một sản phẩm cụ thể.
+   * Đăng ký cấu hình thiết lập Auto-Bid (Đấu giá tự động) cho một sản phẩm cụ
+   * thể.
    *
    * @param request Đối tượng JSON chứa cấu hình Auto-Bid.
    * @return Một JsonObject phản hồi trạng thái.
@@ -249,7 +255,8 @@ public class BiddingService {
       double maxBid = request.get("maxBid").getAsDouble();
       double increment = request.get("increment").getAsDouble();
       String username = request.has("username")
-          ? request.get("username").getAsString() : "Khách";
+          ? request.get("username").getAsString()
+          : "Khách";
 
       if (increment < item.getStepPrice()) {
         JsonObject response = new JsonObject();
@@ -320,7 +327,8 @@ public class BiddingService {
   /**
    * AUTO-BID ENGINE (Cơ chế Đấu giá tự động - Proxy Bidding).
    *
-   * <p>Luồng hoạt động (Architecture Flow):
+   * <p>
+   * Luồng hoạt động (Architecture Flow):
    * 1. Kiểm tra trạng thái sản phẩm xem có đang mở đấu giá không.
    * 2. Lấy người đang dẫn đầu hiện tại (currentHighestBidderId).
    * 3. Lấy danh sách đăng ký Auto-Bid từ DB (sắp xếp theo Ngân sách giảm dần).
@@ -408,8 +416,7 @@ public class BiddingService {
               rs.getInt("user_id"),
               rs.getDouble("max_bid"),
               rs.getDouble("increment_amount"),
-              rs.getString("created_at")
-          ));
+              rs.getString("created_at")));
         }
       }
     }
@@ -418,12 +425,13 @@ public class BiddingService {
 
   /**
    * Thuật toán cốt lõi tính toán giá Proxy.
-   * Proxy Bidding chỉ nâng giá lên đúng bằng Bước Giá (increment) so với đối thủ đứng thứ 2.
+   * Proxy Bidding chỉ nâng giá lên đúng bằng Bước Giá (increment) so với đối thủ
+   * đứng thứ 2.
    *
    * @return Giá mới cần đặt, hoặc -1 nếu không cần nâng giá.
    */
   private double calculateNextProxyBidPrice(Item item, List<AutoBidConfig> autoBidders,
-                                            AutoBidConfig topBidder, int currentHighestBidderId) {
+      AutoBidConfig topBidder, int currentHighestBidderId) {
     double challengePrice = item.getCurrentPrice();
 
     // Nếu có đối thủ cạnh tranh (người thứ 2)
@@ -478,10 +486,11 @@ public class BiddingService {
   }
 
   /**
-   * Lưu giá trị mới vào Database và phát (Broadcast) thông điệp Socket tới mọi Client.
+   * Lưu giá trị mới vào Database và phát (Broadcast) thông điệp Socket tới mọi
+   * Client.
    */
   private void executeAutoBidTransaction(int itemId, double newPrice, int bidderId,
-                                         String username, ItemDao itemDao) {
+      String username, ItemDao itemDao) {
     boolean updateSuccess = itemDao.updateProxyPrice(itemId, newPrice, bidderId);
     BidTransactionDao bidDao = new BidTransactionDao();
     boolean logSuccess = bidDao.insertBidTransaction(itemId, bidderId, newPrice);
@@ -528,10 +537,12 @@ public class BiddingService {
   /**
    * ANTI-SNIPING (Cơ chế Chống Bắn Tỉa - Gia hạn giờ chót).
    *
-   * <p>Cơ chế này đảm bảo sự công bằng cho tất cả người tham gia bằng cách cộng thêm
+   * <p>
+   * Cơ chế này đảm bảo sự công bằng cho tất cả người tham gia bằng cách cộng thêm
    * thời gian nếu có một mức giá mới được đưa ra vào những giây cuối cùng.
    *
-   * <p>Xử lý Edge Case (Độ trễ mạng):
+   * <p>
+   * Xử lý Edge Case (Độ trễ mạng):
    * Hệ thống cho phép dung sai 2 giây (NETWORK_LATENCY_TOLERANCE_SECONDS).
    * Nếu người dùng bấm "Đặt giá" ở đúng giây 00:00 nhưng do độ trễ mạng (Ping)
    * làm gói tin tới Server trễ 1-2 giây, hệ thống vẫn chấp nhận và lấy thời gian
@@ -544,25 +555,24 @@ public class BiddingService {
         return null;
       }
 
-      java.time.format.DateTimeFormatter formatter =
-          java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+      java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+          .ofPattern("yyyy-MM-dd HH:mm:ss");
       java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(item.getEndTime(), formatter);
       java.time.LocalDateTime now = java.time.LocalDateTime.now();
 
       long secondsLeft = java.time.Duration.between(now, endTime).getSeconds();
 
-      // Kiểm tra xem thời gian còn lại có nằm trong ngưỡng kích hoạt không (cả dung sai trễ mạng)
+      // Kiểm tra xem thời gian còn lại có nằm trong ngưỡng kích hoạt không (cả dung
+      // sai trễ mạng)
       boolean isWithinThreshold = secondsLeft <= ANTI_SNIPING_THRESHOLD_SECONDS;
       boolean isWithinLatencyTolerance = secondsLeft >= -NETWORK_LATENCY_TOLERANCE_SECONDS;
 
       if (isWithinThreshold && isWithinLatencyTolerance) {
 
-        // Nếu gói tin tới trễ (now > endTime), mốc thời gian sẽ là "Bây giờ" để cộng dồn
-        // Nếu gói tin tới sớm, mốc thời gian vẫn là "Thời gian kết thúc cũ"
-        java.time.LocalDateTime baseTime = now.isAfter(endTime) ? now.withNano(0) : endTime;
-
-        String extendedTime =
-            baseTime.plusSeconds(ANTI_SNIPING_EXTENSION_SECONDS).format(formatter);
+        // Đảm bảo thời gian còn lại luôn luôn là 10 giây kể từ thời điểm đặt giá hiện
+        // tại (now)
+        java.time.LocalDateTime extendedTimeLDT = now.plusSeconds(ANTI_SNIPING_EXTENSION_SECONDS).withNano(0);
+        String extendedTime = extendedTimeLDT.format(formatter);
         itemDao.updateEndTime(itemId, extendedTime);
 
         logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);

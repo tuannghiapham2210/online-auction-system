@@ -29,12 +29,12 @@
 1. [Mô tả bài toán và phạm vi hệ thống](#1-mô-tả-bài-toán-và-phạm-vi-hệ-thống)
 2. [Công nghệ và Yêu cầu môi trường](#2-công-nghệ-và-yêu-cầu-môi-trường)
 3. [Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
-4. [Sơ đồ lớp UML (UML Class Diagrams)](#4-sơ-đồ-lớp-uml-uml-class-diagrams)
-5. [Vị trí các file .jar (Thực thi)](#5-vị-trí-các-file-jar-thực-thi)
-6. [Hướng dẫn chạy Server/Client theo thứ tự](#6-hướng-dẫn-chạy-serverclient-theo-thứ-tự)
-7. [Danh sách chức năng đã hoàn thành](#7-danh-sách-chức-năng-đã-hoàn-thành-theo-yêu-cầu-đồ-án)
-8. [Tài liệu Báo cáo & Video Demo](#8-tài-liệu-báo-cáo--video-demo)
-9. [Giao diện hệ thống (Screenshots)](#9-giao-diện-hệ-thống-screenshots)
+4. [Vị trí các file .jar (Thực thi)](#4-vị-trí-các-file-jar-thực-thi)
+5. [Hướng dẫn chạy Server/Client theo thứ tự](#5-hướng-dẫn-chạy-serverclient-theo-thứ-tự)
+6. [Danh sách chức năng đã hoàn thành](#6-danh-sách-chức-năng-đã-hoàn-thành-theo-yêu-cầu-đồ-án)
+7. [Tài liệu Báo cáo & Video Demo](#7-tài-liệu-báo-cáo--video-demo)
+8. [Giao diện hệ thống (Screenshots)](#8-giao-diện-hệ-thống-screenshots)
+9. [Sơ đồ lớp UML (UML Class Diagrams)](#9-sơ-đồ-lớp-uml-uml-class-diagrams)
 10. [Hạn chế của hệ thống (Known Limitations)](#10-hạn-chế-của-hệ-thống-known-limitations)
 
 ---
@@ -111,7 +111,165 @@ online-auction-system/
 
 ---
 
-## 4. Sơ đồ lớp UML (UML Class Diagrams)
+## 4. Vị trí các file .jar (Thực thi)
+
+Hệ thống sử dụng `maven-shade-plugin` để đóng gói toàn bộ mã nguồn và thư viện phụ thuộc thành các file Fat JAR. Sau quá trình biên dịch (`mvn clean package`), các file thực thi sẽ được lưu trữ tại:
+
+- **Server:** `online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar`
+- **Client:** `online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar`
+
+*(Ghi chú: Giám khảo có thể tải trực tiếp các file `.jar` đã được biên dịch sẵn từ mục **Releases** trên GitHub của dự án).*
+
+---
+
+## 5. Hướng dẫn chạy Server/Client theo thứ tự
+
+> [!IMPORTANT]
+> **Quy tắc bắt buộc:** Phải khởi động Server trước để thiết lập kết nối mạng, sau đó mới tiến hành khởi chạy (các) Client.
+
+### Phương pháp 1: Biên dịch và chạy từ mã nguồn (Dành cho nhà phát triển)
+**Bước 1: Biên dịch mã nguồn (Build Project)**
+Mở Terminal (hoặc Command Prompt) tại thư mục gốc của dự án và thực thi lệnh Maven:
+```bash
+mvn clean package
+```
+
+**Bước 2: Khởi động Server**
+Tại thư mục gốc của dự án, thực thi lệnh sau:
+```bash
+java -jar online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar
+```
+
+**Bước 3: Khởi động Client**
+Giữ nguyên cửa sổ Server, mở Terminal mới và chạy lệnh:
+```bash
+java -jar online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar
+```
+
+---
+
+### Phương pháp 2: Chạy trực tiếp từ file thực thi (Khuyến nghị cho Giám khảo)
+Phương pháp này giúp bỏ qua quá trình cài đặt môi trường Maven. Giám khảo chỉ cần tải các file `.jar` đã được biên dịch sẵn.
+
+**Bước 1: Tải file thực thi (.jar)**
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>🖥️ Máy Chủ (Server)</b></td>
+      <td align="center"><b>💻 Máy Khách (Client)</b></td>
+    </tr>
+    <tr>
+      <td align="center">
+        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-server-1.0-SNAPSHOT.jar">
+          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_SERVER_JAR-0052CC?style=for-the-badge&logo=java&logoColor=white" alt="Download Server JAR" width="240">
+        </a>
+      </td>
+      <td align="center">
+        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-client-1.0-SNAPSHOT.jar">
+          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_CLIENT_JAR-238636?style=for-the-badge&logo=java&logoColor=white" alt="Download Client JAR" width="240">
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
+
+*(Lưu ý đối với sinh viên: Cập nhật đường link tải file `.jar` thực tế vào 2 nút bấm phía trên)*
+
+**Bước 2: Khởi động Server**
+Mở Terminal tại thư mục chứa file vừa tải về và chạy lệnh:
+```bash
+java -jar online-auction-server-1.0-SNAPSHOT.jar
+```
+*(Hệ thống Server sẽ khởi chạy, lắng nghe các kết nối TCP và tự động khởi tạo cơ sở dữ liệu `auction.db`)*
+
+**Bước 3: Khởi động Client**
+Mở thêm một (hoặc nhiều) cửa sổ Terminal mới tại cùng thư mục và khởi chạy Client:
+```bash
+java -jar online-auction-client-1.0-SNAPSHOT.jar
+```
+*Tài khoản kiểm thử định nghĩa sẵn trong CSDL: `admin`/`123456`, `seller1`/`123`, `bidder1`/`123`*
+
+---
+
+## 6. Danh sách chức năng đã hoàn thành (Theo yêu cầu đồ án)
+
+Hệ thống được phát triển bám sát và hoàn thành toàn bộ các tiêu chí đánh giá của môn học.
+
+### 6.1. Thiết kế lớp và kiến trúc (Trọng tâm OOP)
+- [x] **Xác định các lớp chính:** Xây dựng đầy đủ `User` (phân vai trò Admin, Seller, Bidder), `Item` (kế thừa bởi `Electronics`, `Art`, `Vehicle`), `Auction`, `BidTransaction`.
+- [x] **Nguyên tắc OOP:** Triển khai các nguyên tắc Đóng gói (Encapsulation), Kế thừa (Inheritance), Đa hình (Polymorphism) và Trừu tượng (Abstraction).
+- [x] **Design Pattern:** Áp dụng Factory Method cho quy trình khởi tạo sản phẩm, Singleton cho quản lý kết nối CSDL, và Builder cho cấu trúc DTO.
+
+### 6.2. Chức năng chính
+- [x] **Quản lý hệ thống:** Xác thực người dùng, quản trị số dư, và thực hiện các thao tác CRUD đối với sản phẩm.
+- [x] **Chức năng đấu giá:** Ghi nhận giá thầu, tự động khấu trừ, và xác định đối tượng thắng cuộc.
+- [x] **Kiểm soát lỗi & Ngoại lệ:** Xử lý các trường hợp dữ liệu không hợp lệ (Validation), gián đoạn kết nối mạng và các ngoại lệ SQL.
+
+### 6.3. Kỹ thuật quan trọng & Xử lý đồng thời (Concurrency)
+- [x] **Xử lý đồng thời (Thread-safe):** Giải quyết triệt để vấn đề Race Condition và Lost Update thông qua cơ chế `ReentrantLock` kết hợp với Transaction SQL cấp độ CSDL.
+- [x] **Cập nhật thời gian thực (Real-time Update):** Đồng bộ hóa trạng thái phiên đấu giá ngay lập tức cho toàn bộ Client thông qua cơ chế Observer Pattern trên nền tảng TCP Socket.
+
+### 6.4. Tích hợp và Chất lượng mã
+- [x] **Kiến trúc phân tầng:** Phân tách rõ ràng Client (JavaFX) và Server (TCP, SQLite) thành các module độc lập.
+- [x] **Áp dụng MVC & DAO:** Sử dụng mô hình Controller-Model-DAO trên Server và Controller-FXML trên Client.
+- [x] **Quản lý dự án & Coding Convention:** Cấu hình bằng Maven, duy trì định dạng mã nguồn sạch và chuẩn hóa nhất quán theo **Google Checkstyle**.
+- [x] **Kiểm thử phần mềm:** Triển khai Unit Test (JUnit) bao phủ các nghiệp vụ cốt lõi.
+- [x] **CI/CD Cơ bản:** Thiết lập GitHub Actions tự động kiểm thử và biên dịch.
+
+### 6.5. Chức năng nâng cao
+- [x] **Đấu giá tự động (Auto-Bidding):** Tích hợp cấu trúc dữ liệu `PriorityQueue` hỗ trợ hệ thống tự động đặt giá thầu dựa trên ngân sách thiết lập trước.
+- [x] **Gia hạn chống gian lận (Anti-sniping):** Tự động gia hạn thời gian 10 giây nếu hệ thống ghi nhận giá thầu trong khoảng thời gian sắp kết thúc phiên.
+- [x] **Trực quan hóa dữ liệu (Bid History Visualization):** Biểu đồ hóa biến động giá thầu thời gian thực (Line Chart) trên giao diện JavaFX.
+
+---
+
+## 7. Tài liệu Báo cáo & Video Demo
+
+<div align="left">
+  <a href="[LINK_BAO_CAO_PDF]">
+    <img src="https://img.shields.io/badge/BAO_CAO_CHI_TIET-PDF_DOWNLOAD-E34F26?style=for-the-badge" alt="Báo Cáo PDF">
+  </a>
+  &nbsp;&nbsp;
+  <a href="[LINK_VIDEO_YOUTUBE_HOAC_DRIVE]">
+    <img src="https://img.shields.io/badge/VIDEO_DEMO-WATCH_NOW-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Video Demo">
+  </a>
+</div>
+
+- **Link Báo Cáo (PDF):** [Chèn Link Google Drive/Dropbox vào đây]
+- **Link Video Demo (YouTube/Drive):** [Chèn Link Video vào đây]
+*(Video minh họa: Khởi chạy Server/Client, chức năng đấu giá thời gian thực song song, Auto-bidding và cơ chế xử lý Race Condition).*
+
+---
+
+## 8. Giao diện hệ thống (Screenshots)
+
+Dưới đây là một số hình ảnh giao diện nổi bật của hệ thống. 
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>1. Đăng nhập (Login)</b></td>
+      <td align="center"><b>2. Đăng ký (Register)</b></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="images/login.png" alt="Login Screen" width="400"></td>
+      <td align="center"><img src="images/register.png" alt="Register Screen" width="400"></td>
+    </tr>
+    <tr>
+      <td align="center"><b>3. Bảng điều khiển (Dashboard)</b></td>
+      <td align="center"><b>4. Phòng đấu giá (Bid Room)</b></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="images/dashboard.png" alt="Dashboard Screen" width="400"></td>
+      <td align="center"><img src="images/bidroom.png" alt="Bid Room Screen" width="400"></td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 9. Sơ đồ lớp UML (UML Class Diagrams)
 
 Hệ thống được tổ chức thành 3 module chính (`common`, `server`, và `client`). Sơ đồ luồng dữ liệu và tương tác giữa các module được mô tả tóm tắt qua kiến trúc tổng quan dưới đây:
 
@@ -139,7 +297,7 @@ flowchart TD
 
 Để đi sâu hơn vào chi tiết thiết kế lập trình hướng đối tượng (OOP) và các mẫu thiết kế (Design Pattern), sơ đồ lớp UML được chia nhỏ thành 4 phần chuyên biệt dưới đây:
 
-### 4.1. Sơ đồ các Thực thể Dữ liệu (Domain Models)
+### 9.1. Sơ đồ các Thực thể Dữ liệu (Domain Models)
 Sơ đồ phân cấp kế thừa từ lớp trừu tượng `Entity` và `User`, thể hiện đầy đủ tính Đóng gói (Encapsulation), Kế thừa (Inheritance), Đa hình (Polymorphism) và Trừu tượng (Abstraction).
 
 ```mermaid
@@ -286,7 +444,7 @@ classDiagram
   }
 ```
 
-### 4.2. Sơ đồ Tầng Cơ sở Dữ liệu & Xử lý Nghiệp vụ (DAO & Service Layers)
+### 9.2. Sơ đồ Tầng Cơ sở Dữ liệu & Xử lý Nghiệp vụ (DAO & Service Layers)
 Thể hiện cấu trúc phân tầng kết hợp mẫu thiết kế **Singleton** (`DatabaseConnection`), mẫu thiết kế **DAO** cô lập thao tác SQLite, và tầng **Service** điều phối logic nghiệp vụ (như Concurrent Bidding, Proxy Auto-Bid, Anti-sniping, Payment).
 
 ```mermaid
@@ -386,7 +544,7 @@ classDiagram
   }
 ```
 
-### 4.3. Sơ đồ Kiến trúc Giao tiếp Client-Server (Networking Layer)
+### 9.3. Sơ đồ Kiến trúc Giao tiếp Client-Server (Networking Layer)
 Mô tả luồng giao tiếp TCP Socket đa nhiệm (Multi-threaded TCP Connection) sử dụng Thread Pool trên Server.
 
 ```mermaid
@@ -414,7 +572,7 @@ classDiagram
   }
 ```
 
-### 4.4. Sơ đồ Khởi tạo Đối tượng (Factory Method Design Pattern)
+### 9.4. Sơ đồ Khởi tạo Đối tượng (Factory Method Design Pattern)
 Sử dụng lớp `ItemFactory` để trừu tượng hóa quá trình tạo ra các sản phẩm khác nhau dựa trên tham số phân loại.
 
 ```mermaid
@@ -436,164 +594,6 @@ classDiagram
   class Vehicle
   class Other
 ```
-
----
-
-## 5. Vị trí các file .jar (Thực thi)
-
-Hệ thống sử dụng `maven-shade-plugin` để đóng gói toàn bộ mã nguồn và thư viện phụ thuộc thành các file Fat JAR. Sau quá trình biên dịch (`mvn clean package`), các file thực thi sẽ được lưu trữ tại:
-
-- **Server:** `online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar`
-- **Client:** `online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar`
-
-*(Ghi chú: Giám khảo có thể tải trực tiếp các file `.jar` đã được biên dịch sẵn từ mục **Releases** trên GitHub của dự án).*
-
----
-
-## 6. Hướng dẫn chạy Server/Client theo thứ tự
-
-> [!IMPORTANT]
-> **Quy tắc bắt buộc:** Phải khởi động Server trước để thiết lập kết nối mạng, sau đó mới tiến hành khởi chạy (các) Client.
-
-### Phương pháp 1: Biên dịch và chạy từ mã nguồn (Dành cho nhà phát triển)
-**Bước 1: Biên dịch mã nguồn (Build Project)**
-Mở Terminal (hoặc Command Prompt) tại thư mục gốc của dự án và thực thi lệnh Maven:
-```bash
-mvn clean package
-```
-
-**Bước 2: Khởi động Server**
-Tại thư mục gốc của dự án, thực thi lệnh sau:
-```bash
-java -jar online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar
-```
-
-**Bước 3: Khởi động Client**
-Giữ nguyên cửa sổ Server, mở Terminal mới và chạy lệnh:
-```bash
-java -jar online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar
-```
-
----
-
-### Phương pháp 2: Chạy trực tiếp từ file thực thi (Khuyến nghị cho Giám khảo)
-Phương pháp này giúp bỏ qua quá trình cài đặt môi trường Maven. Giám khảo chỉ cần tải các file `.jar` đã được biên dịch sẵn.
-
-**Bước 1: Tải file thực thi (.jar)**
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><b>🖥️ Máy Chủ (Server)</b></td>
-      <td align="center"><b>💻 Máy Khách (Client)</b></td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-server-1.0-SNAPSHOT.jar">
-          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_SERVER_JAR-0052CC?style=for-the-badge&logo=java&logoColor=white" alt="Download Server JAR" width="240">
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-client-1.0-SNAPSHOT.jar">
-          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_CLIENT_JAR-238636?style=for-the-badge&logo=java&logoColor=white" alt="Download Client JAR" width="240">
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
-
-*(Lưu ý đối với sinh viên: Cập nhật đường link tải file `.jar` thực tế vào 2 nút bấm phía trên)*
-
-**Bước 2: Khởi động Server**
-Mở Terminal tại thư mục chứa file vừa tải về và chạy lệnh:
-```bash
-java -jar online-auction-server-1.0-SNAPSHOT.jar
-```
-*(Hệ thống Server sẽ khởi chạy, lắng nghe các kết nối TCP và tự động khởi tạo cơ sở dữ liệu `auction.db`)*
-
-**Bước 3: Khởi động Client**
-Mở thêm một (hoặc nhiều) cửa sổ Terminal mới tại cùng thư mục và khởi chạy Client:
-```bash
-java -jar online-auction-client-1.0-SNAPSHOT.jar
-```
-*Tài khoản kiểm thử định nghĩa sẵn trong CSDL: `admin`/`123456`, `seller1`/`123`, `bidder1`/`123`*
-
----
-
-## 7. Danh sách chức năng đã hoàn thành (Theo yêu cầu đồ án)
-
-Hệ thống được phát triển bám sát và hoàn thành toàn bộ các tiêu chí đánh giá của môn học.
-
-### 7.1. Thiết kế lớp và kiến trúc (Trọng tâm OOP)
-- [x] **Xác định các lớp chính:** Xây dựng đầy đủ `User` (phân vai trò Admin, Seller, Bidder), `Item` (kế thừa bởi `Electronics`, `Art`, `Vehicle`), `Auction`, `BidTransaction`.
-- [x] **Nguyên tắc OOP:** Triển khai các nguyên tắc Đóng gói (Encapsulation), Kế thừa (Inheritance), Đa hình (Polymorphism) và Trừu tượng (Abstraction).
-- [x] **Design Pattern:** Áp dụng Factory Method cho quy trình khởi tạo sản phẩm, Singleton cho quản lý kết nối CSDL, và Builder cho cấu trúc DTO.
-
-### 7.2. Chức năng chính
-- [x] **Quản lý hệ thống:** Xác thực người dùng, quản trị số dư, và thực hiện các thao tác CRUD đối với sản phẩm.
-- [x] **Chức năng đấu giá:** Ghi nhận giá thầu, tự động khấu trừ, và xác định đối tượng thắng cuộc.
-- [x] **Kiểm soát lỗi & Ngoại lệ:** Xử lý các trường hợp dữ liệu không hợp lệ (Validation), gián đoạn kết nối mạng và các ngoại lệ SQL.
-
-### 7.3. Kỹ thuật quan trọng & Xử lý đồng thời (Concurrency)
-- [x] **Xử lý đồng thời (Thread-safe):** Giải quyết triệt để vấn đề Race Condition và Lost Update thông qua cơ chế `ReentrantLock` kết hợp với Transaction SQL cấp độ CSDL.
-- [x] **Cập nhật thời gian thực (Real-time Update):** Đồng bộ hóa trạng thái phiên đấu giá ngay lập tức cho toàn bộ Client thông qua cơ chế Observer Pattern trên nền tảng TCP Socket.
-
-### 7.4. Tích hợp và Chất lượng mã
-- [x] **Kiến trúc phân tầng:** Phân tách rõ ràng Client (JavaFX) và Server (TCP, SQLite) thành các module độc lập.
-- [x] **Áp dụng MVC & DAO:** Sử dụng mô hình Controller-Model-DAO trên Server và Controller-FXML trên Client.
-- [x] **Quản lý dự án & Coding Convention:** Cấu hình bằng Maven, duy trì định dạng mã nguồn sạch và chuẩn hóa nhất quán theo **Google Checkstyle**.
-- [x] **Kiểm thử phần mềm:** Triển khai Unit Test (JUnit) bao phủ các nghiệp vụ cốt lõi.
-- [x] **CI/CD Cơ bản:** Thiết lập GitHub Actions tự động kiểm thử và biên dịch.
-
-### 7.5. Chức năng nâng cao
-- [x] **Đấu giá tự động (Auto-Bidding):** Tích hợp cấu trúc dữ liệu `PriorityQueue` hỗ trợ hệ thống tự động đặt giá thầu dựa trên ngân sách thiết lập trước.
-- [x] **Gia hạn chống gian lận (Anti-sniping):** Tự động gia hạn thời gian 10 giây nếu hệ thống ghi nhận giá thầu trong khoảng thời gian sắp kết thúc phiên.
-- [x] **Trực quan hóa dữ liệu (Bid History Visualization):** Biểu đồ hóa biến động giá thầu thời gian thực (Line Chart) trên giao diện JavaFX.
-
----
-
-## 8. Tài liệu Báo cáo & Video Demo
-
-<div align="left">
-  <a href="[LINK_BAO_CAO_PDF]">
-    <img src="https://img.shields.io/badge/BAO_CAO_CHI_TIET-PDF_DOWNLOAD-E34F26?style=for-the-badge" alt="Báo Cáo PDF">
-  </a>
-  &nbsp;&nbsp;
-  <a href="[LINK_VIDEO_YOUTUBE_HOAC_DRIVE]">
-    <img src="https://img.shields.io/badge/VIDEO_DEMO-WATCH_NOW-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Video Demo">
-  </a>
-</div>
-
-- **Link Báo Cáo (PDF):** [Chèn Link Google Drive/Dropbox vào đây]
-- **Link Video Demo (YouTube/Drive):** [Chèn Link Video vào đây]
-*(Video minh họa: Khởi chạy Server/Client, chức năng đấu giá thời gian thực song song, Auto-bidding và cơ chế xử lý Race Condition).*
-
----
-
-## 9. Giao diện hệ thống (Screenshots)
-
-Dưới đây là một số hình ảnh giao diện nổi bật của hệ thống. 
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center"><b>1. Đăng nhập (Login)</b></td>
-      <td align="center"><b>2. Đăng ký (Register)</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="images/login.png" alt="Login Screen" width="400"></td>
-      <td align="center"><img src="images/register.png" alt="Register Screen" width="400"></td>
-    </tr>
-    <tr>
-      <td align="center"><b>3. Bảng điều khiển (Dashboard)</b></td>
-      <td align="center"><b>4. Phòng đấu giá (Bid Room)</b></td>
-    </tr>
-    <tr>
-      <td align="center"><img src="images/dashboard.png" alt="Dashboard Screen" width="400"></td>
-      <td align="center"><img src="images/bidroom.png" alt="Bid Room Screen" width="400"></td>
-    </tr>
-  </table>
-</div>
 
 ---
 
