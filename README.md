@@ -142,9 +142,26 @@ Phương pháp này giúp bỏ qua quá trình cài đặt môi trường Maven.
 
 **Bước 1: Tải file thực thi (.jar)**
 
-| Server | Client |
-| :---: | :---: |
-| [![Download Server JAR](https://img.shields.io/badge/DOWNLOAD-SERVER%20JAR-007bff?style=for-the-badge)]([LINK_GITHUB_RELEASES_SERVER]) | [![Download Client JAR](https://img.shields.io/badge/DOWNLOAD-CLIENT%20JAR-28a745?style=for-the-badge)]([LINK_GITHUB_RELEASES_CLIENT]) |
+<div align="center">
+  <table>
+    <tr>
+      <td align="center"><b>🖥️ Máy Chủ (Server)</b></td>
+      <td align="center"><b>💻 Máy Khách (Client)</b></td>
+    </tr>
+    <tr>
+      <td align="center">
+        <a href="[LINK_GITHUB_RELEASES_SERVER]">
+          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_SERVER_JAR-0052CC?style=for-the-badge&logo=java&logoColor=white" alt="Download Server JAR" width="240">
+        </a>
+      </td>
+      <td align="center">
+        <a href="[LINK_GITHUB_RELEASES_CLIENT]">
+          <img src="https://img.shields.io/badge/⬇_DOWNLOAD_CLIENT_JAR-238636?style=for-the-badge&logo=java&logoColor=white" alt="Download Client JAR" width="240">
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
 
 *(Lưu ý đối với sinh viên: Cập nhật đường link tải file `.jar` thực tế vào 2 nút bấm phía trên)*
 
@@ -185,7 +202,7 @@ Hệ thống được phát triển bám sát và hoàn thành toàn bộ các t
 ### 5.4. Tích hợp và Chất lượng mã
 - [x] **Kiến trúc phân tầng:** Phân tách rõ ràng Client (JavaFX) và Server (TCP, SQLite) thành các module độc lập.
 - [x] **Áp dụng MVC & DAO:** Sử dụng mô hình Controller-Model-DAO trên Server và Controller-FXML trên Client.
-- [x] **Quản lý dự án:** Cấu hình bằng Maven, duy trì định dạng mã nguồn nhất quán.
+- [x] **Quản lý dự án & Coding Convention:** Cấu hình bằng Maven, duy trì định dạng mã nguồn sạch và chuẩn hóa nhất quán theo **Google Checkstyle**.
 - [x] **Kiểm thử phần mềm:** Triển khai Unit Test (JUnit) bao phủ các nghiệp vụ cốt lõi.
 - [x] **CI/CD Cơ bản:** Thiết lập GitHub Actions tự động kiểm thử và biên dịch.
 
