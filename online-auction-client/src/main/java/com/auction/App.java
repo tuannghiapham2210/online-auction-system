@@ -1,21 +1,18 @@
 package com.auction;
 
+import java.io.IOException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
 import javafx.scene.image.Image;
-
-import java.io.IOException;
+import javafx.stage.Stage;
 
 /**
  * Lớp khởi chạy chính (Main Class) cho ứng dụng Client giao diện JavaFX.
  */
 public class App extends Application {
-
-  private static Scene scene;
 
   /**
    * Phương thức thiết lập giao diện cửa sổ đầu tiên khi ứng dụng được bật.
@@ -30,7 +27,7 @@ public class App extends Application {
     Parent root = fxmlLoader.load();
 
     // 2. Bọc Node gốc vào Scene bối cảnh
-    scene = new Scene(root, 640, 480);
+    Scene scene = new Scene(root, 640, 480);
 
     // 3. Cấu hình Stage và hiển thị
     stage.setTitle("Hệ Thống Đấu Giá Trực Tuyến");
@@ -61,6 +58,6 @@ public class App extends Application {
    * @param args Tham số dòng lệnh (hiện không sử dụng).
    */
   public static void main(String[] args) {
-    launch();
+    launch(args);
   }
 }
