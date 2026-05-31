@@ -1,11 +1,11 @@
 package com.auction.dao;
 
+import com.auction.dto.UserDto;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.auction.dto.UserDTO;
 
 /**
  * Lớp DAO quản lý các thao tác Database liên quan đến người dùng (User).
@@ -13,10 +13,13 @@ import com.auction.dto.UserDTO;
  */
 public class UserDao {
 
+  /** Logger dùng để ghi nhận log cho lớp UserDao. */
   private static final Logger logger = LoggerFactory.getLogger(UserDao.class);
 
   /**
    * Lấy kết nối tới Database thông qua lớp DatabaseConnection Singleton.
+   *
+   * @return Đối tượng Connection kết nối cơ sở dữ liệu.
    */
   private Connection getConnection() {
     return DatabaseConnection.getInstance().getConnection();
@@ -70,6 +73,9 @@ public class UserDao {
 
   /**
    * Kiểm tra xem tên đăng nhập (Username) đã tồn tại trong hệ thống chưa.
+   *
+   * @param username Tên đăng nhập cần kiểm tra.
+   * @return true nếu đã tồn tại, ngược lại trả về false.
    */
   public boolean isUsernameExists(String username) {
     String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
@@ -89,6 +95,10 @@ public class UserDao {
   /**
    * Kiểm tra xem Username mới có bị trùng với tài khoản của người khác
    * hay không (dùng khi cập nhật Profile).
+   *
+   * @param userId   ID người dùng hiện tại.
+   * @param username Tên đăng nhập mới cần kiểm tra trùng lặp.
+   * @return true nếu bị trùng với tài khoản khác, ngược lại trả về false.
    */
   public boolean isUsernameTakenByOther(int userId, String username) {
     String sql = "SELECT COUNT(*) FROM users WHERE username = ? AND id != ?";
@@ -108,19 +118,22 @@ public class UserDao {
 
   /**
    * TỐI ƯU HÓA HIỆU SUẤT (Performance Optimization):
-   * Khắc phục N+1 Query Anti-Pattern bằng cách lấy TOÀN BỘ dữ liệu User 
+   * Khắc phục N+1 Query Anti-Pattern bằng cách lấy TOÀN BỘ dữ liệu User
    * chỉ trong 1 câu SQL (Database Hit) thay vì gọi DB 6 lần rời rạc.
-   * 
+   *
+   * @param username Tên tài khoản người dùng.
+   * @param password Mật khẩu người dùng.
+   *
    * @return Đối tượng DTO (Data Transfer Object) lưu trong RAM.
    */
-  public UserDTO getUserByCredentials(String username, String password) {
+  public UserDto getUserByCredentials(String username, String password) {
     String sql = "SELECT * FROM users WHERE username = ? AND password = ?";
     try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
       stmt.setString(1, username);
       stmt.setString(2, password);
       try (ResultSet rs = stmt.executeQuery()) {
         if (rs.next()) {
-          return new UserDTO(
+          return new UserDto(
               rs.getInt("id"),
               rs.getString("username"),
               rs.getString("role"),
@@ -138,6 +151,10 @@ public class UserDao {
 
   /**
    * Lấy quyền hạn (Role) của người dùng dựa trên thông tin đăng nhập.
+   *
+   * @param username Tên đăng nhập.
+   * @param password Mật khẩu.
+   * @return Tên quyền hạn dưới dạng String.
    */
   public String getUserRole(String username, String password) {
     String sql = "SELECT role FROM users WHERE username = ? AND password = ?";
@@ -157,6 +174,10 @@ public class UserDao {
 
   /**
    * Lấy ID người dùng từ cơ sở dữ liệu dựa trên Username và Password.
+   *
+   * @param username Tên đăng nhập.
+   * @param password Mật khẩu.
+   * @return ID người dùng hoặc -1 nếu không tìm thấy.
    */
   public int getUserId(String username, String password) {
     String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
@@ -176,6 +197,10 @@ public class UserDao {
 
   /**
    * Lấy địa chỉ Email của người dùng.
+   *
+   * @param username Tên đăng nhập.
+   * @param password Mật khẩu.
+   * @return Chuỗi email hoặc null nếu có lỗi.
    */
   public String getUserEmail(String username, String password) {
     String sql = "SELECT email FROM users WHERE username = ? AND password = ?";
@@ -195,6 +220,10 @@ public class UserDao {
 
   /**
    * Lấy số điện thoại của người dùng.
+   *
+   * @param username Tên đăng nhập.
+   * @param password Mật khẩu.
+   * @return Số điện thoại dưới dạng chuỗi String.
    */
   public String getUserPhone(String username, String password) {
     String sql = "SELECT phone FROM users WHERE username = ? AND password = ?";
@@ -213,7 +242,13 @@ public class UserDao {
   }
 
   /**
-   * Cập nhật thông tin hồ sơ cá nhân (Username mới, Email, Số điện thoại) theo ID người dùng.
+   * Cập nhật thông tin hồ sơ cá nhân theo ID người dùng.
+   *
+   * @param userId      ID của người dùng cần cập nhật.
+   * @param newUsername Tên đăng nhập mới.
+   * @param email       Email mới.
+   * @param phone       Số điện thoại mới.
+   * @return true nếu cập nhật thành công, ngược lại trả về false.
    */
   public boolean updateUserProfile(int userId, String newUsername, String email, String phone) {
     java.util.concurrent.locks.ReentrantLock lock =
@@ -238,7 +273,11 @@ public class UserDao {
 
   /**
    * BƯỚC 1 (DAO Layer): Xác thực mật khẩu cũ của người dùng.
-   * Tách biệt bước xác thực (Read) khỏi bước cập nhật (Write) để Service Layer có thể kiểm soát luồng.
+   * Tách biệt bước xác thực khỏi bước cập nhật để Service Layer có thể kiểm soát luồng.
+   *
+   * @param userId   ID người dùng cần xác thực.
+   * @param password Mật khẩu cũ cần kiểm tra.
+   * @return true nếu khớp mật khẩu cũ, ngược lại trả về false.
    */
   public boolean verifyPassword(int userId, String password) {
     String sql = "SELECT COUNT(*) FROM users WHERE id = ? AND password = ?";
@@ -259,6 +298,10 @@ public class UserDao {
   /**
    * BƯỚC 3 (DAO Layer): Cập nhật mật khẩu mới vào cơ sở dữ liệu.
    * Phương thức này CHỈ được gọi khi Service (Bước 2) đã xác thực thành công.
+   *
+   * @param userId      ID người dùng cần đổi mật khẩu.
+   * @param newPassword Mật khẩu mới cần lưu.
+   * @return true nếu cập nhật thành công số hàng lớn hơn 0, ngược lại trả về false.
    */
   public boolean updatePassword(int userId, String newPassword) {
     java.util.concurrent.locks.ReentrantLock lock =
@@ -281,13 +324,19 @@ public class UserDao {
 
   /**
    * Khôi phục hoặc đặt lại mật khẩu mới thông qua chức năng Quên mật khẩu.
+   *
+   * @param username    Tên đăng nhập yêu cầu cấp lại.
+   * @param contactInfo Thông tin liên hệ (Email hoặc số điện thoại kiểm tra trùng khớp).
+   * @param newPassword Mật khẩu mới được thiết lập lại.
+   * @return true nếu reset thành công, false nếu thông tin không chính xác.
    */
   public boolean resetPassword(String username, String contactInfo, String newPassword) {
     java.util.concurrent.locks.ReentrantLock lock =
         DatabaseConnection.getInstance().getDbWriteLock();
     lock.lock();
     try {
-      String sql = "UPDATE users SET password = ? WHERE username = ? AND (email = ? OR phone = ?)";
+      String sql = "UPDATE users SET password = ? "
+          + "WHERE username = ? AND (email = ? OR phone = ?)";
       try (PreparedStatement stmt = getConnection().prepareStatement(sql)) {
         stmt.setString(1, newPassword);
         stmt.setString(2, username);
@@ -305,6 +354,10 @@ public class UserDao {
 
   /**
    * Thực hiện nạp tiền hoặc trừ tiền vào số dư tài khoản của người dùng.
+   *
+   * @param username Tên người dùng thực hiện giao dịch số dư.
+   * @param amount   Số tiền thay đổi (cộng số dương để nạp, trừ số âm nếu thanh toán).
+   * @return true nếu cập nhật số dư thành công trên Database.
    */
   public boolean depositBalance(String username, int amount) {
     java.util.concurrent.locks.ReentrantLock lock =
@@ -327,6 +380,9 @@ public class UserDao {
 
   /**
    * Lấy số dư tài khoản ví hiện tại của người dùng dựa trên Username.
+   *
+   * @param username Tên người dùng cần kiểm tra tài khoản.
+   * @return Số tiền hiện tại, mặc định là 0 nếu có lỗi hoặc không thấy.
    */
   public int getBalanceByUsername(String username) {
     String sql = "SELECT balance FROM users WHERE username = ?";
@@ -345,6 +401,9 @@ public class UserDao {
 
   /**
    * Lấy ngược lại chuỗi tên người dùng (username) dựa trên ID.
+   *
+   * @param userId ID người dùng cần tra cứu tên.
+   * @return Tên tài khoản dạng String hoặc null.
    */
   public String getUsernameById(int userId) {
     String sql = "SELECT username FROM users WHERE id = ?";

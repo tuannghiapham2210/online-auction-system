@@ -1,6 +1,6 @@
 package com.auction.network;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,7 +56,7 @@ class AddItemNetworkRequestTest {
         CountDownLatch latch = new CountDownLatch(1);
         JsonObject[] result = new JsonObject[1];
 
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .setPriceStr("100")
@@ -79,7 +79,7 @@ class AddItemNetworkRequestTest {
         CountDownLatch latch = new CountDownLatch(1);
         JsonObject[] result = new JsonObject[1];
 
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .build();

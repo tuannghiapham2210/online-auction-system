@@ -1,7 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.UserDao;
-import com.auction.dto.UserDTO;
+import com.auction.dto.UserDto;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,19 +18,20 @@ public class UserService {
    */
   public JsonObject processLogin(String username, String password) {
     UserDao dao = new UserDao();
-    UserDTO user = dao.getUserByCredentials(username, password); // Chỉ gọi DB 1 lần!
-    
+    UserDto user = dao.getUserByCredentials(username, password); // Chỉ gọi DB 1 lần!
+
     JsonObject response = new JsonObject();
 
     if (user != null) {
       response.addProperty("status", "SUCCESS");
       response.addProperty("message", "Đăng nhập thành công!");
-      response.addProperty("role", user.getRole());
-      response.addProperty("userId", user.getId());
-      response.addProperty("username", user.getUsername());
-      response.addProperty("balance", user.getBalance());
-      response.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
-      response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
+      // SỬA TẠI ĐÂY: Thay các hàm get...() thành các hàm accessor của Record
+      response.addProperty("role", user.role());
+      response.addProperty("userId", user.id());
+      response.addProperty("username", user.username());
+      response.addProperty("balance", user.balance());
+      response.addProperty("email", user.email() != null ? user.email() : "");
+      response.addProperty("phone", user.phone() != null ? user.phone() : "");
     } else {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
@@ -75,7 +76,6 @@ public class UserService {
 
   /**
    * THREE-STEP AUTHENTICATION FLOW (Cơ chế đổi mật khẩu 3 bước chuẩn Clean Architecture)
-   * 
    * Thay vì gộp chung logic kiểm tra và cập nhật vào một câu truy vấn SQL khổng lồ,
    * Service này điều phối luồng xử lý thành 3 bước rõ ràng để dễ bảo trì và mở rộng:
    * 1. DAO: Xác thực mật khẩu cũ (verifyPassword).
@@ -85,24 +85,25 @@ public class UserService {
   public JsonObject processChangePassword(int userId, String oldPassword, String newPassword) {
     JsonObject response = new JsonObject();
 
-    if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+    if (oldPassword == null || oldPassword.isEmpty()
+        || newPassword == null || newPassword.isEmpty()) {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
       return response;
     }
 
     UserDao userDao = new UserDao();
-    
+
     // BƯỚC 1: Xác thực mật khẩu cũ
     boolean isOldPasswordCorrect = userDao.verifyPassword(userId, oldPassword);
-    
+
     // BƯỚC 2: Đánh giá kết quả (Service Logic)
     if (!isOldPasswordCorrect) {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Mật khẩu cũ không chính xác!");
       return response;
     }
-    
+
     // BƯỚC 3: Cập nhật mật khẩu mới
     boolean updateSuccess = userDao.updatePassword(userId, newPassword);
 
@@ -113,7 +114,7 @@ public class UserService {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Đã có lỗi hệ thống xảy ra khi lưu mật khẩu.");
     }
-    
+
     return response;
   }
 
