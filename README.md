@@ -160,12 +160,12 @@ Phương pháp này giúp bỏ qua quá trình cài đặt môi trường Maven.
     </tr>
     <tr>
       <td align="center">
-        <a href="[LINK_GITHUB_RELEASES_SERVER]">
+        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-server-1.0-SNAPSHOT.jar">
           <img src="https://img.shields.io/badge/⬇_DOWNLOAD_SERVER_JAR-0052CC?style=for-the-badge&logo=java&logoColor=white" alt="Download Server JAR" width="240">
         </a>
       </td>
       <td align="center">
-        <a href="[LINK_GITHUB_RELEASES_CLIENT]">
+        <a href="https://github.com/tuannghiapham2210/online-auction-system/releases/download/v1.0/online-auction-client-1.0-SNAPSHOT.jar">
           <img src="https://img.shields.io/badge/⬇_DOWNLOAD_CLIENT_JAR-238636?style=for-the-badge&logo=java&logoColor=white" alt="Download Client JAR" width="240">
         </a>
       </td>
