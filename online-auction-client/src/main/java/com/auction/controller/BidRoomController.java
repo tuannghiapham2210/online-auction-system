@@ -236,7 +236,7 @@ public class BidRoomController {
 
     chartManager.clearData();
     model.getHistoryLogs().clear();
-    chartManager.updateYAxisBounds();
+    chartManager.updateYaxisBounds();
 
     socketManager.connect(itemId, this);
 
