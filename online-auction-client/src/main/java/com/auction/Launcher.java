@@ -8,11 +8,12 @@ package com.auction;
  */
 public class Launcher {
 
-    /**
-     * Phương thức main "mồi", gọi trực tiếp đến hàm main của lớp App.
-     * @param args Tham số dòng lệnh.
-     */
-    public static void main(String[] args) {
-        App.main(args);
-    }
+  /**
+   * Phương thức main "mồi", gọi trực tiếp đến hàm main của lớp App.
+   *
+   * @param args Tham số dòng lệnh.
+   */
+  public static void main(String[] args) {
+    App.main(args);
+  }
 }
