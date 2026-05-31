@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import com.auction.network.AddItemNetworkRequest;
 
 public class AddItemService {
@@ -11,14 +11,14 @@ public class AddItemService {
 
     /**
      * Hàm điều phối (Orchestrator) chính của tính năng Thêm Sản phẩm.
-     * Giải quyết "Long Parameter List" bằng cách nhận AddItemRequestDTO.
+     * Giải quyết "Long Parameter List" bằng cách nhận AddItemRequestDto.
      * Áp dụng "Single Responsibility Principle" bằng cách giao việc Validate cho AddItemValidator.
      * Giao việc Serialize JSON cho AddItemNetworkRequest.
      *
      * @param dto      Đối tượng chứa toàn bộ dữ liệu từ Form (sử dụng Builder Pattern)
      * @param callback Hàm callback để cập nhật giao diện sau khi có kết quả
      */
-    public static void submit(AddItemRequestDTO dto, AddItemCallback callback) {
+    public static void submit(AddItemRequestDto dto, AddItemCallback callback) {
         
         // 1. Giao việc kiểm duyệt cho chuyên gia Validator (SRP)
         AddItemValidator.ValidationResult validation = AddItemValidator.validate(dto);

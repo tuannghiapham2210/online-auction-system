@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,7 +9,7 @@ class AddItemValidatorTest {
 
     @Test
     void testValidate_Success() {
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .setPriceStr("1,500.50")
@@ -29,7 +29,7 @@ class AddItemValidatorTest {
 
     @Test
     void testValidate_MissingFields() {
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("") // Empty name
                 .setType("ELECTRONICS")
                 .setPriceStr("100")
@@ -45,7 +45,7 @@ class AddItemValidatorTest {
 
     @Test
     void testValidate_InvalidTimeFormat() {
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .setPriceStr("100")
@@ -61,7 +61,7 @@ class AddItemValidatorTest {
 
     @Test
     void testValidate_InvalidNumberFormat() {
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .setPriceStr("abc")
@@ -77,7 +77,7 @@ class AddItemValidatorTest {
 
     @Test
     void testValidate_NegativeValues() {
-        AddItemRequestDTO dto = new AddItemRequestDTO.Builder()
+        AddItemRequestDto dto = new AddItemRequestDto.Builder()
                 .setName("Test Item")
                 .setType("ELECTRONICS")
                 .setPriceStr("-100")

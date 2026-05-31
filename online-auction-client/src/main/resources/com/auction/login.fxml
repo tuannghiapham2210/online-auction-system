@@ -10,7 +10,7 @@
       <!-- HEADER -->
       <VBox alignment="CENTER" spacing="5">
          <Label styleClass="logo-icon-premium" text="&#x269C;" />
-         <HBox fx:id="titleHBox" alignment="CENTER" maxWidth="-Infinity">
+         <HBox fx:id="titleHbox" alignment="CENTER" maxWidth="-Infinity">
             <Label styleClass="title" text="THE AUCTION" />
             <Label styleClass="title-accent" text=" SYSTEM" />
          </HBox>
@@ -18,7 +18,7 @@
       </VBox>
 
       <!-- CARD -->
-      <VBox fx:id="cardVBox" alignment="CENTER" spacing="20" styleClass="card">
+      <VBox fx:id="cardVbox" alignment="CENTER" spacing="20" styleClass="card">
 
 
          <!-- TAB -->

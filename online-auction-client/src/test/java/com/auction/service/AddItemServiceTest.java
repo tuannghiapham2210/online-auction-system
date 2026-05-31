@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import com.auction.network.AddItemNetworkRequest;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -15,8 +15,8 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 
 class AddItemServiceTest {
 
-    private AddItemRequestDTO createDTO(String name, String type, String url, String desc, String price, String step, String duration, int sellerId) {
-        return new AddItemRequestDTO.Builder()
+    private AddItemRequestDto createDTO(String name, String type, String url, String desc, String price, String step, String duration, int sellerId) {
+        return new AddItemRequestDto.Builder()
                 .setName(name)
                 .setType(type)
                 .setImageUrl(url)
@@ -100,7 +100,7 @@ class AddItemServiceTest {
         AddItemService.AddItemCallback callback = (b, i, s) -> { resBool[0] = b; resInt[0] = i; resStr[0] = s; };
         
         try (MockedStatic<AddItemNetworkRequest> mockedStatic = Mockito.mockStatic(AddItemNetworkRequest.class)) {
-            mockedStatic.when(() -> AddItemNetworkRequest.sendAddItemRequestAsync(any(AddItemRequestDTO.class), anyDouble(), anyDouble(), anyDouble(), any(Consumer.class)))
+            mockedStatic.when(() -> AddItemNetworkRequest.sendAddItemRequestAsync(any(AddItemRequestDto.class), anyDouble(), anyDouble(), anyDouble(), any(Consumer.class)))
                     .thenAnswer(invocation -> {
                         Consumer<JsonObject> networkCallback = invocation.getArgument(4);
                         JsonObject response = new JsonObject();
@@ -127,7 +127,7 @@ class AddItemServiceTest {
         AddItemService.AddItemCallback callback = (b, i, s) -> { resBool[0] = b; resInt[0] = i; resStr[0] = s; };
         
         try (MockedStatic<AddItemNetworkRequest> mockedStatic = Mockito.mockStatic(AddItemNetworkRequest.class)) {
-            mockedStatic.when(() -> AddItemNetworkRequest.sendAddItemRequestAsync(any(AddItemRequestDTO.class), anyDouble(), anyDouble(), anyDouble(), any(Consumer.class)))
+            mockedStatic.when(() -> AddItemNetworkRequest.sendAddItemRequestAsync(any(AddItemRequestDto.class), anyDouble(), anyDouble(), anyDouble(), any(Consumer.class)))
                     .thenAnswer(invocation -> {
                         Consumer<JsonObject> networkCallback = invocation.getArgument(4);
                         JsonObject response = new JsonObject();

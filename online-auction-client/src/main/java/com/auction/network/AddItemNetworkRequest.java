@@ -1,6 +1,6 @@
 package com.auction.network;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import javafx.application.Platform;
@@ -26,13 +26,13 @@ public class AddItemNetworkRequest {
     /**
      * Nhận dữ liệu DTO từ Service, đóng gói (Serialize) thành JSON và gửi tới Server bất đồng bộ.
      *
-     * @param dto           Gói dữ liệu AddItemRequestDTO
+     * @param dto           Gói dữ liệu AddItemRequestDto
      * @param startingPrice Giá khởi điểm đã kiểm duyệt
      * @param stepPrice     Bước giá đã kiểm duyệt
      * @param durationHours Thời lượng phiên đấu giá đã tính toán
      * @param callback      Bộ lắng nghe nhận JsonObject kết quả phản hồi chạy trên JavaFX Application Thread.
      */
-    public static void sendAddItemRequestAsync(AddItemRequestDTO dto, double startingPrice, double stepPrice, double durationHours, Consumer<JsonObject> callback) {
+    public static void sendAddItemRequestAsync(AddItemRequestDto dto, double startingPrice, double stepPrice, double durationHours, Consumer<JsonObject> callback) {
         new Thread(() -> {
             JsonObject request = new JsonObject();
             request.addProperty("action", "ADD_ITEM");

@@ -7,7 +7,7 @@ package com.auction.dto;
  * Pattern này giúp giải quyết "Long Parameter List Code Smell" khi khởi tạo object
  * có quá nhiều thuộc tính, giúp code tường minh, dễ đọc và dễ mở rộng.
  */
-public class AddItemRequestDTO {
+public class AddItemRequestDto {
     private final String name;
     private final String type;
     private final String imageUrl;
@@ -18,7 +18,7 @@ public class AddItemRequestDTO {
     private final int sellerId;
 
     // Private constructor chỉ được gọi thông qua Builder
-    private AddItemRequestDTO(Builder builder) {
+    private AddItemRequestDto(Builder builder) {
         this.name = builder.name;
         this.type = builder.type;
         this.imageUrl = builder.imageUrl;
@@ -92,8 +92,8 @@ public class AddItemRequestDTO {
             return this;
         }
 
-        public AddItemRequestDTO build() {
-            return new AddItemRequestDTO(this);
+        public AddItemRequestDto build() {
+            return new AddItemRequestDto(this);
         }
     }
 }

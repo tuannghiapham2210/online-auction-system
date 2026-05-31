@@ -98,7 +98,7 @@ public class ServerListener implements Runnable {
 
         eventHandlers.put("FETCH_BID_HISTORY_RESPONSE", json -> {
             if (json.has("history") && json.get("history").isJsonArray()) {
-                controller.hydrateUIWithHistory(json.get("history").getAsJsonArray());
+                controller.hydrateUiWithHistory(json.get("history").getAsJsonArray());
             }
         });
     }

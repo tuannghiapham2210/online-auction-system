@@ -25,12 +25,13 @@ public class UserService {
     if (user != null) {
       response.addProperty("status", "SUCCESS");
       response.addProperty("message", "Đăng nhập thành công!");
-      response.addProperty("role", user.getRole());
-      response.addProperty("userId", user.getId());
-      response.addProperty("username", user.getUsername());
-      response.addProperty("balance", user.getBalance());
-      response.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
-      response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
+      // SỬA TẠI ĐÂY: Thay các hàm get...() thành các hàm accessor của Record
+      response.addProperty("role", user.role());
+      response.addProperty("userId", user.id());
+      response.addProperty("username", user.username());
+      response.addProperty("balance", user.balance());
+      response.addProperty("email", user.email() != null ? user.email() : "");
+      response.addProperty("phone", user.phone() != null ? user.phone() : "");
     } else {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");

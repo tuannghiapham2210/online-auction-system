@@ -1,6 +1,6 @@
 package com.auction.service;
 
-import com.auction.dto.AddItemRequestDTO;
+import com.auction.dto.AddItemRequestDto;
 import com.auction.util.NumberUtil;
 
 /**
@@ -31,10 +31,10 @@ public class AddItemValidator {
     /**
      * Kiểm tra tính hợp lệ của gói dữ liệu DTO.
      * 
-     * @param dto Gói dữ liệu AddItemRequestDTO.
+     * @param dto Gói dữ liệu AddItemRequestDto.
      * @return ValidationResult chứa kết quả và dữ liệu đã ép kiểu hợp lệ.
      */
-    public static ValidationResult validate(AddItemRequestDTO dto) {
+    public static ValidationResult validate(AddItemRequestDto dto) {
         if (dto.getName() == null || dto.getName().trim().isEmpty() || 
             dto.getType() == null ||
             dto.getPriceStr() == null || dto.getPriceStr().trim().isEmpty() ||

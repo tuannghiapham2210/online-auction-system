@@ -1,136 +1,163 @@
 package com.auction.controller;
+
 import com.auction.service.RegisterService;
-import javafx.animation.*;
+import java.util.Objects;
+import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.css.PseudoClass;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputControl;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.css.PseudoClass;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.util.Duration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Controller quản lý giao diện Đăng ký tài khoản mới (Register).
- * <p>
- * Thu thập thông tin từ người dùng (username, password, role), gửi yêu cầu khởi tạo
+ *
+ * <p>Thu thập thông tin từ người dùng (username, password, role), gửi yêu cầu khởi tạo
  * lên Server và điều hướng về trang Đăng nhập nếu thành công.
  */
 public class RegisterController {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
+  private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
 
-    @FXML private Button registerButton;
-    @FXML private TextField usernameField;
-    @FXML private PasswordField passwordField;
-    @FXML private TextField emailField;
-    @FXML private TextField phoneField;
-    @FXML private ToggleGroup roleToggleGroup;
-    @FXML private Label messageLabel;
-    @FXML private StackPane rootPane;
-    @FXML private javafx.scene.layout.VBox cardVBox;
-    @FXML private javafx.scene.layout.HBox titleHBox;
+  @FXML
+  private Button registerButton;
+  @FXML
+  private TextField usernameField;
+  @FXML
+  private PasswordField passwordField;
+  @FXML
+  private TextField emailField;
+  @FXML
+  private TextField phoneField;
+  @FXML
+  private ToggleGroup roleToggleGroup;
+  @FXML
+  private Label messageLabel;
+  @FXML
+  private StackPane rootPane;
+  @FXML
+  private VBox cardVbox;
+  @FXML
+  private HBox titleHbox;
 
-    /**
-     * Hàm tự động chạy khi giao diện được tải lên.
-     * Thiết lập các lựa chọn Vai trò (Role) mặc định cho ComboBox.
-     */
-    @FXML
-    public void initialize() {
-        cardVBox.setMinWidth(420);
-        cardVBox.maxWidthProperty().bind(Bindings.min(
-                Bindings.max(titleHBox.widthProperty().add(60), 420),
-                rootPane.widthProperty().multiply(0.8)
-        ));
-        cardVBox.prefWidthProperty().bind(cardVBox.maxWidthProperty());
+  /**
+   * Phương thức khởi tạo mặc định cho RegisterController.
+   */
+  public RegisterController() {
+    // Khởi tạo mặc định để tuân thủ Checkstyle MissingJavadocMethod
+  }
 
-        PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
+  /**
+   * Khởi tạo các thiết lập giao diện và sự kiện sau khi FXML được tải.
+   */
+  @FXML
+  public void initialize() {
+    cardVbox.setMinWidth(420);
+    cardVbox.maxWidthProperty().bind(Bindings.min(
+        Bindings.max(titleHbox.widthProperty().add(60), 420),
+        rootPane.widthProperty().multiply(0.8)));
+    cardVbox.prefWidthProperty().bind(cardVbox.maxWidthProperty());
 
-        // Dùng EventFilter trên rootPane để bắt sự kiện phím Enter
-        // và tự động được giải phóng khi chuyển cảnh (tránh rò rỉ bộ nhớ / xung đột bộ lọc trên Scene)
-        rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                javafx.scene.Node focus = rootPane.getScene() != null ? rootPane.getScene().getFocusOwner() : null;
-                registerButton.pseudoClassStateChanged(pressedClass, true);
-                if (focus instanceof TextInputControl || focus instanceof ToggleButton) {
-                    registerButton.fire();
-                    event.consume();
-                }
-            }
-        });
-        
-        rootPane.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                registerButton.pseudoClassStateChanged(pressedClass, false);
-            }
-        });
-    }
+    PseudoClass pressedClass = PseudoClass.getPseudoClass("pressed");
 
-    /**
-     * Xử lý sự kiện khi người dùng nhấn nút Đăng ký.
-     */
-    @FXML
-    private void handleRegister() {
-
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText().trim();
-        String email = emailField != null ? emailField.getText().trim() : "";
-        String phone = phoneField != null ? phoneField.getText().trim() : "";
-        Toggle selectedRole = roleToggleGroup.getSelectedToggle();
-        String roleValue = selectedRole != null ? ((ToggleButton) selectedRole).getId() : null;
-
-        messageLabel.getStyleClass().setAll("label", "msg-warning");
-        messageLabel.setText("Đang đăng ký...");
-
-        RegisterService.validateAndRegister(username, password, email, phone, roleValue, (isSuccess, message) -> {
-            javafx.application.Platform.runLater(() -> {
-                if (isSuccess) {
-                    messageLabel.getStyleClass().setAll("label", "msg-success");
-                    messageLabel.setText("✔ " + message + " Đang chuyển");
-
-                    Timeline dots = new Timeline(
-                            new KeyFrame(Duration.millis(300), e -> {
-                                String text = messageLabel.getText();
-                                if (text.endsWith("...")) {
-                                    messageLabel.setText(text.replace("...", ""));
-                                } else {
-                                    messageLabel.setText(text + ".");
-                                }
-                            })
-                    );
-                    dots.setCycleCount(Timeline.INDEFINITE);
-                    dots.play();
-
-                    PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
-                    delay.setOnFinished(e -> {
-                        dots.stop();
-                        goToLogin();
-                    });
-                    delay.play();
-                } else {
-                    messageLabel.getStyleClass().setAll("label", "msg-error");
-                    messageLabel.setText(message);
-                }
-            });
-        });
-    }
-
-    /**
-     * Chuyển hướng người dùng quay lại giao diện Đăng nhập (Login).
-     */
-    @FXML
-    private void goToLogin() {
-        try {
-            Parent root = FXMLLoader.load(
-                    getClass().getResource("/com/auction/login.fxml"));
-            usernameField.getScene().setRoot(root);
-        } catch (Exception e) {
-            logger.error("Failed to navigate to login screen: {}", e.getMessage(), e);
+    rootPane.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+      if (event.getCode() == KeyCode.ENTER && registerButton.isDefaultButton()) {
+        Node focus = rootPane.getScene() != null ? rootPane.getScene().getFocusOwner() : null;
+        registerButton.pseudoClassStateChanged(pressedClass, true);
+        if (focus instanceof TextInputControl) {
+          registerButton.fire();
+          event.consume();
         }
+      }
+    });
+
+    rootPane.addEventFilter(KeyEvent.KEY_RELEASED, event -> {
+      if (event.getCode() == KeyCode.ENTER && registerButton.isDefaultButton()) {
+        registerButton.pseudoClassStateChanged(pressedClass, false);
+      }
+    });
+  }
+
+  /**
+   * Xử lý sự kiện khi bấm nút Đăng ký.
+   * Thu thập, chuẩn hóa dữ liệu đầu vào và gọi lớp nghiệp vụ để xử lý.
+   */
+  @FXML
+  private void handleRegister() {
+    String username = usernameField.getText().trim();
+    String password = passwordField.getText().trim();
+    String email = emailField.getText().trim();
+    String phone = phoneField.getText().trim();
+
+    RadioButton selectedRadio = (RadioButton) roleToggleGroup.getSelectedToggle();
+    String role = selectedRadio != null ? selectedRadio.getText() : "";
+
+    messageLabel.getStyleClass().setAll("label", "msg-warning");
+    messageLabel.setText("Đang xử lý đăng ký...");
+
+    RegisterService.validateAndRegister(username, password, email, phone, role,
+        (isSuccess, message) -> Platform.runLater(() -> {
+          if (isSuccess) {
+            messageLabel.getStyleClass().setAll("label", "msg-success");
+            messageLabel.setText("✔ " + message + " Đang chuyển");
+
+            Timeline dots = new Timeline(
+                new KeyFrame(Duration.millis(300), e -> {
+                  String text = messageLabel.getText();
+                  if (text.endsWith("...")) {
+                    messageLabel.setText(text.replace("...", ""));
+                  } else {
+                    messageLabel.setText(text + ".");
+                  }
+                }));
+            dots.setCycleCount(Timeline.INDEFINITE);
+            dots.play();
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(1.5));
+            delay.setOnFinished(e -> {
+              dots.stop();
+              goToLogin();
+            });
+            delay.play();
+          } else {
+            messageLabel.getStyleClass().setAll("label", "msg-error");
+            messageLabel.setText(message);
+          }
+        })
+    );
+  }
+
+  /**
+   * Chuyển hướng người dùng quay lại giao diện Đăng nhập (Login).
+   */
+  @FXML
+  private void goToLogin() {
+    try {
+      Parent root = FXMLLoader.load(
+          Objects.requireNonNull(getClass().getResource("/com/auction/login.fxml"))
+      );
+      usernameField.getScene().setRoot(root);
+    } catch (Exception e) {
+      logger.error("Failed to load login screen: {}", e.getMessage(), e);
     }
+  }
 }
