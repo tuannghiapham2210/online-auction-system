@@ -7,6 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Luồng (Thread) chạy ngầm phía Client để liên tục lắng nghe thông điệp từ Server.
@@ -17,6 +20,9 @@ public class DashboardListener implements Runnable {
     private static final Logger logger = LoggerFactory.getLogger(DashboardListener.class);
     private BufferedReader in;
     private DashboardController controller;
+    
+    // Kiến trúc Event Dispatcher: Bản đồ định tuyến các sự kiện (loại bỏ If-Else chằng chịt)
+    private final Map<String, Consumer<JsonObject>> eventHandlers;
 
     /**
      * Khởi tạo luồng lắng nghe mạng cho Dashboard.
@@ -26,11 +32,79 @@ public class DashboardListener implements Runnable {
     public DashboardListener(BufferedReader in, DashboardController controller) {
         this.in = in;
         this.controller = controller;
+        this.eventHandlers = new HashMap<>();
+        registerEventHandlers();
+    }
+
+    /**
+     * Đăng ký (Register) các hành động xử lý vào Event Router.
+     * Áp dụng Open/Closed Principle: Dễ dàng thêm sự kiện mới mà không cần sửa code cũ.
+     */
+    private void registerEventHandlers() {
+        eventHandlers.put("NEW_ITEM_ADDED", json -> {
+            if (controller != null) {
+                controller.addNewItemRealtime(json);
+            }
+        });
+
+        eventHandlers.put("AUCTION_STARTED", json -> {
+            if (controller != null) {
+                controller.startAuctionRealtime(json.get("itemId").getAsInt(), json.get("endTime").getAsString());
+            }
+        });
+
+        eventHandlers.put("AUCTION_CANCELLED", json -> {
+            if (controller != null) {
+                controller.auctionCancelledRealtime(json.get("itemId").getAsInt());
+            }
+        });
+
+        eventHandlers.put("AUCTION_FINISHED", json -> {
+            if (controller != null) {
+                controller.auctionFinishedRealtime(
+                    json.get("itemId").getAsInt(),
+                    json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "Không có",
+                    json.has("finalPrice") ? json.get("finalPrice").getAsDouble() : 0.0
+                );
+            }
+        });
+
+        eventHandlers.put("PAYMENT_PROCESSED", json -> {
+            if (controller != null) {
+                controller.paymentProcessedRealtime(
+                    json.get("itemId").getAsInt(),
+                    json.has("itemName") ? json.get("itemName").getAsString() : "",
+                    json.has("amount") ? json.get("amount").getAsDouble() : 0.0,
+                    json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "",
+                    json.has("sellerId") ? json.get("sellerId").getAsInt() : -1,
+                    json.has("newSellerBalance") ? json.get("newSellerBalance").getAsInt() : 0
+                );
+            }
+        });
+
+        eventHandlers.put("UPDATE_PRICE", json -> {
+            if (controller != null) {
+                controller.updateItemPriceRealtime(
+                    json.get("itemId").getAsInt(),
+                    json.get("newPrice").getAsDouble(),
+                    json.has("username") ? json.get("username").getAsString() : ""
+                );
+            }
+        });
+
+        eventHandlers.put("UPDATE_VIEWER_COUNT", json -> {
+            if (controller != null) {
+                controller.updateViewerCountRealtime(
+                    json.get("itemId").getAsInt(),
+                    json.get("viewerCount").getAsInt()
+                );
+            }
+        });
     }
 
     /**
      * Vòng lặp thực thi chính của luồng.
-     * Liên tục đọc tin nhắn từ Server và phân loại hành động (action) để xử lý.
+     * Liên tục đọc tin nhắn từ Server và dùng Event Router để xử lý.
      */
     @Override
     public void run() {
@@ -44,67 +118,11 @@ public class DashboardListener implements Runnable {
                 JsonObject json = JsonParser.parseString(message).getAsJsonObject();
                 String action = json.has("action") ? json.get("action").getAsString() : "";
 
-                // 3. Xử lý sự kiện: Item mới được tạo
-                if ("NEW_ITEM_ADDED".equals(action)) {
-                    if (controller != null) {
-                        controller.addNewItemRealtime(json);
-                    }
-                }
-                // 4. Xử lý sự kiện: Phiên đấu giá bắt đầu
-                else if ("AUCTION_STARTED".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    String endTime = json.get("endTime").getAsString();
-
-                    if (controller != null) {
-                        controller.startAuctionRealtime(itemId, endTime);
-                    }
-                }
-                // 5. Xử lý sự kiện: Phiên đấu giá bị hủy
-                else if ("AUCTION_CANCELLED".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    if (controller != null) {
-                        controller.auctionCancelledRealtime(itemId);
-                    }
-                }
-                // 6. Xử lý sự kiện: Phiên đấu giá kết thúc
-                else if ("AUCTION_FINISHED".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    String winnerUsername = json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "Không có";
-                    double finalPrice = json.has("finalPrice") ? json.get("finalPrice").getAsDouble() : 0.0;
-
-                    if (controller != null) {
-                        controller.auctionFinishedRealtime(itemId, winnerUsername, finalPrice);
-                    }
-                }
-                else if ("PAYMENT_PROCESSED".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    String itemName = json.has("itemName") ? json.get("itemName").getAsString() : "";
-                    double amount = json.has("amount") ? json.get("amount").getAsDouble() : 0.0;
-                    String winnerUsername = json.has("winnerUsername") ? json.get("winnerUsername").getAsString() : "";
-                    int sellerId = json.has("sellerId") ? json.get("sellerId").getAsInt() : -1;
-                    int newSellerBalance = json.has("newSellerBalance") ? json.get("newSellerBalance").getAsInt() : 0;
-
-                    if (controller != null) {
-                        controller.paymentProcessedRealtime(itemId, itemName, amount, winnerUsername, sellerId, newSellerBalance);
-                    }
-                }
-                // 7. Xử lý sự kiện cập nhật giá trong phòng đấu giá (nếu đang xem)
-                else if ("UPDATE_PRICE".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    double newPrice = json.get("newPrice").getAsDouble();
-                    String winnerUsername = json.has("username") ? json.get("username").getAsString() : "";
-
-                    if (controller != null) {
-                        controller.updateItemPriceRealtime(itemId, newPrice, winnerUsername);
-                    }
-                }
-                // 8. Xử lý sự kiện cập nhật số lượng người xem
-                else if ("UPDATE_VIEWER_COUNT".equals(action)) {
-                    int itemId = json.get("itemId").getAsInt();
-                    int viewerCount = json.get("viewerCount").getAsInt();
-                    if (controller != null) {
-                        controller.updateViewerCountRealtime(itemId, viewerCount);
-                    }
+                // 3. Thực thi hành động tương ứng qua Event Dispatcher
+                if (eventHandlers.containsKey(action)) {
+                    eventHandlers.get(action).accept(json);
+                } else {
+                    logger.warn("Unknown action received in DashboardListener: {}", action);
                 }
             }
         } catch (Exception e) {

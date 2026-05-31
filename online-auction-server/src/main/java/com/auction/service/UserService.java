@@ -1,6 +1,7 @@
 package com.auction.service;
 
 import com.auction.dao.UserDao;
+import com.auction.dto.UserDTO;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,32 +13,24 @@ public class UserService {
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
   /**
-   * Xử lý nghiệp vụ đăng nhập vào hệ thống.
-   *
-   * @param username Tên đăng nhập của người dùng.
-   * @param password Mật khẩu đăng nhập.
-   * @return Đối tượng {@link JsonObject} chứa trạng thái và thông tin chi tiết tài khoản.
+   * Xử lý nghiệp vụ đăng nhập vào hệ thống (Đã tối ưu hóa).
+   * DTO Pattern: Chuyển 6 câu query thành 1 câu query duy nhất.
    */
   public JsonObject processLogin(String username, String password) {
     UserDao dao = new UserDao();
-    boolean isOk = dao.login(username, password);
+    UserDTO user = dao.getUserByCredentials(username, password); // Chỉ gọi DB 1 lần!
+    
     JsonObject response = new JsonObject();
 
-    if (isOk) {
-      String role = dao.getUserRole(username, password);
-      int userId = dao.getUserId(username, password);
-      int balance = dao.getBalanceByUsername(username);
-      String email = dao.getUserEmail(username, password);
-      String phone = dao.getUserPhone(username, password);
-
+    if (user != null) {
       response.addProperty("status", "SUCCESS");
       response.addProperty("message", "Đăng nhập thành công!");
-      response.addProperty("role", role);
-      response.addProperty("userId", userId);
-      response.addProperty("username", username);
-      response.addProperty("balance", balance);
-      response.addProperty("email", email != null ? email : "");
-      response.addProperty("phone", phone != null ? phone : "");
+      response.addProperty("role", user.getRole());
+      response.addProperty("userId", user.getId());
+      response.addProperty("username", user.getUsername());
+      response.addProperty("balance", user.getBalance());
+      response.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
+      response.addProperty("phone", user.getPhone() != null ? user.getPhone() : "");
     } else {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Sai tài khoản hoặc mật khẩu!");
@@ -81,28 +74,46 @@ public class UserService {
   }
 
   /**
-   * Thay đổi mật khẩu tài khoản người dùng công khai.
+   * THREE-STEP AUTHENTICATION FLOW (Cơ chế đổi mật khẩu 3 bước chuẩn Clean Architecture)
+   * 
+   * Thay vì gộp chung logic kiểm tra và cập nhật vào một câu truy vấn SQL khổng lồ,
+   * Service này điều phối luồng xử lý thành 3 bước rõ ràng để dễ bảo trì và mở rộng:
+   * 1. DAO: Xác thực mật khẩu cũ (verifyPassword).
+   * 2. Service: Đánh giá kết quả xác thực. Nếu thất bại, chặn lại ngay.
+   * 3. DAO: Cập nhật mật khẩu mới (updatePassword) chỉ khi bước 2 vượt qua.
    */
   public JsonObject processChangePassword(int userId, String oldPassword, String newPassword) {
     JsonObject response = new JsonObject();
 
-    if (oldPassword == null || oldPassword.isEmpty()
-        || newPassword == null || newPassword.isEmpty()) {
+    if (oldPassword == null || oldPassword.isEmpty() || newPassword == null || newPassword.isEmpty()) {
       response.addProperty("status", "FAIL");
       response.addProperty("message", "Cần nhập đầy đủ mật khẩu cũ và mật khẩu mới.");
       return response;
     }
 
     UserDao userDao = new UserDao();
-    boolean success = userDao.changePassword(userId, oldPassword, newPassword);
+    
+    // BƯỚC 1: Xác thực mật khẩu cũ
+    boolean isOldPasswordCorrect = userDao.verifyPassword(userId, oldPassword);
+    
+    // BƯỚC 2: Đánh giá kết quả (Service Logic)
+    if (!isOldPasswordCorrect) {
+      response.addProperty("status", "FAIL");
+      response.addProperty("message", "Mật khẩu cũ không chính xác!");
+      return response;
+    }
+    
+    // BƯỚC 3: Cập nhật mật khẩu mới
+    boolean updateSuccess = userDao.updatePassword(userId, newPassword);
 
-    if (success) {
+    if (updateSuccess) {
       response.addProperty("status", "SUCCESS");
       response.addProperty("message", "Đổi mật khẩu thành công.");
     } else {
       response.addProperty("status", "FAIL");
-      response.addProperty("message", "Mật khẩu cũ không đúng hoặc không thể thay đổi.");
+      response.addProperty("message", "Đã có lỗi hệ thống xảy ra khi lưu mật khẩu.");
     }
+    
     return response;
   }
 
