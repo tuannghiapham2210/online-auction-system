@@ -66,8 +66,7 @@ public class BiddingService {
   /**
    * Xử lý luồng đặt giá (PLACE_BID) từ người dùng.
    *
-   * <p>
-   * Kiến trúc: Áp dụng Single Responsibility Principle (SRP) để đập nhỏ hàm khổng
+   * <p>Kiến trúc: Áp dụng Single Responsibility Principle (SRP) để đập nhỏ hàm khổng
    * lồ
    * thành 3 bước độc lập, dễ bảo trì và dễ unit test.
    *
@@ -327,8 +326,7 @@ public class BiddingService {
   /**
    * AUTO-BID ENGINE (Cơ chế Đấu giá tự động - Proxy Bidding).
    *
-   * <p>
-   * Luồng hoạt động (Architecture Flow):
+   * <p>Luồng hoạt động (Architecture Flow):
    * 1. Kiểm tra trạng thái sản phẩm xem có đang mở đấu giá không.
    * 2. Lấy người đang dẫn đầu hiện tại (currentHighestBidderId).
    * 3. Lấy danh sách đăng ký Auto-Bid từ DB (sắp xếp theo Ngân sách giảm dần).
@@ -537,12 +535,10 @@ public class BiddingService {
   /**
    * ANTI-SNIPING (Cơ chế Chống Bắn Tỉa - Gia hạn giờ chót).
    *
-   * <p>
-   * Cơ chế này đảm bảo sự công bằng cho tất cả người tham gia bằng cách cộng thêm
+   * <p>Cơ chế này đảm bảo sự công bằng cho tất cả người tham gia bằng cách cộng thêm
    * thời gian nếu có một mức giá mới được đưa ra vào những giây cuối cùng.
    *
-   * <p>
-   * Xử lý Edge Case (Độ trễ mạng):
+   * <p>Xử lý Edge Case (Độ trễ mạng):
    * Hệ thống cho phép dung sai 2 giây (NETWORK_LATENCY_TOLERANCE_SECONDS).
    * Nếu người dùng bấm "Đặt giá" ở đúng giây 00:00 nhưng do độ trễ mạng (Ping)
    * làm gói tin tới Server trễ 1-2 giây, hệ thống vẫn chấp nhận và lấy thời gian
@@ -571,8 +567,9 @@ public class BiddingService {
 
         // Đảm bảo thời gian còn lại luôn luôn là 10 giây kể từ thời điểm đặt giá hiện
         // tại (now)
-        java.time.LocalDateTime extendedTimeLDT = now.plusSeconds(ANTI_SNIPING_EXTENSION_SECONDS).withNano(0);
-        String extendedTime = extendedTimeLDT.format(formatter);
+        java.time.LocalDateTime extendedTimeLdt =
+            now.plusSeconds(ANTI_SNIPING_EXTENSION_SECONDS).withNano(0);
+        String extendedTime = extendedTimeLdt.format(formatter);
         itemDao.updateEndTime(itemId, extendedTime);
 
         logger.info("🔥 Anti-sniping kích hoạt: Item {} được gia hạn tới {}", itemId, extendedTime);
