@@ -1,193 +1,213 @@
-# 🔨 Hệ Thống Đấu Giá Trực Tuyến (Online Auction System)
+<div align="center">
+  <h1>Hệ Thống Đấu Giá Trực Tuyến (Online Auction System)</h1>
+  <p><i>Báo cáo Đồ án môn học Lập trình Nâng cao (LTNC)</i></p>
 
-> **Bài tập lớn môn:** Lập trình nâng cao (LTNC)  
-> **Nhóm thực hiện:** [Tên các thành viên nhóm của bạn]  
-> **Thời hạn nộp bài:** Trước 23:59, ngày 31/05/2026  
+  <!-- Badges -->
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=java&logoColor=white" alt="Java" />
+  <img src="https://img.shields.io/badge/JavaFX-MVC-4796CE?style=for-the-badge&logo=java" alt="JavaFX" />
+  <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite" />
+  <img src="https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven" />
+</div>
 
----
+<hr/>
 
-## 📖 1. Mô tả Bài Toán & Phạm Vi Hệ Thống
-
-### 📌 Bài toán đặt ra
-Trong kỷ nguyên số, việc mua bán các mặt hàng quý hiếm, đồ công nghệ, nghệ thuật hay phương tiện giao thông thông qua phương thức đấu giá truyền thống gặp nhiều rào cản về mặt địa lý, tính công khai minh bạch và độ trễ thông tin. **Hệ thống Đấu giá Trực tuyến (Online Auction System)** được ra đời nhằm giải quyết triệt để các rào cản này, mang lại một sàn đấu giá số hóa an toàn, công bằng và cập nhật dữ liệu tức thì.
-
-### 🎯 Phạm vi hệ thống
-Hệ thống hoạt động theo mô hình **Client-Server** thông qua giao thức **TCP Socket**, hỗ trợ đa người dùng cùng lúc (Multi-threading). Phạm vi ứng dụng bao gồm:
-*   **Phân quyền rõ ràng (Multi-Auth):** Hỗ trợ 3 nhóm vai trò người dùng cốt lõi:
-    *   **Admin:** Quản trị viên hệ thống, có quyền can thiệp kiểm soát các phiên đấu giá (Mở phiên, Hủy phiên, Dừng/Chốt phiên đấu giá sớm).
-    *   **Seller (Người bán):** Đăng bán sản phẩm kèm hình ảnh, mô tả chi tiết, phân loại sản phẩm, đặt giá khởi điểm, bước giá thầu và theo dõi quá trình giao dịch sản phẩm của mình đăng.
-    *   **Bidder (Người mua/đấu giá):** Tìm kiếm mặt hàng theo từ khóa và danh mục, nạp tiền vào ví điện tử cá nhân, xem biểu đồ biến động giá, và tham gia trả giá thời gian thực (đặt thầu thủ công hoặc đặt thầu tự động).
-*   **Đấu giá thời gian thực (Real-time Broadcast):** Đồng bộ hóa tức thì toàn bộ hoạt động trong phòng đấu giá (giá thầu mới, người dẫn đầu, lượt đếm xem, sự kiện đóng/hủy phiên) tới tất cả các client đang kết nối mà không cần tải lại trang.
-*   **Tự động hóa thanh toán:** Hệ thống tự động khấu trừ tiền ví của người thắng đấu giá và chuyển trực tiếp vào ví của người bán ngay khi phiên đấu giá kết thúc.
+**Thông tin nhóm thực hiện:**
+- **Thành viên 1:** [Họ và tên] - [Mã sinh viên]
+- **Thành viên 2:** [Họ và tên] - [Mã sinh viên]
+- **Thành viên 3:** [Họ và tên] - [Mã sinh viên]
+- **Repository:** [Link GitHub]
 
 ---
 
-## 🛠 2. Công Nghệ Sử Dụng & Yêu Cầu Cài Đặt
-
-### 💻 Công nghệ và Thư viện
-*   **Ngôn ngữ phát triển:** Java 21 (Phiên bản JDK mới nhất hỗ trợ các tính năng Pattern Matching, Switch Expression và tối ưu hóa hiệu năng).
-*   **Giao diện đồ họa (GUI):** JavaFX 21 + FXML (Hỗ trợ cấu trúc giao diện phân tách rõ ràng và CSS hóa hiện đại).
-*   **Kiến trúc mạng:** Java TCP Sockets, Multi-threading (Thread Pool cố định 20 luồng đồng thời) để duy trì các luồng kết nối dài hạn thời gian thực.
-*   **Cơ sở dữ liệu:** SQLite (Lưu trữ quan hệ nhẹ, tự động khởi tạo tệp tin, tự nâng cấp schema và nạp sẵn dữ liệu test mẫu).
-*   **Quản lý dự án & Build:** Maven 3.x
-*   **Thư viện bên thứ ba:**
-    *   `com.google.code.gson` (Gson 2.10.1): Mã hóa và giải mã các gói tin mạng JSON.
-    *   `org.xerial:sqlite-jdbc` (3.45.1.0): Driver kết nối CSDL SQLite từ Java.
-    *   `SLF4J` & `slf4j-simple` (2.0.9): Hệ thống ghi log chuyên nghiệp để giám sát trạng thái mạng và CSDL.
-
-### 📋 Môi trường chạy & Yêu cầu cài đặt
-1.  **Hệ điều hành:** Windows 10/11, macOS hoặc Linux.
-2.  **Môi trường Java:** Đã cài đặt **JDK 21** và cấu hình biến môi trường `JAVA_HOME` chính xác.
-3.  **Công cụ Build (Tùy chọn nếu muốn tự build từ mã nguồn):** Đã cài đặt **Apache Maven** và cấu hình trong biến môi trường PATH.
+## Mục lục
+1. [Mô tả bài toán và phạm vi hệ thống](#1-mô-tả-bài-toán-và-phạm-vi-hệ-thống)
+2. [Công nghệ và Yêu cầu môi trường](#2-công-nghệ-và-yêu-cầu-môi-trường)
+3. [Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
+4. [Vị trí các file .jar (Thực thi)](#4-vị-trí-các-file-jar-thực-thi)
+5. [Hướng dẫn chạy Server/Client theo thứ tự](#5-hướng-dẫn-chạy-serverclient-theo-thứ-tự)
+6. [Danh sách chức năng đã hoàn thành](#6-danh-sách-chức-năng-đã-hoàn-thành-theo-yêu-cầu-đồ-án)
+7. [Tài liệu Báo cáo & Video Demo](#7-tài-liệu-báo-cáo--video-demo)
 
 ---
 
-## 📁 3. Cấu Trúc Thư Mục & Các Module Chính
+## 1. Mô tả bài toán và phạm vi hệ thống
 
-Dự án được tổ chức theo kiến trúc Maven đa mô-đun (Multi-module) cực kỳ sạch sẽ và dễ bảo trì:
+### Bài toán
+Hệ thống đấu giá truyền thống thường gặp khó khăn về giới hạn không gian, thời gian và thiếu tính minh bạch trong quá trình ghi nhận giá thầu. Hệ thống Đấu giá Trực tuyến (Online Auction System) được xây dựng nhằm cung cấp một nền tảng giao dịch số hóa, cho phép người dùng tham gia đấu giá các vật phẩm theo thời gian thực một cách công bằng, an toàn và minh bạch.
+
+### Phạm vi hệ thống
+Hệ thống hoạt động theo mô hình Client-Server, giao tiếp qua giao thức TCP Socket. Hệ thống hỗ trợ đa kết nối đồng thời với các vai trò phân quyền chi tiết:
+- **Admin:** Giám sát hoạt động của hệ thống, quản lý người dùng và các phiên đấu giá.
+- **Seller (Người bán):** Đăng tải sản phẩm, thiết lập quy định đấu giá (giá khởi điểm, bước giá, thời gian).
+- **Bidder (Người mua):** Quản lý số dư, tìm kiếm sản phẩm và đặt giá thầu trong thời gian thực.
+
+**Đặc tả kỹ thuật trọng tâm:** Hệ thống đảm bảo xử lý an toàn các luồng dữ liệu đấu giá đồng thời (Concurrent Bidding), đồng bộ hóa sự kiện tới toàn bộ Client theo thời gian thực (Real-time Update) và tích hợp thuật toán đặt giá tự động (Auto-Bidding).
+
+---
+
+## 2. Công nghệ và Yêu cầu môi trường
+
+### Công nghệ sử dụng
+| Thành phần | Công nghệ / Thư viện | Vai trò |
+| :--- | :--- | :--- |
+| **Ngôn ngữ** | Java 21 | Xử lý nghiệp vụ Backend & Frontend |
+| **Giao diện (Client)**| JavaFX 21 + FXML | Triển khai giao diện theo mô hình MVC |
+| **Cơ sở dữ liệu** | SQLite (`sqlite-jdbc`) | Quản trị dữ liệu quan hệ, tích hợp trực tiếp |
+| **Giao tiếp mạng** | TCP Sockets, `Gson` (JSON) | Truyền tải dữ liệu thời gian thực |
+| **Quản lý dự án** | Maven (`maven-shade-plugin`) | Quản lý phụ thuộc và đóng gói Fat JAR |
+| **Kiểm thử & CI/CD** | JUnit 5, Mockito, GitHub Actions| Tự động hóa kiểm thử mã nguồn |
+
+### Yêu cầu cài đặt
+- Hệ điều hành: Windows, macOS, hoặc Linux.
+- Môi trường thực thi: Java Runtime Environment (JRE) 21 hoặc JDK 21.
+- Mạng: Kết nối mạng cục bộ (Localhost/LAN) để đảm bảo giao tiếp giữa Client và Server.
+
+---
+
+## 3. Cấu trúc thư mục
+
+Dự án được triển khai theo cấu trúc Maven Multi-module nhằm phân tách các thành phần hệ thống:
 
 ```text
 online-auction-system/
+├── online-auction-common/          # Chứa Model, Factory và các cấu trúc dùng chung
+│   └── src/main/java/com/auction/
+│       ├── factory/                # Factory Method Pattern cho đối tượng Item
+│       └── model/                  # Cấu trúc phân cấp dữ liệu lõi: User, Item
 │
-├── online-auction-common/          # Chứa Model nghiệp vụ và các Design Pattern dùng chung
+├── online-auction-server/          # Backend Server (Xử lý Socket, Concurrency, SQLite)
+│   └── src/main/java/com/auction/
+│       ├── dao/                    # DAO Pattern (Tương tác trực tiếp với cơ sở dữ liệu)
+│       ├── dto/                    # Data Transfer Objects (Đối tượng truyền dữ liệu)
+│       ├── service/                # Business logic (Quản lý Concurrent Bidding, Payment)
+│       ├── ClientHandler.java      # Quản lý luồng kết nối TCP độc lập cho từng Client
+│       └── ServerApp.java          # Entry-point cấu hình và khởi chạy máy chủ
+│
+├── online-auction-client/          # Frontend Client (Giao diện JavaFX và Giao tiếp mạng)
 │   ├── src/main/java/com/auction/
-│   │   ├── factory/                # [Factory Method Pattern] Khởi tạo các phân loại Item
-│   │   └── model/                  # Định nghĩa User, Admin, Seller, Bidder, Item, Art, Vehicle,...
-│   └── pom.xml
+│   │   ├── controller/             # MVC Pattern (Controller điều khiển logic giao diện)
+│   │   ├── dto/                    # Data Transfer Objects phía Client
+│   │   ├── network/                # Xử lý Socket phi đồng bộ (Nhận Real-time Update)
+│   │   ├── service/                # Quản lý các tác vụ gọi mạng và xử lý phụ trợ
+│   │   ├── util/                   # Lớp tiện ích (Định dạng dữ liệu, thông báo UI)
+│   │   ├── App.java                # Lớp khởi tạo JavaFX Application
+│   │   ├── Session.java            # Quản lý trạng thái (Global State) người dùng hiện tại
+│   │   └── Launcher.java           # Entry-point hỗ trợ đóng gói Fat JAR cho JavaFX
+│   └── src/main/resources/         # Cấu trúc tài nguyên (View FXML, CSS, Asset)
 │
-├── online-auction-server/          # Chứa lõi điều khiển mạng, cơ sở dữ liệu SQLite & các Service xử lý
-│   ├── src/main/java/com/auction/
-│   │   ├── dao/                    # Tầng truy cập dữ liệu (UserDao, ItemDao, BidTransactionDao)
-│   │   ├── service/                # Tầng xử lý nghiệp vụ (BiddingService, AuctionService, PaymentService, UserService)
-│   │   ├── ClientHandler.java      # Luồng xử lý Socket song song cho từng Client kết nối
-│   │   └── ServerApp.java          # Khởi chạy Server (Main Class của Server)
-│   └── pom.xml
-│
-├── online-auction-client/          # Giao diện đồ họa JavaFX, bộ điều khiển luồng UI và Socket Client
-│   ├── src/main/java/com/auction/
-│   │   ├── controller/             # Controller điều khiển FXML (Dashboard, BidRoom, Login, Register,...)
-│   │   ├── network/                # Quản lý Socket gửi tin phi đồng bộ và lắng nghe broadcast
-│   │   ├── service/                # Tầng dịch vụ trung gian kết nối Controller và Mạng
-│   │   ├── App.java                # Lớp khởi chạy ứng dụng JavaFX
-│   │   ├── Launcher.java           # Lớp khởi chạy Wrapper mồi (Main Class thực tế của Client để tránh lỗi classpath)
-│   │   └── Session.java            # Lưu trữ trạng thái phiên làm việc toàn cục (Global State)
-│   ├── src/main/resources/com/auction/
-│   │   ├── *.fxml                  # Toàn bộ tệp giao diện FXML (đăng nhập, dashboard, phòng đấu giá,...)
-│   │   ├── style.css               # Tệp CSS định hình phong cách đồ họa cho hệ thống
-│   │   └── logo.png                # Icon logo ứng dụng
-│   └── pom.xml
-│
-├── pom.xml                         # File POM cha (Parent POM) định nghĩa phiên bản và liên kết module
-├── auction.db                      # Cơ sở dữ liệu SQLite tự động tạo tại thư mục gốc
-├── client-history.log              # Nhật ký hoạt động của ứng dụng Client
-└── server-history.log              # Nhật ký hoạt động của ứng dụng Server
+└── pom.xml                         # Cấu hình Parent POM quản lý Dependencies
 ```
 
 ---
 
-## 📦 4. Vị Trí Các File `.jar` Sau Khi Build
+## 4. Vị trí các file .jar (Thực thi)
 
-Dự án sử dụng plugin **`maven-shade-plugin`** được cấu hình sẵn trong cả hai module Client và Server để tự động đóng gói toàn bộ các thư viện phụ thuộc (Dependencies) thành một tệp tin duy nhất (Executable Fat JAR / Uber JAR).
+Hệ thống sử dụng `maven-shade-plugin` để đóng gói toàn bộ mã nguồn và thư viện phụ thuộc thành các file Fat JAR. Sau quá trình biên dịch (`mvn clean package`), các file thực thi sẽ được lưu trữ tại:
 
-Sau khi chạy lệnh build (xem Hướng dẫn ở phần 5), các file `.jar` chạy độc lập sẽ được tạo ra tại các đường dẫn sau:
+- **Server:** `online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar`
+- **Client:** `online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar`
 
-1.  **File JAR của Server:**
-    *   `online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar`
-2.  **File JAR của Client:**
-    *   `online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar`
+*(Ghi chú: Giám khảo có thể tải trực tiếp các file `.jar` đã được biên dịch sẵn từ mục **Releases** trên GitHub của dự án).*
 
 ---
 
-## 🚀 5. Hướng Dẫn Build & Chạy Chương Trình Chi Tiết
+## 5. Hướng dẫn chạy Server/Client theo thứ tự
 
-Vì hệ thống hoạt động theo mô hình Client-Server, bạn **bắt buộc** phải tuân thủ thứ tự: **Bật Server trước, sau đó mới bật các Client kết nối.**
+> [!IMPORTANT]
+> **Quy tắc bắt buộc:** Phải khởi động Server trước để thiết lập kết nối mạng, sau đó mới tiến hành khởi chạy (các) Client.
 
-### 🛠 Bước 1: Build mã nguồn thành file Fat JAR độc lập
-Mở terminal (PowerShell / Command Prompt / Terminal) tại thư mục gốc của dự án (`online-auction-system`) và thực hiện lệnh sau:
-
+### Phương pháp 1: Biên dịch và chạy từ mã nguồn (Dành cho nhà phát triển)
+**Bước 1: Biên dịch mã nguồn (Build Project)**
+Mở Terminal (hoặc Command Prompt) tại thư mục gốc của dự án và thực thi lệnh Maven:
 ```bash
 mvn clean package
 ```
 
-Lệnh này sẽ tự động:
-1.  Dọn dẹp các bản build cũ (`clean`).
-2.  Kiểm tra cú pháp Checkstyle bảo mật mã nguồn.
-3.  Biên dịch toàn bộ mã nguồn Java.
-4.  Tự động nén và tạo ra các file executable fat JAR hoàn hảo tại thư mục `target` của mỗi module.
-
----
-
-### 💻 Bước 2: Khởi động Server
-Tại Terminal của bạn, di chuyển đến thư mục module server hoặc trỏ trực tiếp đến file jar để khởi chạy:
-
+**Bước 2: Khởi động Server**
+Tại thư mục gốc của dự án, thực thi lệnh sau:
 ```bash
 java -jar online-auction-server/target/online-auction-server-1.0-SNAPSHOT.jar
 ```
 
-*   **Hiện tượng xảy ra:** 
-    *   Server sẽ khởi chạy trên cổng mạng mặc định **`8080`**.
-    *   Nếu là lần chạy đầu tiên, hệ thống sẽ tự động khởi tạo file dữ liệu `auction.db` ở thư mục gốc, tạo bảng và nạp sẵn 3 tài khoản thử nghiệm kèm theo 1 siêu xe Koenigsegg Jesko mẫu.
-    *   Màn hình console xuất hiện dòng chữ: `Connected successfully to SQLite database.` và `Waiting for client connections...`.
-
----
-
-### 🖥 Bước 3: Khởi động các Client
-Mở một cửa sổ Terminal mới (hoặc nhiều cửa sổ khác nhau nếu muốn giả lập nhiều người đấu giá cùng lúc) và thực hiện lệnh:
-
+**Bước 3: Khởi động Client**
+Giữ nguyên cửa sổ Server, mở Terminal mới và chạy lệnh:
 ```bash
 java -jar online-auction-client/target/online-auction-client-1.0-SNAPSHOT.jar
 ```
 
-*   **Hiện tượng xảy ra:** 
-    *   Cửa sổ ứng dụng JavaFX sẽ xuất hiện với màn hình đăng nhập tối tân, thiết kế theo phong cách Dark Mode cao cấp.
-    *   Bạn có thể đăng nhập bằng các tài khoản mẫu được nạp sẵn để trải nghiệm các vai trò khác nhau.
+---
 
-#### 🔑 Danh sách các tài khoản thử nghiệm (Seed Accounts):
-| Vai trò (Role) | Tên đăng nhập (Username) | Mật khẩu (Password) | Số dư ví ban đầu |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `123456` | $1,000,000 |
-| **Seller** (Người bán) | `seller1` | `123` | $0 |
-| **Bidder** (Người mua) | `bidder1` | `123` | $0 *(Hãy bấm Nạp tiền tại góc trên bên phải)* |
+### Phương pháp 2: Chạy trực tiếp từ file thực thi (Khuyến nghị cho Giám khảo)
+Phương pháp này giúp bỏ qua quá trình cài đặt môi trường Maven. Giám khảo chỉ cần tải các file `.jar` đã được biên dịch sẵn.
+
+**Bước 1: Tải file thực thi (.jar)**
+
+| Server | Client |
+| :---: | :---: |
+| [![Download Server JAR](https://img.shields.io/badge/DOWNLOAD-SERVER%20JAR-007bff?style=for-the-badge)]([LINK_GITHUB_RELEASES_SERVER]) | [![Download Client JAR](https://img.shields.io/badge/DOWNLOAD-CLIENT%20JAR-28a745?style=for-the-badge)]([LINK_GITHUB_RELEASES_CLIENT]) |
+
+*(Lưu ý đối với sinh viên: Cập nhật đường link tải file `.jar` thực tế vào 2 nút bấm phía trên)*
+
+**Bước 2: Khởi động Server**
+Mở Terminal tại thư mục chứa file vừa tải về và chạy lệnh:
+```bash
+java -jar online-auction-server-1.0-SNAPSHOT.jar
+```
+*(Hệ thống Server sẽ khởi chạy, lắng nghe các kết nối TCP và tự động khởi tạo cơ sở dữ liệu `auction.db`)*
+
+**Bước 3: Khởi động Client**
+Mở thêm một (hoặc nhiều) cửa sổ Terminal mới tại cùng thư mục và khởi chạy Client:
+```bash
+java -jar online-auction-client-1.0-SNAPSHOT.jar
+```
+*Tài khoản kiểm thử định nghĩa sẵn trong CSDL: `admin`/`123456`, `seller1`/`123`, `bidder1`/`123`*
 
 ---
 
-## ✅ 6. Danh Sách Chức Năng Đã Hoàn Thành
+## 6. Danh sách chức năng đã hoàn thành (Theo yêu cầu đồ án)
 
-Hệ thống đã triển khai đầy đủ và kiểm thử thành công các nhóm chức năng sau:
+Hệ thống được phát triển bám sát và hoàn thành toàn bộ các tiêu chí đánh giá của môn học.
 
-### 1. Phân Quyền & Quản Lý Người Dùng
-*   [x] **Đăng ký tài khoản mới:** Người dùng lựa chọn vai trò (Seller/Bidder), nhập SĐT, Email và đăng ký trực tiếp.
-*   [x] **Đăng nhập an toàn:** Xác thực nhanh thông qua hệ thống JDBC SQLite của Server.
-*   [x] **Quên mật khẩu / Đổi mật khẩu:** Cho phép người dùng đổi mật khẩu trực tiếp hoặc khôi phục mật khẩu thông qua kiểm tra đối khớp SĐT/Email.
-*   [x] **Cập nhật hồ sơ cá nhân:** Cập nhật Username hiển thị, Email và Số điện thoại nhanh chóng.
+### 5.1. Thiết kế lớp và kiến trúc (Trọng tâm OOP)
+- [x] **Xác định các lớp chính:** Xây dựng đầy đủ `User` (phân vai trò Admin, Seller, Bidder), `Item` (kế thừa bởi `Electronics`, `Art`, `Vehicle`), `Auction`, `BidTransaction`.
+- [x] **Nguyên tắc OOP:** Triển khai các nguyên tắc Đóng gói (Encapsulation), Kế thừa (Inheritance), Đa hình (Polymorphism) và Trừu tượng (Abstraction).
+- [x] **Design Pattern:** Áp dụng Factory Method cho quy trình khởi tạo sản phẩm, Singleton cho quản lý kết nối CSDL, và Builder cho cấu trúc DTO.
 
-### 2. Quản Lý Sản Phẩm Đấu Giá (Design Pattern Factory)
-*   [x] **Khởi tạo thông minh:** Tạo sản phẩm dựa trên **Factory Method Pattern** cho các loại mặt hàng (`Electronics`, `Art`, `Vehicle`, `Other`).
-*   [x] **Đăng bán sản phẩm (Seller):** Cho phép người bán nhập tên, ảnh (URL), giá khởi điểm, bước giá tối thiểu, thời gian đấu giá và thuộc tính bổ sung (ví dụ: Tên nghệ sĩ cho tranh Art, Động cơ cho xe Vehicle,...).
-*   [x] **Gỡ sản phẩm / Hủy phiên (Seller/Admin):** Cho phép gỡ sản phẩm khi chưa diễn ra đấu giá hoặc hủy khẩn cấp.
-*   [x] **Mở phiên đấu giá (Seller/Admin):** Đưa sản phẩm từ trạng thái chờ (`PENDING`) sang hoạt động (`ACTIVE`) để kích hoạt đếm ngược thời gian thực.
+### 5.2. Chức năng chính
+- [x] **Quản lý hệ thống:** Xác thực người dùng, quản trị số dư, và thực hiện các thao tác CRUD đối với sản phẩm.
+- [x] **Chức năng đấu giá:** Ghi nhận giá thầu, tự động khấu trừ, và xác định đối tượng thắng cuộc.
+- [x] **Kiểm soát lỗi & Ngoại lệ:** Xử lý các trường hợp dữ liệu không hợp lệ (Validation), gián đoạn kết nối mạng và các ngoại lệ SQL.
 
-### 3. Đấu Giá Thời Gian Thực (Real-time TCP Socket Bidding)
-*   [x] **Đồng bộ hóa giá thầu tức thì:** Khi có người ra giá mới, toàn bộ client đang xem sẽ thấy giá cập nhật ngay lập tức.
-*   [x] **Biểu đồ biến động giá (Real-time Area Chart):** Biểu diễn trực quan dòng tiền đấu giá tăng động theo thời gian thực.
-*   [x] **Đếm số người xem phòng thầu:** Hiển thị tức thì số lượng người dùng đang truy cập xem phòng đấu giá đó.
-*   [x] **Đếm ngược thời gian thực:** Đồng hồ đếm ngược được tính toán chính xác tới từng mili-giây.
+### 5.3. Kỹ thuật quan trọng & Xử lý đồng thời (Concurrency)
+- [x] **Xử lý đồng thời (Thread-safe):** Giải quyết triệt để vấn đề Race Condition và Lost Update thông qua cơ chế `ReentrantLock` kết hợp với Transaction SQL cấp độ CSDL.
+- [x] **Cập nhật thời gian thực (Real-time Update):** Đồng bộ hóa trạng thái phiên đấu giá ngay lập tức cho toàn bộ Client thông qua cơ chế Observer Pattern trên nền tảng TCP Socket.
 
-### 4. Các Động Cơ Nâng Cao (Advanced Bidding & Anti-sniping Engine)
-*   [x] **Hệ thống đặt giá tự động (Auto-Bid / Proxy Bidding):** Người mua cài ngân sách tối đa và bước nhảy tự động. Server sẽ tự động đại diện đấu giá chéo cực kỳ thông minh.
-*   [x] **Cơ chế chống bắn tỉa phút chót (Anti-sniping):** Tự động cộng thêm 10 giây nếu phát hiện lượt đặt giá trong 10 giây cuối cùng để tránh đầu cơ gian lận giá.
+### 5.4. Tích hợp và Chất lượng mã
+- [x] **Kiến trúc phân tầng:** Phân tách rõ ràng Client (JavaFX) và Server (TCP, SQLite) thành các module độc lập.
+- [x] **Áp dụng MVC & DAO:** Sử dụng mô hình Controller-Model-DAO trên Server và Controller-FXML trên Client.
+- [x] **Quản lý dự án:** Cấu hình bằng Maven, duy trì định dạng mã nguồn nhất quán.
+- [x] **Kiểm thử phần mềm:** Triển khai Unit Test (JUnit) bao phủ các nghiệp vụ cốt lõi.
+- [x] **CI/CD Cơ bản:** Thiết lập GitHub Actions tự động kiểm thử và biên dịch.
 
-### 5. Ví Điện Tử & Thanh Toán Giao Dịch Tự Động
-*   [x] **Nạp tiền ví (Deposit):** Cho phép người mua nạp tiền trực tuyến trực tiếp vào tài khoản qua popup đồ họa cực đẹp.
-*   [x] **Khấu trừ tiền thắng thầu tự động:** Chốt số dư ví của người thắng và cộng trực tiếp cho người bán, giải phóng trạng thái phiên đấu giá khép kín.
-*   [x] **Hệ thống thông báo thông minh tràn màn hình (Winner/Sale Overlay):** Đưa ra màn hình vinh danh tràn màn hình rực rỡ cho người thắng đấu giá (`justWon`) và người bán bán được hàng (`justSold`) tức thì ngay trên Dashboard.
+### 5.5. Chức năng nâng cao
+- [x] **Đấu giá tự động (Auto-Bidding):** Tích hợp cấu trúc dữ liệu `PriorityQueue` hỗ trợ hệ thống tự động đặt giá thầu dựa trên ngân sách thiết lập trước.
+- [x] **Gia hạn chống gian lận (Anti-sniping):** Tự động gia hạn thời gian 10 giây nếu hệ thống ghi nhận giá thầu trong khoảng thời gian sắp kết thúc phiên.
+- [x] **Trực quan hóa dữ liệu (Bid History Visualization):** Biểu đồ hóa biến động giá thầu thời gian thực (Line Chart) trên giao diện JavaFX.
 
 ---
 
-## 📊 7. Tài Liệu Báo Cáo & Video Demo
+## 7. Tài liệu Báo cáo & Video Demo
 
-> [!NOTE]
-> Liên kết tài liệu báo cáo học thuật và video giới thiệu hệ thống trực quan của nhóm chúng tôi.
+<div align="left">
+  <a href="[LINK_BAO_CAO_PDF]">
+    <img src="https://img.shields.io/badge/BAO_CAO_CHI_TIET-PDF_DOWNLOAD-E34F26?style=for-the-badge" alt="Báo Cáo PDF">
+  </a>
+  &nbsp;&nbsp;
+  <a href="[LINK_VIDEO_YOUTUBE_HOAC_DRIVE]">
+    <img src="https://img.shields.io/badge/VIDEO_DEMO-WATCH_NOW-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Video Demo">
+  </a>
+</div>
 
-*   **Báo cáo bài tập lớn (PDF):** `[Tải Báo Cáo PDF tại đây] (Đang cập nhật / Link tài liệu của bạn)`
-*   **Video Demo trực quan:** `[Xem Video thực tế tại đây] (Đang cập nhật / Link video YouTube hoặc Drive của bạn)`
+- **Link Báo Cáo (PDF):** [Chèn Link Google Drive/Dropbox vào đây]
+- **Link Video Demo (YouTube/Drive):** [Chèn Link Video vào đây]
+*(Video minh họa: Khởi chạy Server/Client, chức năng đấu giá thời gian thực song song, Auto-bidding và cơ chế xử lý Race Condition).*
